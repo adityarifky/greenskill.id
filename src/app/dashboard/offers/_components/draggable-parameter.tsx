@@ -2,10 +2,10 @@
 
 import * as React from 'react';
 import { GripVertical } from 'lucide-react';
-import type { Parameter } from '../preview/page';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import type { Parameter } from '../preview/page';
+
 
 interface DraggableParameterProps {
   param: Parameter;
@@ -26,11 +26,13 @@ export function DraggableParameter({
   const elementRef = React.useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Don't drag if editing
+    // Prevent drag if editing or clicking on input
     if (isEditing || (e.target as HTMLElement).tagName === 'INPUT') {
       return;
     }
     e.preventDefault();
+    e.stopPropagation(); // Stop propagation to parent
+    
     if (elementRef.current) {
       dragStartRef.current = {
         x: e.clientX - elementRef.current.offsetLeft,
@@ -48,6 +50,7 @@ export function DraggableParameter({
     const newX = e.clientX - dragStartRef.current.x;
     const newY = e.clientY - dragStartRef.current.y;
 
+    // Constrain position within parent
     const constrainedX = Math.max(0, Math.min(newX, parentRect.width - elementRef.current.offsetWidth));
     const constrainedY = Math.max(0, Math.min(newY, parentRect.height - elementRef.current.offsetHeight));
 
@@ -60,7 +63,8 @@ export function DraggableParameter({
     document.removeEventListener('mouseup', handleMouseUp);
   };
   
-  const handleDoubleClick = () => {
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering parent handlers
     setIsEditing(true);
   };
 
@@ -82,7 +86,6 @@ export function DraggableParameter({
       setIsEditing(false);
     }
   };
-
 
   return (
     <div
@@ -109,7 +112,8 @@ export function DraggableParameter({
                     onKeyDown={handleKeyDown}
                     onBlur={handleLabelSave}
                     autoFocus
-                    className="h-8"
+                    className="h-8 bg-white"
+                    onClick={(e) => e.stopPropagation()} // Prevent double click from propagating
                 />
             </div>
         ) : (

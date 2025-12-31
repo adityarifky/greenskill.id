@@ -22,7 +22,7 @@ export type Parameter = {
   label: string;
   value: string;
   position: { x: number; y: number };
-  key: string; // Keep original key for mapping
+  key: string;
 };
 
 const dummyScheme: Scheme = {
@@ -82,25 +82,29 @@ export default function SessionOfferPreviewPage() {
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const data = JSON.parse(e.dataTransfer.getData("application/json"));
+    const dataString = e.dataTransfer.getData("application/json");
+    if (!dataString) return;
+
+    const data = JSON.parse(dataString);
     const parentRect = printAreaRef.current?.getBoundingClientRect();
     if (!parentRect) return;
+
+    // Adjust for scrolled content
+    const offsetX = e.clientX - parentRect.left;
+    const offsetY = e.clientY - parentRect.top;
 
     const newParam: Parameter = {
       id: `param-${Date.now()}`,
       key: data.paramKey,
       label: 'Label Baru',
-      value: 'Nilai Baru',
-      position: {
-        x: e.clientX - parentRect.left,
-        y: e.clientY - parentRect.top,
-      },
+      value: '', // Value is not needed as per new request
+      position: { x: offsetX, y: offsetY },
     };
     setActiveParams(prev => [...prev, newParam]);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
+    e.preventDefault(); // This is necessary to allow dropping
   };
 
   const defaultTemplateImage = PlaceHolderImages.find(img => img.id === 'a4-template');
@@ -196,16 +200,12 @@ export default function SessionOfferPreviewPage() {
                     priority
                     className="object-cover pointer-events-none"
                   />
-                  {!previewData.isTemplateOnlyPreview && (
-                    <PrintPreview
-                      offer={offerForPreview as Offer}
-                      scheme={previewData.scheme || dummyScheme}
-                      activeParams={activeParams}
-                      onPositionChange={handlePositionChange}
-                      onLabelChange={handleLabelChange}
-                      parentRef={printAreaRef}
-                    />
-                  )}
+                  <PrintPreview
+                    activeParams={activeParams}
+                    onPositionChange={handlePositionChange}
+                    onLabelChange={handleLabelChange}
+                    parentRef={printAreaRef}
+                  />
                 </div>
               </div>
             );

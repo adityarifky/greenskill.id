@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import type { Offer, Scheme } from '@/lib/types';
 import { DraggableParameter } from './draggable-parameter';
 import type { Parameter } from '../preview/page';
 
