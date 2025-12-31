@@ -102,7 +102,9 @@ service cloud.firestore {
      */
     match /registration_schemas/{registrationSchemaId} {
       allow get, list: if isSignedIn();
-      allow create, update, delete: if false; // Admin-only
+      allow create: if isSignedIn();
+      allow update: if isOwner(request.auth.uid);
+      allow delete: if false; //
     }
 
     /**
@@ -119,5 +121,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
