@@ -70,8 +70,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
-  const storage = getStorage();
-
+  
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData ? {
@@ -85,7 +84,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
     },
   });
 
-  const { formState: { isSubmitting }, handleSubmit, reset, setError } = form;
+  const { formState: { isSubmitting }, handleSubmit } = form;
 
   const title = initialData ? 'Edit Penawaran' : 'Buat Penawaran Baru';
   const description = initialData ? 'Perbarui detail penawaran.' : 'Isi formulir untuk membuat penawaran baru.';
@@ -104,62 +103,63 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
     }
 
     try {
-        let backgroundUrl = initialData?.backgroundUrl || '';
+      const storage = getStorage();
+      let backgroundUrl = initialData?.backgroundUrl || '';
 
-        if (data.backgroundFile && data.backgroundFile.length > 0) {
-            const file = data.backgroundFile[0];
-            const storageRef = ref(storage, `offer_backgrounds/${user.uid}/${Date.now()}-${file.name}`);
-            const snapshot = await uploadBytes(storageRef, file);
-            backgroundUrl = await getDownloadURL(snapshot.ref);
-        }
+      // 1. Handle file upload if a new file is provided
+      if (data.backgroundFile && data.backgroundFile.length > 0) {
+        const file = data.backgroundFile[0];
+        const storageRef = ref(storage, `offer_backgrounds/${user.uid}/${Date.now()}-${file.name}`);
+        
+        toast({ title: 'Mengunggah gambar...', description: 'Mohon tunggu sebentar.' });
+        const snapshot = await uploadBytes(storageRef, file);
+        backgroundUrl = await getDownloadURL(snapshot.ref);
+      }
 
-        const selectedScheme = schemes.find(s => s.id === data.schemeId);
-        if (!selectedScheme) {
-            toast({
-                variant: "destructive",
-                title: "Gagal!",
-                description: "Skema yang dipilih tidak valid.",
-            });
-            return;
-        }
+      const selectedScheme = schemes.find(s => s.id === data.schemeId);
+      if (!selectedScheme) {
+        throw new Error("Skema yang dipilih tidak valid.");
+      }
+      
+      const offerData = {
+          schemeId: data.schemeId,
+          schemeName: selectedScheme.name, // Denormalized name
+          customerName: data.customerName,
+          offerDate: data.offerDate,
+          userRequest: data.userRequest,
+          userId: user.uid,
+          ...(backgroundUrl && { backgroundUrl }),
+          updatedAt: serverTimestamp(),
+      };
 
-        const offerData = {
-            schemeId: data.schemeId,
-            schemeName: selectedScheme.name, // Denormalized name
-            customerName: data.customerName,
-            offerDate: data.offerDate,
-            userRequest: data.userRequest,
-            userId: user.uid,
-            ...(backgroundUrl && { backgroundUrl }),
-            updatedAt: serverTimestamp(),
-        };
+      let offerId = initialData?.id;
 
-        let offerId = initialData?.id;
+      // 2. Save data to Firestore
+      if (initialData) {
+          await setDoc(doc(firestore, 'training_offers', initialData.id), offerData, { merge: true });
+      } else {
+          const docRef = await addDoc(collection(firestore, 'training_offers'), { ...offerData, createdAt: serverTimestamp() });
+          offerId = docRef.id;
+      }
 
-        if (initialData) {
-            await setDoc(doc(firestore, 'training_offers', initialData.id), offerData, { merge: true });
-        } else {
-            const docRef = await addDoc(collection(firestore, 'training_offers'), { ...offerData, createdAt: serverTimestamp() });
-            offerId = docRef.id;
-        }
+      toast({
+          title: 'Sukses!',
+          description: toastMessage,
+      });
 
-        toast({
-            title: 'Sukses!',
-            description: toastMessage,
-        });
-
-        if (offerId) {
-            router.push(`/dashboard/offers/${offerId}/preview`);
-        } else {
-            router.push('/dashboard/offers');
-        }
-        router.refresh();
+      // 3. Redirect on success
+      if (offerId) {
+          router.push(`/dashboard/offers/${offerId}/preview`);
+      } else {
+          router.push('/dashboard/offers');
+      }
+      router.refresh();
 
     } catch (error: any) {
         console.error("Operation failed:", error);
-         toast({
+        toast({
             variant: "destructive",
-            title: "Gagal!",
+            title: "Operasi Gagal!",
             description: error.message || "Terjadi kesalahan saat menyimpan penawaran.",
         });
     }
@@ -169,7 +169,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <Card>
           <CardHeader>
             <CardTitle>{title}</CardTitle>
