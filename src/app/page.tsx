@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from 'react';
 import { useRouter } from "next/navigation";
 import { AtSign, FileText, KeyRound } from "lucide-react";
 
@@ -8,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
 
   const handleLogin = (e: React.FormEvent) => {
@@ -16,6 +17,37 @@ export default function LoginPage() {
     // Mock login logic
     router.push("/dashboard");
   };
+
+  return (
+     <form onSubmit={handleLogin} className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="email">Alamat Email</Label>
+        <div className="relative">
+          <AtSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input id="email" type="email" placeholder="anda@contoh.com" required className="pl-10" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Kata Sandi</Label>
+        <div className="relative">
+          <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input id="password" type="password" placeholder="••••••••" required className="pl-10" />
+        </div>
+      </div>
+      <Button type="submit" className="w-full text-lg">
+        Masuk
+      </Button>
+    </form>
+  )
+}
+
+export default function LoginPage() {
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   return (
     <main className="flex min-h-screen w-full items-center justify-center bg-background p-4">
@@ -28,25 +60,7 @@ export default function LoginPage() {
           <CardDescription>Selamat datang kembali! Silakan masuk untuk melanjutkan.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email">Alamat Email</Label>
-              <div className="relative">
-                <AtSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input id="email" type="email" placeholder="anda@contoh.com" required className="pl-10" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Kata Sandi</Label>
-              <div className="relative">
-                <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input id="password" type="password" placeholder="••••••••" required className="pl-10" />
-              </div>
-            </div>
-            <Button type="submit" className="w-full text-lg">
-              Masuk
-            </Button>
-          </form>
+          {isClient ? <LoginForm /> : null}
         </CardContent>
       </Card>
     </main>
