@@ -8,7 +8,7 @@ import { Header } from '@/components/layout/header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, ArrowLeft, Save, Pencil, PackagePlus, FileText, Calendar, User, Tag, List, MessageSquare } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Save, Pencil, Plus } from 'lucide-react';
 import type { Offer, Scheme, TemplateParameter } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useFirestore, useUser } from '@/firebase';
@@ -76,8 +76,10 @@ export default function SessionOfferPreviewPage() {
     );
   }, []);
   
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, paramKey: string, defaultLabel: string) => {
-    e.dataTransfer.setData("application/json", JSON.stringify({ paramKey, defaultLabel }));
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    // We only need to know that we are dragging a new parameter.
+    // The key and label will be generic and editable later.
+    e.dataTransfer.setData("application/json", JSON.stringify({ isNew: true }));
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -85,14 +87,16 @@ export default function SessionOfferPreviewPage() {
     const dataString = e.dataTransfer.getData("application/json");
     if (!dataString) return;
 
-    const { paramKey, defaultLabel } = JSON.parse(dataString);
+    const { isNew } = JSON.parse(dataString);
+    if (!isNew) return;
+    
     const parentRect = printAreaRef.current?.getBoundingClientRect();
     if (!parentRect) return;
 
     const newParam: Parameter = {
       id: `param-${Date.now()}`,
-      key: paramKey,
-      label: defaultLabel,
+      key: `custom-${Date.now()}`, // Generic key
+      label: "Label Baru", // Generic label
       position: { x: e.clientX - parentRect.left, y: e.clientY - parentRect.top },
     };
     setActiveParams(prev => [...prev, newParam]);
@@ -186,16 +190,6 @@ export default function SessionOfferPreviewPage() {
     ? 'Pratinjau Template Latar'
     : 'Pratinjau Penawaran';
   
-  const parameterItems = [
-    { key: 'offerId', name: 'Nomor Surat', icon: FileText },
-    { key: 'offerDate', name: 'Tanggal Penawaran', icon: Calendar },
-    { key: 'customerName', name: 'Nama Customer', icon: User },
-    { key: 'schemeName', name: 'Nama Skema', icon: PackagePlus },
-    { key: 'schemePrice', name: 'Harga Skema', icon: Tag },
-    { key: 'schemeUnits', name: 'Unit Pelatihan', icon: List },
-    { key: 'userRequest', name: 'Permintaan User', icon: MessageSquare },
-  ];
-
   return (
     <div className="flex h-full flex-col bg-muted/40">
       <div className="no-print">
@@ -302,17 +296,14 @@ export default function SessionOfferPreviewPage() {
                 </p>
               </div>
               <div className="grid gap-2">
-                 {parameterItems.map((param) => (
-                   <div
-                    key={param.key}
+                 <div
                     draggable
-                    onDragStart={(e) => handleDragStart(e, param.key, param.name)}
+                    onDragStart={handleDragStart}
                     className="flex cursor-grab items-center gap-2 rounded-md border p-2 transition-colors hover:bg-accent"
                   >
-                    <param.icon className="h-4 w-4 text-muted-foreground" />
-                    <span>{param.name}</span>
+                    <Plus className="h-4 w-4 text-muted-foreground" />
+                    <span>Tambah Parameter</span>
                    </div>
-                 ))}
               </div>
             </div>
         </PopoverContent>
