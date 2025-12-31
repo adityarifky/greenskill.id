@@ -40,7 +40,7 @@ function LoginForm() {
       await signInWithEmailAndPassword(auth, email, password);
       // onAuthStateChanged will handle the redirect
     } catch (signInError: any) {
-      if (signInError.code === 'auth/user-not-found') {
+      if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
         try {
           await createUserWithEmailAndPassword(auth, email, password);
           // onAuthStateChanged will handle the redirect
