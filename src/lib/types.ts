@@ -25,4 +25,5 @@ export type Offer = {
   backgroundUrl?: string; // For single background
   backgroundUrls?: string[]; // For multiple backgrounds
   scheme?: Scheme; // Added for temporary preview
+  key?: string; // Added for draggable parameter
 };

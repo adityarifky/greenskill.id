@@ -3,13 +3,20 @@
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import Image from 'next/image';
-import { PrintPreview } from '../_components/print-preview';
+import { PrintPreview, type Parameter } from '../_components/print-preview';
 import { Header } from '@/components/layout/header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, ArrowLeft, Printer, Pencil } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Printer, Pencil, Package } from 'lucide-react';
 import type { Offer, Scheme } from '@/lib/types';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 
 
 type PreviewData = Partial<Omit<Offer, 'createdAt' | 'userId'>> & { 
@@ -36,6 +43,9 @@ export default function SessionOfferPreviewPage() {
     const router = useRouter();
     const [previewData, setPreviewData] = React.useState<PreviewData | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
+    const [activeParams, setActiveParams] = React.useState<Parameter[]>([]);
+    const printAreaRef = React.useRef<HTMLDivElement>(null);
+
 
     React.useEffect(() => {
         const storedData = sessionStorage.getItem('previewOffer');
@@ -48,6 +58,53 @@ export default function SessionOfferPreviewPage() {
         }
         setIsLoading(false);
     }, []);
+    
+    const offerForPreview = { ...dummyOffer, ...previewData };
+    const schemeForPreview = previewData?.scheme || dummyScheme;
+
+    const availableParams = [
+      { key: 'customerName', label: 'Nama Customer', value: offerForPreview.customerName },
+      { key: 'offerDate', label: 'Tanggal Penawaran', value: format(offerForPreview.offerDate, "d MMMM yyyy", { locale: id }) },
+      { key: 'schemeName', label: 'Nama Skema', value: schemeForPreview.name },
+      { key: 'unitCode', label: 'Kode Unit', value: schemeForPreview.units[0]?.unitCode || 'N/A'},
+      { key: 'unitName', label: 'Nama Unit', value: schemeForPreview.units[0]?.unitName || 'N/A' },
+      { key: 'price', label: 'Harga', value: `Rp ${Number(schemeForPreview.price || 0).toLocaleString('id-ID')}` },
+      { key: 'userRequest', label: 'Permintaan Pengguna', value: offerForPreview.userRequest },
+    ];
+
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, param: Omit<Parameter, 'id' | 'position'>) => {
+        e.dataTransfer.setData('application/json', JSON.stringify(param));
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        const paramDataString = e.dataTransfer.getData('application/json');
+        if (!paramDataString || !printAreaRef.current) return;
+
+        const paramData = JSON.parse(paramDataString);
+        const dropZoneRect = printAreaRef.current.getBoundingClientRect();
+
+        const newParam: Parameter = {
+            ...paramData,
+            id: `${paramData.key}-${Date.now()}`,
+            position: { 
+              x: e.clientX - dropZoneRect.left, 
+              y: e.clientY - dropZoneRect.top 
+            },
+        };
+        setActiveParams(prev => [...prev, newParam]);
+    };
+    
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault(); // Necessary to allow dropping
+    };
+    
+    const handlePositionChange = (id: string, newPosition: { x: number; y: number }) => {
+        setActiveParams(prev => 
+            prev.map(p => p.id === id ? { ...p, position: newPosition } : p)
+        );
+    };
+
 
     const defaultTemplateImage = PlaceHolderImages.find(img => img.id === 'a4-template');
 
@@ -88,8 +145,6 @@ export default function SessionOfferPreviewPage() {
         );
     }
     
-    const offerForPreview = { ...dummyOffer, ...previewData };
-    const schemeForPreview = previewData.scheme || dummyScheme;
     const isTemporary = !!previewData.id?.startsWith('temp-');
 
     const backgroundUrls = previewData.backgroundUrls && previewData.backgroundUrls.length > 0 
@@ -124,20 +179,28 @@ export default function SessionOfferPreviewPage() {
                         };
                         return (
                              <div key={index} className="print-container mx-auto max-w-4xl rounded-lg bg-white shadow-lg">
-                                <div className="print-content relative aspect-[1/1.414] w-full">
+                                <div 
+                                    ref={printAreaRef}
+                                    onDrop={handleDrop}
+                                    onDragOver={handleDragOver}
+                                    className="print-content relative aspect-[1/1.414] w-full"
+                                >
                                     <Image
                                         src={templateImage.imageUrl}
                                         alt={templateImage.description}
                                         fill
                                         sizes="100vw"
                                         priority
-                                        className="object-cover"
+                                        className="object-cover pointer-events-none"
                                     />
                                     {!previewData.isTemplateOnlyPreview && (
                                         <PrintPreview 
                                             offer={offerForPreview as Offer} 
                                             scheme={schemeForPreview} 
                                             isTemporaryPreview={isTemporary}
+                                            activeParams={activeParams}
+                                            onPositionChange={handlePositionChange}
+                                            parentRef={printAreaRef}
                                         />
                                     )}
                                 </div>
@@ -146,13 +209,42 @@ export default function SessionOfferPreviewPage() {
                     })}
                 </div>
             </main>
-             <Button
-                size="icon"
-                className="no-print fixed bottom-8 left-8 z-50 h-14 w-14 rounded-full shadow-lg"
-            >
-                <Pencil className="h-6 w-6" />
-                <span className="sr-only">Edit Parameters</span>
-            </Button>
+             <Popover>
+                <PopoverTrigger asChild>
+                     <Button
+                        size="icon"
+                        className="no-print fixed bottom-8 left-8 z-50 h-14 w-14 rounded-full shadow-lg"
+                    >
+                        <Pencil className="h-6 w-6" />
+                        <span className="sr-only">Edit Parameters</span>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" side="top" align="start">
+                    <div className="grid gap-4">
+                        <div className="space-y-2">
+                            <h4 className="font-medium leading-none">Parameter Tersedia</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Seret parameter ke atas templat untuk menambahkannya.
+                            </p>
+                        </div>
+                        <div className="grid gap-2">
+                            {availableParams.map((param) => (
+                                <div
+                                    key={param.key}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, { label: param.label, value: param.value, key: param.key })}
+                                    className="flex items-center justify-between rounded-md border p-2 hover:bg-accent hover:text-accent-foreground cursor-grab"
+                                >
+                                    <div className="flex items-center gap-2">
+                                      <Package className="h-4 w-4" />
+                                      <span>{param.label}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
         </div>
     );
 }
