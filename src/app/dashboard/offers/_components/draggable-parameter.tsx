@@ -32,28 +32,6 @@ export function DraggableParameter({
   const dragStartRef = React.useRef<{ offsetX: number; offsetY: number } | null>(null);
   const elementRef = React.useRef<HTMLDivElement>(null);
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isEditing || (e.target as HTMLElement).tagName === 'INPUT') {
-      return;
-    }
-    if (!(e.target as HTMLElement).closest('[data-drag-handle]')) {
-        return;
-    }
-    
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (elementRef.current) {
-        const rect = elementRef.current.getBoundingClientRect();
-        dragStartRef.current = {
-            offsetX: e.clientX - rect.left,
-            offsetY: e.clientY - rect.top,
-        };
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp, { once: true });
-    }
-  };
-
   const handleMouseMove = React.useCallback((e: MouseEvent) => {
     if (!dragStartRef.current || !parentRef.current || !elementRef.current) return;
 
@@ -65,6 +43,7 @@ export function DraggableParameter({
     const elementWidth = elementRef.current.offsetWidth;
     const elementHeight = elementRef.current.offsetHeight;
     
+    // Clamp the position to be within the parent's bounds
     newX = Math.max(0, Math.min(newX, parentRect.width - elementWidth));
     newY = Math.max(0, Math.min(newY, parentRect.height - elementHeight));
 
@@ -74,9 +53,38 @@ export function DraggableParameter({
   const handleMouseUp = React.useCallback(() => {
     dragStartRef.current = null;
     document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
   },[handleMouseMove]);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isEditing || (e.target as HTMLElement).tagName === 'INPUT') {
+      return;
+    }
+    // Only allow dragging from the handle
+    if (!(e.target as HTMLElement).closest('[data-drag-handle]')) {
+        return;
+    }
+    
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (elementRef.current) {
+        const rect = elementRef.current.getBoundingClientRect();
+        // Calculate the offset from the element's top-left corner
+        dragStartRef.current = {
+            offsetX: e.clientX - rect.left,
+            offsetY: e.clientY - rect.top,
+        };
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+  };
   
   const handleDoubleClick = (e: React.MouseEvent) => {
+    // Don't trigger edit when double clicking the drag handle
+    if ((e.target as HTMLElement).closest('[data-drag-handle]')) {
+        return;
+    }
     e.stopPropagation();
     setIsEditing(true);
   };
@@ -107,15 +115,15 @@ export function DraggableParameter({
         position: 'absolute',
         top: `${param.position.y}px`,
         left: `${param.position.x}px`,
-        cursor: isEditing ? 'default' : 'pointer',
+        cursor: 'default',
         touchAction: 'none',
       }}
       className="group/param z-10 flex items-center gap-1 rounded-md p-1 hover:bg-blue-100/50 hover:ring-1 hover:ring-blue-500 transition-all"
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
     >
-      <div data-drag-handle className="cursor-grab p-1">
-        <GripVertical className="h-5 w-5 text-gray-400 opacity-0 group-hover/param:opacity-100 transition-opacity" />
+      <div data-drag-handle className="cursor-grab p-1 touch-none">
+        <GripVertical className="h-5 w-5 text-gray-400 opacity-0 group-hover/param:opacity-100 transition-opacity pointer-events-none" />
       </div>
       <div className="flex flex-col text-sm w-auto">
          {isEditing ? (
