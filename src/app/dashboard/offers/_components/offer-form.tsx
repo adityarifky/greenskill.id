@@ -277,7 +277,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
-                </Item>
+                </FormItem>
               )}
             />
 
