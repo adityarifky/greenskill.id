@@ -44,14 +44,12 @@ export default async function SchemesPage() {
                 <CardTitle>Daftar Skema</CardTitle>
                 <CardDescription>Kelola semua skema pelatihan Anda.</CardDescription>
               </div>
-              <Link href="/dashboard/schemes/new" passHref legacyBehavior>
-                <Button asChild>
-                  <a>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Buat Skema Baru
-                  </a>
-                </Button>
-              </Link>
+              <Button asChild>
+                <Link href="/dashboard/schemes/new">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Buat Skema Baru
+                </Link>
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -88,9 +86,9 @@ export default async function SchemesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                          <Link href={`/dashboard/schemes/${scheme.id}/edit`} passHref>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                          </Link>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/schemes/${scheme.id}/edit`}>Edit</Link>
+                          </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive">Hapus</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

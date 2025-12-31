@@ -31,25 +31,25 @@ export default async function OfferDetailsPage({ params }: { params: { id: strin
       <main className="flex-1 p-4 md:p-8">
         <div className="mx-auto max-w-3xl">
           <div className="mb-6 flex items-center justify-between">
-            <Link href="/dashboard/offers" passHref legacyBehavior>
-              <Button variant="outline">
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/offers">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Kembali ke Daftar
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             <div className="flex gap-2">
-              <Link href={`/dashboard/offers/${offer.id}/edit`} passHref legacyBehavior>
-                <Button variant="secondary">
+              <Button variant="secondary" asChild>
+                <Link href={`/dashboard/offers/${offer.id}/edit`}>
                   <FileEdit className="mr-2 h-4 w-4" />
                   Edit
-                </Button>
-              </Link>
-              <Link href={`/dashboard/offers/${offer.id}/preview`} passHref legacyBehavior>
-                <Button>
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link href={`/dashboard/offers/${offer.id}/preview`}>
                   <Printer className="mr-2 h-4 w-4" />
                   Pratinjau Cetak
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </div>
           <Card>

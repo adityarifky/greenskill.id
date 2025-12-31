@@ -43,14 +43,12 @@ export default async function OffersPage() {
                 <CardTitle>Penawaran Dibuat</CardTitle>
                 <CardDescription>Kelola semua penawaran yang telah Anda buat.</CardDescription>
               </div>
-              <Link href="/dashboard/offers/new" passHref legacyBehavior>
-                <Button asChild>
-                  <a>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Buat Penawaran Baru
-                  </a>
-                </Button>
-              </Link>
+              <Button asChild>
+                <Link href="/dashboard/offers/new">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Buat Penawaran Baru
+                </Link>
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -83,15 +81,15 @@ export default async function OffersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                          <Link href={`/dashboard/offers/${offer.id}`} passHref>
-                            <DropdownMenuItem>Lihat</DropdownMenuItem>
-                          </Link>
-                          <Link href={`/dashboard/offers/${offer.id}/preview`} passHref>
-                            <DropdownMenuItem>Pratinjau Cetak</DropdownMenuItem>
-                          </Link>
-                          <Link href={`/dashboard/offers/${offer.id}/edit`} passHref>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                          </Link>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/offers/${offer.id}`}>Lihat</Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/offers/${offer.id}/preview`}>Pratinjau Cetak</Link>
+                          </DropdownMenuItem>
+                           <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/offers/${offer.id}/edit`}>Edit</Link>
+                          </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive">Hapus</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

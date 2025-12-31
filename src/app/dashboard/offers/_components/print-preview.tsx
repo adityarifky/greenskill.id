@@ -28,12 +28,12 @@ export function PrintPreview({ offer, scheme, templateImage }: PrintPreviewProps
   return (
     <>
       <div className="no-print mx-auto mb-6 flex max-w-4xl items-center justify-between">
-        <Link href={`/dashboard/offers/${offer.id}`} passHref legacyBehavior>
-          <Button variant="outline">
+        <Button variant="outline" asChild>
+          <Link href={`/dashboard/offers/${offer.id}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Kembali ke Detail
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         <Button onClick={handlePrint}>
           <Printer className="mr-2 h-4 w-4" />
           Cetak Halaman Ini

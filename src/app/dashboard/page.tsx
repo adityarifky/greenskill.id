@@ -24,14 +24,12 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="flex-grow" />
             <CardFooter>
-              <Link href="/dashboard/schemes" passHref legacyBehavior>
-                <Button asChild className="w-full">
-                  <a>
-                    Buka Skema
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </a>
-                </Button>
-              </Link>
+              <Button asChild className="w-full">
+                <Link href="/dashboard/schemes">
+                  Buka Skema
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </CardFooter>
           </Card>
 
@@ -45,14 +43,12 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="flex-grow" />
             <CardFooter>
-              <Link href="/dashboard/offers/new" passHref legacyBehavior>
-                <Button asChild className="w-full">
-                  <a>
-                    Buat Penawaran
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </a>
-                </Button>
-              </Link>
+              <Button asChild className="w-full">
+                <Link href="/dashboard/offers/new">
+                  Buat Penawaran
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </CardFooter>
           </Card>
         </div>
