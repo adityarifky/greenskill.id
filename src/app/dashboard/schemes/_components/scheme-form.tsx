@@ -1,10 +1,11 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { PlusCircle, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +19,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
 import type { Scheme } from '@/lib/types';
 import { DataPreview } from './data-preview';
@@ -27,9 +29,13 @@ import { errorEmitter } from '@/firebase/error-emitter';
 
 const formSchema = z.object({
   name: z.string().min(3, { message: 'Nama skema harus memiliki setidaknya 3 karakter.' }),
-  unitName: z.string().min(3, { message: 'Nama unit harus memiliki setidaknya 3 karakter.' }),
-  unitCode: z.string().min(2, { message: 'Kode unit diperlukan.' }),
   price: z.string().refine(val => /^(Rp\s)?\d{1,3}(\.\d{3})*$/.test(val) || /^\d+$/.test(val), { message: 'Format harga tidak valid. Contoh: Rp 1.500.000 atau 1500000' }),
+  units: z.array(
+    z.object({
+      unitCode: z.string().min(2, { message: "Kode unit diperlukan." }),
+      unitName: z.string().min(3, { message: "Nama unit diperlukan." }),
+    })
+  ).min(1, { message: "Minimal harus ada satu unit pelatihan." }),
 });
 
 type SchemeFormValues = z.infer<typeof formSchema>;
@@ -49,10 +55,14 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
       price: `Rp ${Number(initialData.price).toLocaleString('id-ID')}`
     } : {
       name: '',
-      unitName: '',
-      unitCode: '',
       price: 'Rp ',
+      units: [{ unitCode: '', unitName: '' }],
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "units"
   });
 
   const watchedValues = form.watch();
@@ -75,9 +85,8 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
     const priceAsNumber = parseInt(data.price.replace(/[^0-9]/g, ''), 10);
     const schemeData = {
       name: data.name,
-      unitName: data.unitName,
-      unitCode: data.unitCode,
       price: priceAsNumber,
+      units: data.units,
       updatedAt: serverTimestamp(),
       userId: user.uid,
     };
@@ -128,32 +137,6 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
                     </FormItem>
                   )}
                 />
-                 <FormField
-                  control={form.control}
-                  name="unitName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nama Unit</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Contoh: Mengoperasikan Peralatan" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="unitCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Kode Unit</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Contoh: KSL-01" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 <FormField
                   control={form.control}
                   name="price"
@@ -170,14 +153,83 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
                     </FormItem>
                   )}
                 />
+                
+                <div className="space-y-4">
+                  <FormLabel>Unit Pelatihan</FormLabel>
+                   <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[50px]">No</TableHead>
+                        <TableHead>Kode Unit</TableHead>
+                        <TableHead>Nama Unit</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {fields.map((field, index) => (
+                        <TableRow key={field.id}>
+                          <TableCell className="font-medium">{index + 1}</TableCell>
+                          <TableCell>
+                             <FormField
+                              control={form.control}
+                              name={`units.${index}.unitCode`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input placeholder="KSL-01" {...field} />
+                                  </FormControl>
+                                   <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </TableCell>
+                          <TableCell>
+                             <FormField
+                              control={form.control}
+                              name={`units.${index}.unitName`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input placeholder="Mengoperasikan Peralatan" {...field} />
+                                  </FormControl>
+                                   <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {form.formState.errors.units?.root && (
+                     <p className="text-sm font-medium text-destructive">{form.formState.errors.units.root.message}</p>
+                  )}
+
+                  <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => append({ unitCode: '', unitName: '' })}
+                      >
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Tambah Unit
+                      </Button>
+                  </div>
+                </div>
+
               </CardContent>
             </Card>
           </div>
           <div className="space-y-8">
             <DataPreview
               name={watchedValues.name}
-              unitName={watchedValues.unitName}
-              unitCode={watchedValues.unitCode}
+              units={watchedValues.units}
               price={watchedValues.price}
             />
              <Button type="submit" className="w-full text-lg">

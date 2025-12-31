@@ -1,8 +1,12 @@
+export type TrainingUnit = {
+  unitCode: string;
+  unitName: string;
+};
+
 export type Scheme = {
   id: string;
   name: string;
-  unitName: string;
-  unitCode: string;
+  units: TrainingUnit[];
   price: number;
   createdAt?: { seconds: number; nanoseconds: number; } | Date;
   updatedAt?: { seconds: number; nanoseconds: number; } | Date;
@@ -19,4 +23,5 @@ export type Offer = {
   createdAt: Date;
   userId: string;
   backgroundUrl?: string;
+  scheme?: Scheme; // Added for temporary preview
 };

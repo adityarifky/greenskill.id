@@ -6,28 +6,34 @@ import type { Scheme } from '@/lib/types';
 
 const SchemeForm = dynamic(() => import('./scheme-form').then(mod => mod.SchemeForm), {
   ssr: false,
-  loading: () => (
-     <div className="space-y-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-        <div className="space-y-4">
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      </div>
-    </div>
-  ),
+  loading: () => <SchemeFormSkeleton />,
 });
 
 interface SchemeFormDynamicProps {
   initialData?: Scheme | null;
+  isLoading?: boolean;
 }
 
-export function SchemeFormDynamic({ initialData }: SchemeFormDynamicProps) {
+export function SchemeFormDynamic({ initialData, isLoading }: SchemeFormDynamicProps) {
+    if (isLoading) {
+        return <SchemeFormSkeleton />;
+    }
     return <SchemeForm initialData={initialData} />;
+}
+
+
+function SchemeFormSkeleton() {
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-48 w-full" />
+            </div>
+            <div className="space-y-8">
+                <Skeleton className="h-56 w-full" />
+                <Skeleton className="h-12 w-full" />
+            </div>
+      </div>
+    )
 }
