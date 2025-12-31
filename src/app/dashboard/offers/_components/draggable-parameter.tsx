@@ -28,22 +28,22 @@ export function DraggableParameter({
 }: DraggableParameterProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [tempLabel, setTempLabel] = React.useState(param.label);
-  const dragStartRef = React.useRef<{ offsetX: number; offsetY: number } | null>(null);
+  const dragStartRef = React.useRef<{ startX: number; startY: number; initialX: number; initialY: number } | null>(null);
   const elementRef = React.useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Prevent drag if editing or clicking on input
     if (isEditing || (e.target as HTMLElement).tagName === 'INPUT') {
       return;
     }
     e.preventDefault();
-    e.stopPropagation(); // Stop propagation to parent
-    
+    e.stopPropagation();
+
     if (elementRef.current) {
-        const rect = elementRef.current.getBoundingClientRect();
         dragStartRef.current = {
-            offsetX: e.clientX - rect.left,
-            offsetY: e.clientY - rect.top,
+            startX: e.clientX,
+            startY: e.clientY,
+            initialX: elementRef.current.offsetLeft,
+            initialY: elementRef.current.offsetTop,
         };
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
@@ -51,18 +51,22 @@ export function DraggableParameter({
   };
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (!elementRef.current || !parentRef.current || !dragStartRef.current) return;
+    if (!dragStartRef.current || !parentRef.current || !elementRef.current) return;
 
-    const parentRect = parentRef.current.getBoundingClientRect();
+    const dx = e.clientX - dragStartRef.current.startX;
+    const dy = e.clientY - dragStartRef.current.startY;
     
-    const newX = e.clientX - parentRect.left - dragStartRef.current.offsetX;
-    const newY = e.clientY - parentRect.top - dragStartRef.current.offsetY;
+    const parentRect = parentRef.current.getBoundingClientRect();
+    const elementRect = elementRef.current.getBoundingClientRect();
 
+    let newX = dragStartRef.current.initialX + dx;
+    let newY = dragStartRef.current.initialY + dy;
+    
     // Constrain position within parent
-    const constrainedX = Math.max(0, Math.min(newX, parentRect.width - elementRef.current.offsetWidth));
-    const constrainedY = Math.max(0, Math.min(newY, parentRect.height - elementRef.current.offsetHeight));
+    newX = Math.max(0, Math.min(newX, parentRect.width - elementRect.width));
+    newY = Math.max(0, Math.min(newY, parentRect.height - elementRect.height));
 
-    onPositionChange(param.id, { x: constrainedX, y: constrainedY });
+    onPositionChange(param.id, { x: newX, y: newY });
   };
 
   const handleMouseUp = () => {
@@ -72,7 +76,7 @@ export function DraggableParameter({
   };
   
   const handleDoubleClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering parent handlers
+    e.stopPropagation();
     setIsEditing(true);
   };
 
@@ -121,7 +125,7 @@ export function DraggableParameter({
                     onBlur={handleLabelSave}
                     autoFocus
                     className="h-8 bg-white"
-                    onClick={(e) => e.stopPropagation()} // Prevent double click from propagating
+                    onClick={(e) => e.stopPropagation()}
                 />
             </div>
         ) : (
