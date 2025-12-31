@@ -29,15 +29,13 @@ export function DraggableParameter({
 }: DraggableParameterProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [tempLabel, setTempLabel] = React.useState(param.label);
-  const dragStartRef = React.useRef<{ initialX: number; initialY: number; offsetX: number; offsetY: number } | null>(null);
+  const dragStartRef = React.useRef<{ offsetX: number; offsetY: number } | null>(null);
   const elementRef = React.useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Abaikan jika sedang mode edit atau jika targetnya adalah input
     if (isEditing || (e.target as HTMLElement).tagName === 'INPUT') {
       return;
     }
-    // Hanya aktifkan drag jika menekan handle grip
     if (!(e.target as HTMLElement).closest('[data-drag-handle]')) {
         return;
     }
@@ -48,13 +46,11 @@ export function DraggableParameter({
     if (elementRef.current) {
         const rect = elementRef.current.getBoundingClientRect();
         dragStartRef.current = {
-            initialX: elementRef.current.offsetLeft,
-            initialY: elementRef.current.offsetTop,
             offsetX: e.clientX - rect.left,
             offsetY: e.clientY - rect.top,
         };
       document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mouseup', handleMouseUp, { once: true });
     }
   };
 
@@ -63,25 +59,21 @@ export function DraggableParameter({
 
     const parentRect = parentRef.current.getBoundingClientRect();
     
-    // Posisi mouse relatif terhadap parent
     let newX = e.clientX - parentRect.left - dragStartRef.current.offsetX;
     let newY = e.clientY - parentRect.top - dragStartRef.current.offsetY;
 
-    // Batasi pergerakan di dalam parent
     const elementWidth = elementRef.current.offsetWidth;
     const elementHeight = elementRef.current.offsetHeight;
     
     newX = Math.max(0, Math.min(newX, parentRect.width - elementWidth));
     newY = Math.max(0, Math.min(newY, parentRect.height - elementHeight));
 
-    // Update posisi melalui callback
     onPositionChange(param.id, { x: newX, y: newY });
   }, [param.id, onPositionChange, parentRef]);
 
   const handleMouseUp = React.useCallback(() => {
     dragStartRef.current = null;
     document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
   },[handleMouseMove]);
   
   const handleDoubleClick = (e: React.MouseEvent) => {
