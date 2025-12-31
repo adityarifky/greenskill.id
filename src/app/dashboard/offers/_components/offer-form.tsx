@@ -8,6 +8,7 @@ import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/fires
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format } from "date-fns"
 import { CalendarIcon, Upload } from "lucide-react"
+import * as React from 'react';
  
 import { cn } from "@/lib/utils"
 import { Button } from '@/components/ui/button';
@@ -70,6 +71,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(formSchema),
@@ -84,92 +86,74 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
     },
   });
 
-  const { formState: { isSubmitting }, handleSubmit } = form;
-
   const title = initialData ? 'Edit Penawaran' : 'Buat Penawaran Baru';
   const description = initialData ? 'Perbarui detail penawaran.' : 'Isi formulir untuk membuat penawaran baru.';
-  const toastMessage = initialData ? 'Penawaran berhasil diperbarui.' : 'Penawaran baru berhasil dibuat.';
   const action = initialData ? 'Simpan Perubahan' : 'Buat Penawaran';
   
 
   const onSubmit = async (data: OfferFormValues) => {
-     if (!firestore || !user) {
+    setIsSubmitting(true);
+
+    const selectedScheme = schemes.find(s => s.id === data.schemeId);
+    if (!selectedScheme) {
         toast({
             variant: "destructive",
             title: "Gagal!",
-            description: "Koneksi ke database gagal atau pengguna belum terautentikasi.",
+            description: "Skema yang dipilih tidak valid.",
         });
+        setIsSubmitting(false);
         return;
     }
-
+    
+    // --- START: BYPASS SAVING LOGIC ---
     try {
-      const storage = getStorage();
-      let backgroundUrl = initialData?.backgroundUrl || '';
-
-      // 1. Handle file upload if a new file is provided
-      if (data.backgroundFile && data.backgroundFile.length > 0) {
-        const file = data.backgroundFile[0];
-        const storageRef = ref(storage, `offer_backgrounds/${user.uid}/${Date.now()}-${file.name}`);
+        let backgroundUrl = '';
+        if (data.backgroundFile && data.backgroundFile.length > 0) {
+            const file = data.backgroundFile[0];
+            // Convert image to data URL to pass to preview page
+            backgroundUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+    
+        const temporaryOfferData = {
+            ...data,
+            id: `temp-${Date.now()}`,
+            schemeName: selectedScheme.name,
+            scheme: selectedScheme,
+            backgroundUrl: backgroundUrl,
+        };
         
-        toast({ title: 'Mengunggah gambar...', description: 'Mohon tunggu sebentar.' });
-        const snapshot = await uploadBytes(storageRef, file);
-        backgroundUrl = await getDownloadURL(snapshot.ref);
-      }
+        // Store in sessionStorage to be read by the preview page
+        sessionStorage.setItem('previewOffer', JSON.stringify(temporaryOfferData));
 
-      const selectedScheme = schemes.find(s => s.id === data.schemeId);
-      if (!selectedScheme) {
-        throw new Error("Skema yang dipilih tidak valid.");
-      }
-      
-      const offerData = {
-          schemeId: data.schemeId,
-          schemeName: selectedScheme.name, // Denormalized name
-          customerName: data.customerName,
-          offerDate: data.offerDate,
-          userRequest: data.userRequest,
-          userId: user.uid,
-          ...(backgroundUrl && { backgroundUrl }),
-          updatedAt: serverTimestamp(),
-      };
+        toast({
+            title: 'Mengarahkan ke Pratinjau',
+            description: 'Data tidak disimpan, hanya ditampilkan untuk pratinjau.',
+        });
 
-      let offerId = initialData?.id;
+        router.push('/dashboard/offers/preview');
 
-      // 2. Save data to Firestore
-      if (initialData) {
-          await setDoc(doc(firestore, 'training_offers', initialData.id), offerData, { merge: true });
-      } else {
-          const docRef = await addDoc(collection(firestore, 'training_offers'), { ...offerData, createdAt: serverTimestamp() });
-          offerId = docRef.id;
-      }
-
-      toast({
-          title: 'Sukses!',
-          description: toastMessage,
-      });
-
-      // 3. Redirect on success
-      if (offerId) {
-          router.push(`/dashboard/offers/${offerId}/preview`);
-      } else {
-          router.push('/dashboard/offers');
-      }
-      router.refresh();
-
-    } catch (error: any) {
-        console.error("Operation failed:", error);
+    } catch (error) {
+        console.error("Error creating preview data:", error);
         toast({
             variant: "destructive",
-            title: "Operasi Gagal!",
-            description: error.message || "Terjadi kesalahan saat menyimpan penawaran.",
+            title: "Gagal Membuat Pratinjau",
+            description: "Tidak dapat membuat pratinjau. Silakan coba lagi."
         });
+        setIsSubmitting(false);
     }
+    // --- END: BYPASS SAVING LOGIC ---
   };
   
   const fileRef = form.register("backgroundFile");
 
   return (
     <Form {...form}>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card>
           <CardHeader>
             <CardTitle>{title}</CardTitle>

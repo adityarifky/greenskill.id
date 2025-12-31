@@ -21,7 +21,7 @@ import { useAuth, useUser } from '@/firebase';
 import { toast } from '@/hooks/use-toast';
 
 export function Header({ title }: { title: string }) {
-  const { isMobile, state } = useSidebar();
+  const sidebar = useSidebar();
   const [isClient, setIsClient] = React.useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
@@ -49,11 +49,14 @@ export function Header({ title }: { title: string }) {
     }
   };
   
+  if (!isClient) return <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6" />;
+
+
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
       <div className="flex items-center gap-2">
-        {isClient && <SidebarTrigger className="md:hidden" />}
-        {isClient && !isMobile && state === 'collapsed' && (
+        <SidebarTrigger className="md:hidden" />
+        {!sidebar.isMobile && sidebar.state === 'collapsed' && (
           <SidebarTrigger>
             <PanelLeft />
           </SidebarTrigger>

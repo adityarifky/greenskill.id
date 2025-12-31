@@ -59,17 +59,19 @@ export function SidebarNav() {
       <SidebarContent className="p-2">
         <SidebarMenu>
           {navItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <Link href={item.href}>
-                <SidebarMenuButton
-                  isActive={
-                    item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
-                  }
-                  tooltip={item.label}
-                >
-                  <item.icon />
-                  <span>{item.label}</span>
-                </SidebarMenuButton>
+             <SidebarMenuItem key={item.href}>
+              <Link href={item.href} legacyBehavior passHref>
+                  <SidebarMenuButton
+                    as="a"
+                    isActive={
+                      (item.href === '/dashboard' && pathname === item.href) ||
+                      (item.href !== '/dashboard' && pathname.startsWith(item.href))
+                    }
+                    tooltip={item.label}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
           ))}

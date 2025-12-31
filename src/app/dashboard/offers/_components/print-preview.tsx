@@ -14,9 +14,10 @@ interface PrintPreviewProps {
   offer: Offer;
   scheme: Scheme;
   templateImage: ImagePlaceholder;
+  isTemporaryPreview?: boolean;
 }
 
-export function PrintPreview({ offer, scheme, templateImage }: PrintPreviewProps) {
+export function PrintPreview({ offer, scheme, templateImage, isTemporaryPreview = false }: PrintPreviewProps) {
   const [printDate, setPrintDate] = React.useState('');
 
   React.useEffect(() => {
@@ -29,17 +30,20 @@ export function PrintPreview({ offer, scheme, templateImage }: PrintPreviewProps
 
   const offerDateFormatted = offer.offerDate ? format(offer.offerDate instanceof Date ? offer.offerDate : new Date((offer.offerDate as any).seconds * 1000), "d MMMM yyyy", { locale: id }) : 'N/A';
 
+  const backLink = isTemporaryPreview ? '/dashboard/offers/new' : `/dashboard/offers/${offer.id}`;
+  const backText = isTemporaryPreview ? 'Kembali ke Formulir' : 'Kembali ke Detail';
+
 
   return (
     <>
       <div className="no-print mx-auto mb-6 flex max-w-4xl items-center justify-between">
         <Button variant="outline" asChild>
-          <Link href={`/dashboard/offers/${offer.id}`}>
+          <Link href={backLink}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Kembali ke Detail
+            {backText}
           </Link>
         </Button>
-        <Button onClick={handlePrint}>
+        <Button onClick={handlePrint} disabled={isTemporaryPreview}>
           <Printer className="mr-2 h-4 w-4" />
           Cetak Halaman Ini
         </Button>
