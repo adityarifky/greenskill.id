@@ -15,29 +15,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 type PreviewData = Partial<Omit<Offer, 'createdAt' | 'userId'>> & {
   scheme?: Scheme;
   isTemplateOnlyPreview?: boolean;
+  backgroundUrls?: string[];
 };
 
 export type Parameter = {
   id: string;
   label: string;
-  value: string;
   position: { x: number; y: number };
   key: string;
-};
-
-const dummyScheme: Scheme = {
-  id: 'dummy-scheme',
-  name: 'Nama Skema Belum Dipilih',
-  price: 0,
-  units: [{ unitCode: 'XXX-00', unitName: 'Nama Unit Belum Dipilih' }],
-  userId: 'dummy-user',
-};
-
-const dummyOffer: Omit<Offer, 'id' | 'schemeId' | 'userId' | 'createdAt'> = {
-  customerName: 'Nama Customer Belum Diisi',
-  offerDate: new Date(),
-  userRequest: 'Permintaan Pengguna Belum Diisi',
-  schemeName: 'Nama Skema Belum Dipilih',
 };
 
 export default function SessionOfferPreviewPage() {
@@ -64,17 +49,17 @@ export default function SessionOfferPreviewPage() {
     }
   }, []);
 
-  const handlePositionChange = (id: string, newPosition: { x: number; y: number }) => {
+  const handlePositionChange = React.useCallback((id: string, newPosition: { x: number; y: number }) => {
     setActiveParams(prev =>
       prev.map(p => (p.id === id ? { ...p, position: newPosition } : p))
     );
-  };
+  }, []);
   
-  const handleLabelChange = (id: string, newLabel: string) => {
+  const handleLabelChange = React.useCallback((id: string, newLabel: string) => {
     setActiveParams(prev =>
       prev.map(p => (p.id === id ? { ...p, label: newLabel } : p))
     );
-  };
+  }, []);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, paramKey: string) => {
     e.dataTransfer.setData("application/json", JSON.stringify({ paramKey }));
@@ -89,7 +74,6 @@ export default function SessionOfferPreviewPage() {
     const parentRect = printAreaRef.current?.getBoundingClientRect();
     if (!parentRect) return;
 
-    // Adjust for scrolled content
     const offsetX = e.clientX - parentRect.left;
     const offsetY = e.clientY - parentRect.top;
 
@@ -97,18 +81,16 @@ export default function SessionOfferPreviewPage() {
       id: `param-${Date.now()}`,
       key: data.paramKey,
       label: 'Label Baru',
-      value: '', // Value is not needed as per new request
       position: { x: offsetX, y: offsetY },
     };
     setActiveParams(prev => [...prev, newParam]);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault(); // This is necessary to allow dropping
+    e.preventDefault(); 
   };
 
   const defaultTemplateImage = PlaceHolderImages.find(img => img.id === 'a4-template');
-  const offerForPreview = { ...dummyOffer, ...previewData };
 
   if (isLoading) {
     return (
