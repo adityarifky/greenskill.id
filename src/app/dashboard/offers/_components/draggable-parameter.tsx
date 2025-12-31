@@ -4,22 +4,32 @@ import * as React from 'react';
 import { GripVertical } from 'lucide-react';
 import type { Parameter } from '../preview/page';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface DraggableParameterProps {
   param: Parameter;
   onPositionChange: (id: string, position: { x: number; y: number }) => void;
+  onLabelChange: (id: string, label: string) => void;
   parentRef: React.RefObject<HTMLDivElement>;
 }
 
 export function DraggableParameter({
   param,
   onPositionChange,
+  onLabelChange,
   parentRef,
 }: DraggableParameterProps) {
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [tempLabel, setTempLabel] = React.useState(param.label);
   const dragStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const elementRef = React.useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Don't drag if editing
+    if (isEditing || (e.target as HTMLElement).tagName === 'INPUT') {
+      return;
+    }
     e.preventDefault();
     if (elementRef.current) {
       dragStartRef.current = {
@@ -49,6 +59,30 @@ export function DraggableParameter({
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
   };
+  
+  const handleDoubleClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTempLabel(e.target.value);
+  };
+
+  const handleLabelSave = () => {
+    onLabelChange(param.id, tempLabel);
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleLabelSave();
+    }
+    if (e.key === 'Escape') {
+      setTempLabel(param.label);
+      setIsEditing(false);
+    }
+  };
+
 
   return (
     <div
@@ -62,11 +96,32 @@ export function DraggableParameter({
       }}
       className="group/param z-10 flex items-center gap-1 rounded-md p-2 hover:bg-blue-100/50 hover:ring-1 hover:ring-blue-500 transition-all"
       onMouseDown={handleMouseDown}
+      onDoubleClick={handleDoubleClick}
     >
-      <GripVertical className="h-5 w-5 text-gray-400 opacity-0 group-hover/param:opacity-100 transition-opacity" />
-      <div className="flex flex-col text-sm">
-        <span className="font-semibold text-gray-600">{param.label}</span>
-        <span className="text-gray-800">{param.value}</span>
+      <GripVertical className="h-5 w-5 text-gray-400 opacity-0 group-hover/param:opacity-100 transition-opacity cursor-grab" />
+      <div className="flex flex-col text-sm w-48">
+         {isEditing ? (
+            <div className="flex items-center gap-1">
+                <Input 
+                    type="text"
+                    value={tempLabel}
+                    onChange={handleLabelChange}
+                    onKeyDown={handleKeyDown}
+                    onBlur={handleLabelSave}
+                    autoFocus
+                    className="h-8"
+                />
+            </div>
+        ) : (
+             <span
+                className={cn(
+                    "font-semibold text-gray-800 border border-dashed border-gray-400 p-2 rounded-md",
+                    param.label === 'Label Baru' && 'text-gray-500'
+                )}
+            >
+                {param.label}
+            </span>
+        )}
       </div>
     </div>
   );

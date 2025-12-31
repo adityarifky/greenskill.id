@@ -8,10 +8,9 @@ import { Header } from '@/components/layout/header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, ArrowLeft, Printer } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Printer, Pencil, Package } from 'lucide-react';
 import type { Offer, Scheme } from '@/lib/types';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 type PreviewData = Partial<Omit<Offer, 'createdAt' | 'userId'>> & {
   scheme?: Scheme;
@@ -23,7 +22,7 @@ export type Parameter = {
   label: string;
   value: string;
   position: { x: number; y: number };
-  key: string;
+  key: string; // Keep original key for mapping
 };
 
 const dummyScheme: Scheme = {
@@ -57,48 +56,6 @@ export default function SessionOfferPreviewPage() {
           data.offerDate = new Date(data.offerDate);
         }
         setPreviewData(data);
-
-        // Auto-generate parameters from data
-        const offer = { ...dummyOffer, ...data };
-        const scheme = data.scheme || dummyScheme;
-        const initialParams: Parameter[] = [
-          {
-            id: 'customerName',
-            key: 'customerName',
-            label: 'Customer',
-            value: offer.customerName,
-            position: { x: 50, y: 150 },
-          },
-          {
-            id: 'offerDate',
-            key: 'offerDate',
-            label: 'Tanggal',
-            value: format(offer.offerDate, 'd MMMM yyyy', { locale: id }),
-            position: { x: 50, y: 180 },
-          },
-          {
-            id: 'schemeName',
-            key: 'schemeName',
-            label: 'Skema',
-            value: scheme.name,
-            position: { x: 50, y: 220 },
-          },
-          {
-            id: 'price',
-            key: 'price',
-            label: 'Harga',
-            value: `Rp ${Number(scheme.price || 0).toLocaleString('id-ID')}`,
-            position: { x: 50, y: 250 },
-          },
-          {
-            id: 'userRequest',
-            key: 'userRequest',
-            label: 'Permintaan',
-            value: offer.userRequest,
-            position: { x: 50, y: 280 },
-          },
-        ];
-        setActiveParams(initialParams);
       }
     } catch (error) {
       console.error("Failed to parse preview data from session storage:", error);
@@ -114,16 +71,40 @@ export default function SessionOfferPreviewPage() {
   };
   
   const handleLabelChange = (id: string, newLabel: string) => {
-    // This function is kept for potential future use, but is not currently active
-    // since labels are now derived from data keys.
     setActiveParams(prev =>
       prev.map(p => (p.id === id ? { ...p, label: newLabel } : p))
     );
   };
 
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, paramKey: string) => {
+    e.dataTransfer.setData("application/json", JSON.stringify({ paramKey }));
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const data = JSON.parse(e.dataTransfer.getData("application/json"));
+    const parentRect = printAreaRef.current?.getBoundingClientRect();
+    if (!parentRect) return;
+
+    const newParam: Parameter = {
+      id: `param-${Date.now()}`,
+      key: data.paramKey,
+      label: 'Label Baru',
+      value: 'Nilai Baru',
+      position: {
+        x: e.clientX - parentRect.left,
+        y: e.clientY - parentRect.top,
+      },
+    };
+    setActiveParams(prev => [...prev, newParam]);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
   const defaultTemplateImage = PlaceHolderImages.find(img => img.id === 'a4-template');
   const offerForPreview = { ...dummyOffer, ...previewData };
-  const schemeForPreview = previewData?.scheme || dummyScheme;
 
   if (isLoading) {
     return (
@@ -170,6 +151,10 @@ export default function SessionOfferPreviewPage() {
   const headerTitle = previewData.isTemplateOnlyPreview
     ? 'Pratinjau Template Latar'
     : 'Pratinjau Penawaran';
+  
+  const parameterItems = [
+    { key: 'generic', name: 'Parameter' },
+  ];
 
   return (
     <div className="flex h-full flex-col bg-muted/40">
@@ -200,6 +185,8 @@ export default function SessionOfferPreviewPage() {
                 <div
                   ref={printAreaRef}
                   className="print-content relative aspect-[1/1.414] w-full"
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
                 >
                   <Image
                     src={templateImage.imageUrl}
@@ -212,10 +199,10 @@ export default function SessionOfferPreviewPage() {
                   {!previewData.isTemplateOnlyPreview && (
                     <PrintPreview
                       offer={offerForPreview as Offer}
-                      scheme={schemeForPreview}
+                      scheme={previewData.scheme || dummyScheme}
                       activeParams={activeParams}
                       onPositionChange={handlePositionChange}
-                      onLabelChange={handleLabelChange} // This is kept for consistency
+                      onLabelChange={handleLabelChange}
                       parentRef={printAreaRef}
                     />
                   )}
@@ -225,6 +212,41 @@ export default function SessionOfferPreviewPage() {
           })}
         </div>
       </main>
+
+      <Popover>
+        <PopoverTrigger asChild>
+            <Button
+                variant="default"
+                className="no-print fixed bottom-8 left-8 z-20 h-14 w-14 rounded-full p-4 shadow-lg"
+            >
+                <Pencil className="h-6 w-6" />
+                <span className="sr-only">Tambah Parameter</span>
+            </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-60" side="top" align="start">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium leading-none">Parameter</h4>
+                <p className="text-sm text-muted-foreground">
+                  Seret parameter ke atas templat.
+                </p>
+              </div>
+              <div className="grid gap-2">
+                 {parameterItems.map((param) => (
+                   <div
+                    key={param.key}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, param.key)}
+                    className="flex cursor-grab items-center gap-2 rounded-md border p-2 transition-colors hover:bg-accent"
+                  >
+                    <Package className="h-4 w-4" />
+                    <span>{param.name}</span>
+                   </div>
+                 ))}
+              </div>
+            </div>
+        </PopoverContent>
+    </Popover>
     </div>
   );
 }

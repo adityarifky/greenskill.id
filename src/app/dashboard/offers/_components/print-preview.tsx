@@ -6,17 +6,16 @@ import { DraggableParameter } from './draggable-parameter';
 import type { Parameter } from '../preview/page';
 
 interface PrintContentProps {
-  offer: Offer;
-  scheme: Scheme;
   activeParams: Parameter[];
   onPositionChange: (id: string, position: { x: number; y: number }) => void;
-  onLabelChange: (id: string, label: string) => void; // Kept for API consistency
+  onLabelChange: (id: string, label: string) => void;
   parentRef: React.RefObject<HTMLDivElement>;
 }
 
 export function PrintPreview({
   activeParams,
   onPositionChange,
+  onLabelChange,
   parentRef,
 }: PrintContentProps) {
   
@@ -27,6 +26,7 @@ export function PrintPreview({
           key={param.id}
           param={param}
           onPositionChange={onPositionChange}
+          onLabelChange={onLabelChange}
           parentRef={parentRef}
         />
       ))}
