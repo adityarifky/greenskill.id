@@ -24,7 +24,9 @@ service cloud.firestore {
 
     // Allow users to manage their own templates
     match /offer_templates/{templateId} {
-      allow read, create, update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow get, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow list: if request.auth != null && request.query.get("userId") == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
   }
 }
