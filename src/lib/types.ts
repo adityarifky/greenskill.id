@@ -44,3 +44,12 @@ export type OfferTemplate = {
   userId: string;
   createdAt: { seconds: number; nanoseconds: number; } | Date;
 };
+
+export type Module = {
+  id: string;
+  title: string;
+  content: string;
+  userId: string;
+  createdAt: { seconds: number; nanoseconds: number; } | Date;
+  updatedAt: { seconds: number; nanoseconds: number; } | Date;
+};

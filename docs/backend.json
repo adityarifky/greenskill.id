@@ -166,6 +166,48 @@
         "userId",
         "createdAt"
       ]
+    },
+    "Module": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Module",
+        "type": "object",
+        "description": "Represents a training module with a title and content.",
+        "properties": {
+            "id": {
+                "type": "string",
+                "description": "Unique identifier for the Module entity."
+            },
+            "title": {
+                "type": "string",
+                "description": "The title of the module."
+            },
+            "content": {
+                "type": "string",
+                "description": "The content of the module, can be plain text or markdown."
+            },
+            "userId": {
+                "type": "string",
+                "description": "Reference to User. (Relationship: User 1:N Module)"
+            },
+            "createdAt": {
+                "type": "string",
+                "description": "Date when the module was created.",
+                "format": "date-time"
+            },
+            "updatedAt": {
+                "type": "string",
+                "description": "Date when the module was last updated.",
+                "format": "date-time"
+            }
+        },
+        "required": [
+            "id",
+            "title",
+            "content",
+            "userId",
+            "createdAt",
+            "updatedAt"
+        ]
     }
   },
   "auth": {
@@ -239,8 +281,24 @@
             }
           ]
         }
+      },
+       {
+        "path": "/modules/{moduleId}",
+        "definition": {
+          "entityName": "Module",
+          "schema": {
+            "$ref": "#/backend/entities/Module"
+          },
+          "description": "Stores training modules. The 'userId' field ensures users can only access their own modules.",
+          "params": [
+            {
+              "name": "moduleId",
+              "description": "Unique identifier for the module."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support the application's core features while adhering to the principles of Authorization Independence, Clarity of Intent, and DBAC (Database-Based Access Control). It focuses on storing registration schemas, training offers, user data, and user-defined templates in a structured and secure manner.\n\n*   **Authorization Independence:**  The `TrainingOffer` and `OfferTemplate` collections include the `userId` field, denormalizing user information for authorization purposes. This avoids the need for `get()` calls to the `/users/{userId}` document to verify ownership, thus ensuring atomic operations and simplifying security rules.\n*   **Structural Segregation:** Each entity type is stored in its own dedicated collection, ensuring a homogeneous security posture.\n*   **Access Modeling:** User data is stored using path-based ownership (`/users/{userId}`), granting each user exclusive access to their own data. Training offers and offer templates are also linked to a specific user through the `userId` field, enabling secure listing and filtering based on user ownership.\n*   **QAPs (Rules are not Filters):** Listing operations are secured by segregating data into separate collections based on type and ownership, and by including the `userId` in the training offers and templates, which allows restricting access to user-specific content."
+    "reasoning": "The Firestore data structure is designed to support the application's core features while adhering to the principles of Authorization Independence, Clarity of Intent, and DBAC (Database-Based Access Control). It focuses on storing registration schemas, training offers, user data, and user-defined templates in a structured and secure manner.\n\n*   **Authorization Independence:**  The `TrainingOffer` and `OfferTemplate` collections include the `userId` field, denormalizing user information for authorization purposes. This avoids the need for `get()` calls to the `/users/{userId}` document to verify ownership, thus ensuring atomic operations and simplifying security rules.\n*   **Structural Segregation:** Each entity type is stored in its own dedicated collection, ensuring a homogeneous security posture.\n*   **Access Modeling:** User data is stored using path-based ownership (`/users/{userId}`), granting each user exclusive access to their own data. Training offers and offer templates are also linked to a specific user through the `userId` field, enabling secure listing and filtering based on user-ownership.\n*   **QAPs (Rules are not Filters):** Listing operations are secured by segregating data into separate collections based on type and ownership, and by including the `userId` in the training offers and templates, which allows restricting access to user-specific content."
   }
 }
