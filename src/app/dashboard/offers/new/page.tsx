@@ -1,6 +1,18 @@
+import dynamic from 'next/dynamic';
 import { getSchemes } from '@/lib/data';
 import { Header } from '@/components/layout/header';
-import { OfferForm } from '../_components/offer-form';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const OfferForm = dynamic(() => import('../_components/offer-form').then(mod => mod.OfferForm), {
+  ssr: false,
+  loading: () => (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-12 w-full" />
+    </div>
+  ),
+});
 
 export default async function NewOfferPage() {
   const schemes = await getSchemes();
