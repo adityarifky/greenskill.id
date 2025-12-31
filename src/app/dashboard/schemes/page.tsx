@@ -1,7 +1,11 @@
+
+'use client';
+
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { PlusCircle, MoreHorizontal } from 'lucide-react';
+import * as React from 'react';
 
 import { getSchemes } from '@/lib/data';
 import { Header } from '@/components/layout/header';
@@ -29,10 +33,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import type { Scheme } from '@/lib/types';
 
-export default async function SchemesPage() {
-  const schemes = await getSchemes();
+export default function SchemesPage() {
+  const [schemes, setSchemes] = React.useState<Scheme[]>([]);
+  const [isClient, setIsClient] = React.useState(false);
 
+  React.useEffect(() => {
+    setIsClient(true);
+    getSchemes().then(setSchemes);
+  }, []);
+
+  if (!isClient) {
+    return null;
+  }
+  
   return (
     <div className="flex h-full flex-col">
       <Header title="Skema Registrasi" />
@@ -57,7 +72,7 @@ export default async function SchemesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nama Skema</TableHead>
-                  <TableHead className="hidden md:table-cell">Kode Unit</TableHead>
+                  <TableHead className="hidden md:table-cell">Nama Unit</TableHead>
                   <TableHead>Harga</TableHead>
                   <TableHead className="hidden md:table-cell">Dibuat pada</TableHead>
                   <TableHead>
