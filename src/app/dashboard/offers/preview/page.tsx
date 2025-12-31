@@ -62,18 +62,9 @@ export default function SessionOfferPreviewPage() {
     const offerForPreview = { ...dummyOffer, ...previewData };
     const schemeForPreview = previewData?.scheme || dummyScheme;
 
-    const availableParams = [
-      { key: 'customerName', label: 'Nama Customer', value: offerForPreview.customerName },
-      { key: 'offerDate', label: 'Tanggal Penawaran', value: format(offerForPreview.offerDate, "d MMMM yyyy", { locale: id }) },
-      { key: 'schemeName', label: 'Nama Skema', value: schemeForPreview.name },
-      { key: 'unitCode', label: 'Kode Unit', value: schemeForPreview.units[0]?.unitCode || 'N/A'},
-      { key: 'unitName', label: 'Nama Unit', value: schemeForPreview.units[0]?.unitName || 'N/A' },
-      { key: 'price', label: 'Harga', value: `Rp ${Number(schemeForPreview.price || 0).toLocaleString('id-ID')}` },
-      { key: 'userRequest', label: 'Permintaan Pengguna', value: offerForPreview.userRequest },
-    ];
-
-    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, param: Omit<Parameter, 'id' | 'position'>) => {
-        e.dataTransfer.setData('application/json', JSON.stringify(param));
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+        const genericParam = { label: 'Label Baru', value: 'Nilai Baru', key: 'custom' };
+        e.dataTransfer.setData('application/json', JSON.stringify(genericParam));
     };
 
     const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -222,25 +213,22 @@ export default function SessionOfferPreviewPage() {
                 <PopoverContent className="w-80" side="top" align="start">
                     <div className="grid gap-4">
                         <div className="space-y-2">
-                            <h4 className="font-medium leading-none">Parameter Tersedia</h4>
+                            <h4 className="font-medium leading-none">Parameter Kustom</h4>
                             <p className="text-sm text-muted-foreground">
-                                Seret parameter ke atas templat untuk menambahkannya.
+                                Seret parameter ke atas templat untuk menambahkan field baru.
                             </p>
                         </div>
                         <div className="grid gap-2">
-                            {availableParams.map((param) => (
-                                <div
-                                    key={param.key}
-                                    draggable
-                                    onDragStart={(e) => handleDragStart(e, { label: param.label, value: param.value, key: param.key })}
-                                    className="flex items-center justify-between rounded-md border p-2 hover:bg-accent hover:text-accent-foreground cursor-grab"
-                                >
-                                    <div className="flex items-center gap-2">
-                                      <Package className="h-4 w-4" />
-                                      <span>{param.label}</span>
-                                    </div>
+                            <div
+                                draggable
+                                onDragStart={handleDragStart}
+                                className="flex items-center justify-between rounded-md border p-2 hover:bg-accent hover:text-accent-foreground cursor-grab"
+                            >
+                                <div className="flex items-center gap-2">
+                                  <Package className="h-4 w-4" />
+                                  <span>Parameter</span>
                                 </div>
-                            ))}
+                            </div>
                         </div>
                     </div>
                 </PopoverContent>
