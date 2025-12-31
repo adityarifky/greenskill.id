@@ -1,0 +1,74 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { FileText, LayoutDashboard, FilePlus2, LifeBuoy, Settings } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarFooter,
+} from '@/components/ui/sidebar';
+
+const navItems = [
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Dasbor' },
+  { href: '/dashboard/schemes', icon: FileText, label: 'Skema Registrasi' },
+  { href: '/dashboard/offers', icon: FilePlus2, label: 'Pembuat Penawaran' },
+];
+
+export function SidebarNav() {
+  const pathname = usePathname();
+
+  return (
+    <Sidebar>
+      <SidebarHeader>
+        <div className="flex items-center gap-2 p-2">
+          <FileText className="h-6 w-6 text-primary" />
+          <span className="text-lg font-semibold">Greenskill</span>
+        </div>
+      </SidebarHeader>
+      <SidebarContent className="p-2">
+        <SidebarMenu>
+          {navItems.map((item) => (
+            <SidebarMenuItem key={item.href}>
+              <Link href={item.href} legacyBehavior passHref>
+                <SidebarMenuButton
+                  asChild
+                  isActive={
+                    item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
+                  }
+                  tooltip={item.label}
+                >
+                  <a>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </a>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarContent>
+      <SidebarFooter>
+         <SidebarMenu>
+           <SidebarMenuItem>
+              <SidebarMenuButton tooltip="Pengaturan">
+                <Settings />
+                <span>Pengaturan</span>
+              </SidebarMenuButton>
+           </SidebarMenuItem>
+           <SidebarMenuItem>
+              <SidebarMenuButton tooltip="Bantuan">
+                <LifeBuoy />
+                <span>Bantuan</span>
+              </SidebarMenuButton>
+           </SidebarMenuItem>
+         </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
