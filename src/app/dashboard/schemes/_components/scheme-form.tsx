@@ -91,7 +91,8 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
         });
         router.push('/dashboard/schemes');
         router.refresh();
-    }).catch(error => {
+    }).catch(serverError => {
+        console.error("Firestore operation failed:", serverError);
         const contextualError = new FirestorePermissionError({
             path: initialData ? `registration_schemas/${initialData.id}` : 'registration_schemas',
             operation: initialData ? 'update' : 'create',

@@ -2,11 +2,6 @@ import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import type { Scheme, Offer } from './types';
 import { db } from './firebase'; // Assuming db is your firestore instance
 
-// Helper to create consistent dates
-const createDate = (dateString: string) => new Date(dateString);
-
-const offers: Offer[] = [];
-
 // Simulate async data fetching
 export const getSchemes = async (): Promise<Scheme[]> => {
   const schemesCol = collection(db, 'registration_schemas');
@@ -19,19 +14,45 @@ export const getSchemeById = async (id: string): Promise<Scheme | undefined> => 
   const schemeRef = doc(db, 'registration_schemas', id);
   const schemeSnap = await getDoc(schemeRef);
   if (schemeSnap.exists()) {
-    return { id: schemeSnap.id, ...schemeSnap.data() } as Scheme;
+    const data = schemeSnap.data();
+    return {
+      id: schemeSnap.id,
+      name: data.name,
+      unitName: data.unitName,
+      unitCode: data.unitCode,
+      price: data.price,
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+    } as Scheme;
   } else {
     return undefined;
   }
 };
 
 export const getOffers = async (): Promise<Offer[]> => {
-  return new Promise(resolve => setTimeout(() => resolve(offers.map(o => ({...o, createdAt: new Date(o.createdAt)}))), 500));
+  const offersCol = collection(db, 'training_offers');
+  const offerSnapshot = await getDocs(offersCol);
+  const offerList = offerSnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+    } as Offer;
+  });
+  return offerList;
 };
 
 export const getOfferById = async (id: string): Promise<Offer | undefined> => {
-  return new Promise(resolve => setTimeout(() => {
-    const offer = offers.find(o => o.id === id);
-    resolve(offer ? {...offer, createdAt: new Date(offer.createdAt)} : undefined);
-  }, 300));
+  const offerRef = doc(db, 'training_offers', id);
+  const offerSnap = await getDoc(offerRef);
+  if (offerSnap.exists()) {
+    const data = offerSnap.data();
+    return {
+      id: offerSnap.id,
+      ...data,
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+    } as Offer;
+  } else {
+    return undefined;
+  }
 };

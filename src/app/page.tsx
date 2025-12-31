@@ -3,48 +3,37 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { AtSign, FileText, KeyRound, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { auth } from '@/lib/firebase';
+import { useAuth, useUser } from '@/firebase';
+import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 
 function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const [email, setEmail] = React.useState('test@example.com');
+  const [password, setPassword] = React.useState('password123');
   const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [isLoading, setIsLoading] = React.useState(false);
+  
+  const isLoading = isUserLoading;
+
+  React.useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setIsLoading(true);
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
-    } catch (error: any) {
-      switch (error.code) {
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-        case 'auth/invalid-credential':
-          setError('Email atau kata sandi salah. Silakan coba lagi.');
-          break;
-        case 'auth/invalid-email':
-          setError('Format email tidak valid.');
-          break;
-        default:
-          setError('Terjadi kesalahan saat login. Silakan coba lagi nanti.');
-          break;
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    initiateEmailSignIn(auth, email, password);
   };
 
   return (
@@ -98,6 +87,9 @@ function LoginForm() {
       <Button type="submit" className="w-full text-lg" disabled={isLoading}>
         {isLoading ? 'Memproses...' : 'Masuk'}
       </Button>
+       <div className="text-center text-sm text-muted-foreground">
+        Gunakan <strong>test@example.com</strong> dan <strong>password123</strong> untuk masuk.
+      </div>
     </form>
   );
 }
@@ -120,7 +112,7 @@ export default function LoginPage() {
             <CardTitle className="font-headline text-3xl">Generator File Greenskill</CardTitle>
             <CardDescription>Selamat datang kembali! Silakan masuk untuk melanjutkan.</CardDescription>
           </CardHeader>
-          <CardContent><div className="h-[258px]" /></CardContent>
+          <CardContent><div className="h-[300px]" /></CardContent>
         </Card>
       </main>
     )
