@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface DataPreviewProps {
   name: string;
+  unitName: string;
   unitCode: string;
   price: string;
 }
 
-export function DataPreview({ name, unitCode, price }: DataPreviewProps) {
+export function DataPreview({ name, unitName, unitCode, price }: DataPreviewProps) {
   return (
     <Card className="bg-muted/30">
       <CardHeader>
@@ -22,7 +23,8 @@ export function DataPreview({ name, unitCode, price }: DataPreviewProps) {
           <div className="absolute inset-0 bg-black/40 rounded-lg"></div>
           <div className="relative z-10">
             <h3 className="text-xl font-bold">{name || 'Nama Skema Anda'}</h3>
-            <p className="mt-2 text-sm">Kode: {unitCode || 'KODE-XX'}</p>
+            <p className="mt-2 text-sm">{unitName || 'Nama Unit Anda'}</p>
+            <p className="mt-1 text-xs text-gray-300">Kode: {unitCode || 'KODE-XX'}</p>
             <p className="absolute bottom-4 right-4 text-lg font-semibold">{price || 'Rp 0'}</p>
           </div>
         </div>

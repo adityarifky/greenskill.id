@@ -14,6 +14,10 @@
           "type": "string",
           "description": "Name of the training schema."
         },
+        "unitName": {
+          "type": "string",
+          "description": "Name of the training unit."
+        },
         "unitCode": {
           "type": "string",
           "description": "Code representing the training unit."
@@ -26,6 +30,7 @@
       "required": [
         "id",
         "name",
+        "unitName",
         "unitCode",
         "price"
       ]

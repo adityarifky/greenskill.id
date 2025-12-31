@@ -1,6 +1,7 @@
 export type Scheme = {
   id: string;
   name: string;
+  unitName: string;
   unitCode: string;
   price: string;
   createdAt: Date;

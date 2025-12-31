@@ -23,6 +23,7 @@ import { DataPreview } from './data-preview';
 
 const formSchema = z.object({
   name: z.string().min(3, { message: 'Nama skema harus memiliki setidaknya 3 karakter.' }),
+  unitName: z.string().min(3, { message: 'Nama unit harus memiliki setidaknya 3 karakter.' }),
   unitCode: z.string().min(2, { message: 'Kode unit diperlukan.' }),
   price: z.string().regex(/^Rp\s\d{1,3}(\.\d{3})*$/, { message: 'Format harga tidak valid. Contoh: Rp 1.500.000' }),
 });
@@ -39,6 +40,7 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
       name: '',
+      unitName: '',
       unitCode: '',
       price: 'Rp ',
     },
@@ -85,6 +87,19 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
                     </FormItem>
                   )}
                 />
+                 <FormField
+                  control={form.control}
+                  name="unitName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nama Unit</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Contoh: Mengoperasikan Peralatan" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="unitCode"
@@ -120,6 +135,7 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
           <div className="space-y-8">
             <DataPreview
               name={watchedValues.name}
+              unitName={watchedValues.unitName}
               unitCode={watchedValues.unitCode}
               price={watchedValues.price}
             />
