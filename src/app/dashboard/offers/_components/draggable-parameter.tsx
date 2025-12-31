@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { GripVertical } from 'lucide-react';
-import { cn } from '@/lib/utils';
+
 import { Input } from '@/components/ui/input';
 
 export type Parameter = {
@@ -33,9 +33,15 @@ export function DraggableParameter({
   const elementRef = React.useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Abaikan jika sedang mode edit atau jika targetnya adalah input
     if (isEditing || (e.target as HTMLElement).tagName === 'INPUT') {
       return;
     }
+    // Hanya aktifkan drag jika menekan handle grip
+    if (!(e.target as HTMLElement).closest('[data-drag-handle]')) {
+        return;
+    }
+    
     e.preventDefault();
     e.stopPropagation();
 
@@ -52,29 +58,31 @@ export function DraggableParameter({
     }
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!dragStartRef.current || !parentRef.current) return;
+  const handleMouseMove = React.useCallback((e: MouseEvent) => {
+    if (!dragStartRef.current || !parentRef.current || !elementRef.current) return;
 
     const parentRect = parentRef.current.getBoundingClientRect();
     
+    // Posisi mouse relatif terhadap parent
     let newX = e.clientX - parentRect.left - dragStartRef.current.offsetX;
     let newY = e.clientY - parentRect.top - dragStartRef.current.offsetY;
 
-    // Constrain position within parent
-    if (elementRef.current) {
-        const elementRect = elementRef.current.getBoundingClientRect();
-        newX = Math.max(0, Math.min(newX, parentRect.width - elementRect.width));
-        newY = Math.max(0, Math.min(newY, parentRect.height - elementRect.height));
-    }
+    // Batasi pergerakan di dalam parent
+    const elementWidth = elementRef.current.offsetWidth;
+    const elementHeight = elementRef.current.offsetHeight;
+    
+    newX = Math.max(0, Math.min(newX, parentRect.width - elementWidth));
+    newY = Math.max(0, Math.min(newY, parentRect.height - elementHeight));
 
+    // Update posisi melalui callback
     onPositionChange(param.id, { x: newX, y: newY });
-  };
+  }, [param.id, onPositionChange, parentRef]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = React.useCallback(() => {
     dragStartRef.current = null;
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
-  };
+  },[handleMouseMove]);
   
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -107,14 +115,16 @@ export function DraggableParameter({
         position: 'absolute',
         top: `${param.position.y}px`,
         left: `${param.position.x}px`,
-        cursor: 'grab',
+        cursor: isEditing ? 'default' : 'pointer',
         touchAction: 'none',
       }}
       className="group/param z-10 flex items-center gap-1 rounded-md p-1 hover:bg-blue-100/50 hover:ring-1 hover:ring-blue-500 transition-all"
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
     >
-      <GripVertical className="h-5 w-5 text-gray-400 opacity-0 group-hover/param:opacity-100 transition-opacity cursor-grab" />
+      <div data-drag-handle className="cursor-grab p-1">
+        <GripVertical className="h-5 w-5 text-gray-400 opacity-0 group-hover/param:opacity-100 transition-opacity" />
+      </div>
       <div className="flex flex-col text-sm w-auto">
          {isEditing ? (
             <div className="flex items-center gap-1">
