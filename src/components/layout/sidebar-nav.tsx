@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   MoreHorizontal,
   LayoutTemplate,
+  BookOpen,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -25,6 +26,7 @@ const navItems = [
   { href: '/dashboard/schemes', icon: FileText, label: 'Skema Registrasi' },
   { href: '/dashboard/offers', icon: FileText, label: 'Daftar Penawaran' },
   { href: '/dashboard/templates', icon: LayoutTemplate, label: 'Daftar Tamplate Surat' },
+  { href: '/dashboard/modules', icon: BookOpen, label: 'Modul' },
 ];
 
 export function SidebarNav() {
