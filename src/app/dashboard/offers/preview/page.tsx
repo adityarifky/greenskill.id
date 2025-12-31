@@ -115,7 +115,7 @@ export default function SessionOfferPreviewPage() {
                         Cetak Halaman Ini
                     </Button>
                 </div>
-                 <div className="space-y-8">
+                 <div className="relative space-y-8">
                     {backgroundUrls.map((url, index) => {
                         const templateImage = {
                             id: `preview-template-${index}`,
@@ -141,11 +141,11 @@ export default function SessionOfferPreviewPage() {
                                             isTemporaryPreview={isTemporary}
                                         />
                                     )}
-                                    <DraggableParameterButton />
                                 </div>
                             </div>
                         );
                     })}
+                     <DraggableParameterButton />
                 </div>
             </main>
         </div>
