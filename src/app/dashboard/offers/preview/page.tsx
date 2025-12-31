@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import Image from 'next/image';
-import { PrintPreview, type Parameter } from '../_components/print-preview';
+import { PrintPreview } from '../_components/print-preview';
 import { Header } from '@/components/layout/header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,6 +23,15 @@ type PreviewData = Partial<Omit<Offer, 'createdAt' | 'userId'>> & {
   scheme?: Scheme;
   isTemplateOnlyPreview?: boolean;
 };
+
+export type Parameter = {
+  id: string;
+  label: string;
+  value: string;
+  position: { x: number; y: number };
+  key: string;
+};
+
 
 const dummyScheme: Scheme = {
   id: 'dummy-scheme',
@@ -63,7 +72,7 @@ export default function SessionOfferPreviewPage() {
     const schemeForPreview = previewData?.scheme || dummyScheme;
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-        const genericParam = { label: 'Label Baru', value: 'Nilai Baru', key: 'custom' };
+        const genericParam = { label: '', value: '', key: 'custom' };
         e.dataTransfer.setData('application/json', JSON.stringify(genericParam));
     };
 
@@ -184,16 +193,14 @@ export default function SessionOfferPreviewPage() {
                                         priority
                                         className="object-cover pointer-events-none"
                                     />
-                                    {!previewData.isTemplateOnlyPreview && (
-                                        <PrintPreview 
-                                            offer={offerForPreview as Offer} 
-                                            scheme={schemeForPreview} 
-                                            isTemporaryPreview={isTemporary}
-                                            activeParams={activeParams}
-                                            onPositionChange={handlePositionChange}
-                                            parentRef={printAreaRef}
-                                        />
-                                    )}
+                                    <PrintPreview 
+                                        offer={offerForPreview as Offer} 
+                                        scheme={schemeForPreview} 
+                                        isTemporaryPreview={isTemporary}
+                                        activeParams={activeParams}
+                                        onPositionChange={handlePositionChange}
+                                        parentRef={printAreaRef}
+                                    />
                                 </div>
                             </div>
                         );

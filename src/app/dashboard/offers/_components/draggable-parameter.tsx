@@ -3,7 +3,8 @@
 import * as React from 'react';
 import { GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Parameter } from './print-preview';
+import type { Parameter } from '../preview/page';
+import { Input } from '@/components/ui/input';
 
 interface DraggableParameterProps {
   param: Parameter;
@@ -14,8 +15,14 @@ interface DraggableParameterProps {
 export function DraggableParameter({ param, onPositionChange, parentRef }: DraggableParameterProps) {
   const dragStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const elementRef = React.useRef<HTMLDivElement>(null);
+  const [value, setValue] = React.useState(param.value || '');
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only allow dragging from the handle
+    if (!(e.target as HTMLElement).closest('.drag-handle')) {
+        return;
+    }
+
     e.preventDefault();
     if (elementRef.current) {
       dragStartRef.current = {
@@ -48,30 +55,29 @@ export function DraggableParameter({ param, onPositionChange, parentRef }: Dragg
     document.removeEventListener('mouseup', handleMouseUp);
   };
   
-  const labelClass = cn({
-    'text-sm': true,
-  });
-
   return (
     <div
       ref={elementRef}
-      onMouseDown={handleMouseDown}
       style={{
         position: 'absolute',
         top: `${param.position.y}px`,
         left: `${param.position.x}px`,
-        cursor: 'grab',
         touchAction: 'none',
       }}
-      className="group/param z-10 p-2 rounded-md hover:bg-blue-100/50 hover:ring-1 hover:ring-blue-500 transition-all"
+      className="group/param z-10 flex items-center gap-1 rounded-md p-1 hover:bg-blue-100/50 hover:ring-1 hover:ring-blue-500 transition-all"
     >
-      <div className="relative">
-        <div className={cn(labelClass, 'pointer-events-none')}>
-          <span className="font-semibold">{param.label}: </span>
-          <span>{param.value}</span>
+        <div 
+            className="drag-handle cursor-grab p-1"
+            onMouseDown={handleMouseDown}
+        >
+            <GripVertical className="h-5 w-5 text-gray-400 opacity-0 group-hover/param:opacity-100 transition-opacity" />
         </div>
-        <GripVertical className="absolute -left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 opacity-0 group-hover/param:opacity-100 transition-opacity" />
-      </div>
+        <Input 
+            placeholder="Ketik parameter..."
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="w-48 bg-transparent border-dashed focus:bg-white"
+        />
     </div>
   );
 }
