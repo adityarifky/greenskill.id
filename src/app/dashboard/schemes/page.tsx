@@ -73,6 +73,7 @@ export default function SchemesPage() {
                 <TableRow>
                   <TableHead>Nama Skema</TableHead>
                   <TableHead className="hidden md:table-cell">Nama Unit</TableHead>
+                  <TableHead className="hidden md:table-cell">Kode Unit</TableHead>
                   <TableHead>Harga</TableHead>
                   <TableHead className="hidden md:table-cell">Dibuat pada</TableHead>
                   <TableHead>
@@ -84,6 +85,7 @@ export default function SchemesPage() {
                 {schemes.map((scheme) => (
                   <TableRow key={scheme.id}>
                     <TableCell className="font-medium">{scheme.name}</TableCell>
+                    <TableCell className="hidden md:table-cell">-</TableCell>
                     <TableCell className="hidden md:table-cell">
                       <Badge variant="outline">{scheme.unitCode}</Badge>
                     </TableCell>
