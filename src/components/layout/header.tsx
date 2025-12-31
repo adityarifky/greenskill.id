@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { LogOut, User, Settings, PanelLeft } from 'lucide-react';
 
