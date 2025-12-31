@@ -30,37 +30,43 @@ export function PrintPreview({ offer, scheme, templateImage, isTemporaryPreview 
 
   const offerDateFormatted = offer.offerDate ? format(offer.offerDate instanceof Date ? offer.offerDate : new Date(offer.offerDate), "d MMMM yyyy", { locale: id }) : 'N/A';
 
-
   const backLink = isTemporaryPreview ? '/dashboard/offers/new' : `/dashboard/offers/${offer.id}`;
   const backText = isTemporaryPreview ? 'Kembali ke Formulir' : 'Kembali ke Detail';
+
+  // Only show header for the first preview item
+  const isFirstItem = (document.querySelectorAll('.print-container').length <= 1);
 
 
   return (
     <>
-      <div className="no-print mx-auto mb-6 flex max-w-4xl items-center justify-between">
-        <Button variant="outline" asChild>
-          <Link href={backLink}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {backText}
-          </Link>
-        </Button>
-        <Button onClick={handlePrint} disabled={isTemporaryPreview}>
-          <Printer className="mr-2 h-4 w-4" />
-          Cetak Halaman Ini
-        </Button>
-      </div>
+      {isFirstItem && (
+        <div className="no-print mx-auto mb-6 flex max-w-4xl items-center justify-between">
+          <Button variant="outline" asChild>
+            <Link href={backLink}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {backText}
+            </Link>
+          </Button>
+          <Button onClick={handlePrint}>
+            <Printer className="mr-2 h-4 w-4" />
+            Cetak Halaman Ini
+          </Button>
+        </div>
+      )}
       
       <div className="print-container mx-auto max-w-4xl rounded-lg bg-white shadow-lg">
         <div className="print-content relative aspect-[1/1.414] w-full">
-          <Image
-            src={templateImage.imageUrl}
-            alt={templateImage.description}
-            data-ai-hint={templateImage.imageHint}
-            fill
-            sizes="100vw"
-            priority
-            className="object-cover"
-          />
+          {templateImage.imageUrl && (
+            <Image
+              src={templateImage.imageUrl}
+              alt={templateImage.description}
+              data-ai-hint={templateImage.imageHint}
+              fill
+              sizes="100vw"
+              priority
+              className="object-cover"
+            />
+          )}
           <div className="absolute inset-0 p-[10%] text-gray-800">
             {/* This is an example layout. Adjust positions with top/left/right/bottom */}
             <h1 className="absolute top-[15%] left-[10%] text-3xl font-bold">{scheme.name}</h1>
@@ -71,8 +77,10 @@ export function PrintPreview({ offer, scheme, templateImage, isTemporaryPreview 
             </div>
 
             <div className="absolute top-[35%] left-[10%] text-sm">
-              <p><span className="font-semibold">ID Penawaran:</span> {offer.id}</p>
-              <p><span className="font-semibold">Kode Unit:</span> {scheme.unitCode}</p>
+              <p><span className="font-semibold">ID Penawaran:</span> {isTemporaryPreview ? 'TEMP-PREVIEW' : offer.id}</p>
+              {scheme.units && scheme.units.length > 0 && (
+                 <p><span className="font-semibold">Kode Unit:</span> {scheme.units.map(u => u.unitCode).join(', ')}</p>
+              )}
             </div>
 
             <div className="absolute top-[48%] left-[10%] right-[10%]">

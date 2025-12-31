@@ -22,6 +22,7 @@ export type Offer = {
   userRequest: string;
   createdAt: Date;
   userId: string;
-  backgroundUrl?: string;
+  backgroundUrl?: string; // For single background
+  backgroundUrls?: string[]; // For multiple backgrounds
   scheme?: Scheme; // Added for temporary preview
 };

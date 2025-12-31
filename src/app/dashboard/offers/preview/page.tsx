@@ -22,7 +22,6 @@ export default function SessionOfferPreviewPage() {
         const storedData = sessionStorage.getItem('previewOffer');
         if (storedData) {
             const data = JSON.parse(storedData);
-            // The offerDate is stored as a string, convert it back to a Date object
             data.offerDate = new Date(data.offerDate);
             setPreviewData(data);
         }
@@ -67,20 +66,15 @@ export default function SessionOfferPreviewPage() {
             </div>
         );
     }
-
-    const templateImage = {
-        id: 'preview-template',
-        imageUrl: previewData.backgroundUrl || defaultTemplateImage?.imageUrl || '',
-        description: 'Template pratinjau',
-        imageHint: '',
-    };
     
-    // Make sure offerDate is a Date object before passing it to PrintPreview
     const offerWithDate = {
         ...previewData,
         offerDate: previewData.offerDate instanceof Date ? previewData.offerDate : new Date(previewData.offerDate),
     };
 
+    const backgroundUrls = previewData.backgroundUrls && previewData.backgroundUrls.length > 0 
+        ? previewData.backgroundUrls 
+        : [defaultTemplateImage?.imageUrl || ''];
 
     return (
         <div className="flex h-full flex-col bg-muted/40">
@@ -88,12 +82,25 @@ export default function SessionOfferPreviewPage() {
                 <Header title="Pratinjau Penawaran (Sementara)" />
             </div>
             <main className="flex-1 p-4 md:p-8">
-                <PrintPreview 
-                    offer={offerWithDate} 
-                    scheme={previewData.scheme} 
-                    templateImage={templateImage} 
-                    isTemporaryPreview={true}
-                />
+                 <div className="space-y-8">
+                    {backgroundUrls.map((url, index) => {
+                        const templateImage = {
+                            id: `preview-template-${index}`,
+                            imageUrl: url,
+                            description: 'Template pratinjau',
+                            imageHint: '',
+                        };
+                        return (
+                            <PrintPreview 
+                                key={index}
+                                offer={offerWithDate} 
+                                scheme={previewData.scheme} 
+                                templateImage={templateImage} 
+                                isTemporaryPreview={true}
+                            />
+                        );
+                    })}
+                </div>
             </main>
         </div>
     );

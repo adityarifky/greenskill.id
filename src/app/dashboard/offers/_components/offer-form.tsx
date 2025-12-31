@@ -50,14 +50,24 @@ const formSchema = z.object({
   customerName: z.string().min(2, { message: 'Nama customer harus diisi.' }),
   offerDate: z.date({ required_error: "Tanggal penawaran harus diisi."}),
   userRequest: z.string().min(10, { message: 'Permintaan pengguna harus memiliki setidaknya 10 karakter.' }),
-  backgroundFile: z
+  backgroundFiles: z
     .any()
-    .refine((files) => !files || (files && files.length > 0), "File gambar diperlukan jika diisi.")
-    .refine((files) => !files || !files[0] || files[0].size <= MAX_FILE_SIZE, `Ukuran file maksimal 5MB.`)
-    .refine(
-      (files) => !files || !files[0] || ACCEPTED_IMAGE_TYPES.includes(files[0].type),
-      "Hanya format .jpg, .jpeg, dan .png yang diterima."
-    ).optional(),
+    .refine((files) => !files || (files instanceof FileList && files.length > 0), "Pilih setidaknya satu file gambar.")
+    .refine((files) => {
+        if (!files || !(files instanceof FileList)) return true;
+        for (let i = 0; i < files.length; i++) {
+            if (files[i].size > MAX_FILE_SIZE) return false;
+        }
+        return true;
+    }, `Ukuran file maksimal 5MB per file.`)
+    .refine((files) => {
+        if (!files || !(files instanceof FileList)) return true;
+        for (let i = 0; i < files.length; i++) {
+            if (!ACCEPTED_IMAGE_TYPES.includes(files[i].type)) return false;
+        }
+        return true;
+    }, "Hanya format .jpg, .jpeg, dan .png yang diterima.")
+    .optional(),
 });
 
 type OfferFormValues = z.infer<typeof formSchema>;
@@ -105,18 +115,18 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
         return;
     }
     
-    // --- START: BYPASS SAVING LOGIC ---
     try {
-        let backgroundUrl = '';
-        if (data.backgroundFile && data.backgroundFile.length > 0) {
-            const file = data.backgroundFile[0];
-            // Convert image to data URL to pass to preview page
-            backgroundUrl = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
+        let backgroundUrls: string[] = [];
+        if (data.backgroundFiles && data.backgroundFiles.length > 0) {
+            const filePromises = Array.from(data.backgroundFiles).map(file => {
+                return new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
             });
+            backgroundUrls = await Promise.all(filePromises);
         }
     
         const temporaryOfferData = {
@@ -124,10 +134,9 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
             id: `temp-${Date.now()}`,
             schemeName: selectedScheme.name,
             scheme: selectedScheme,
-            backgroundUrl: backgroundUrl,
+            backgroundUrls: backgroundUrls,
         };
         
-        // Store in sessionStorage to be read by the preview page
         sessionStorage.setItem('previewOffer', JSON.stringify(temporaryOfferData));
 
         toast({
@@ -144,12 +153,12 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
             title: "Gagal Membuat Pratinjau",
             description: "Tidak dapat membuat pratinjau. Silakan coba lagi."
         });
+    } finally {
         setIsSubmitting(false);
     }
-    // --- END: BYPASS SAVING LOGIC ---
   };
   
-  const fileRef = form.register("backgroundFile");
+  const fileRef = form.register("backgroundFiles");
 
   return (
     <Form {...form}>
@@ -244,18 +253,18 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
 
              <FormField
               control={form.control}
-              name="backgroundFile"
+              name="backgroundFiles"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Upload Template Background</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Upload className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input type="file" className="pl-10" {...fileRef} accept=".jpg, .jpeg, .png" />
+                      <Input type="file" className="pl-10" {...fileRef} accept=".jpg, .jpeg, .png" multiple />
                     </div>
                   </FormControl>
                   <FormDescription>
-                    Unggah gambar latar kustom (format .jpg, .png). Jika kosong, template default akan digunakan.
+                    Unggah satu atau lebih gambar latar (format .jpg, .png). Jika kosong, template default akan digunakan.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
