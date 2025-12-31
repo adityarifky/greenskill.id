@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from '@/hooks/use-toast';
 import type { Scheme } from '@/lib/types';
 import { DataPreview } from './data-preview';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
@@ -41,6 +41,7 @@ interface SchemeFormProps {
 export function SchemeForm({ initialData }: SchemeFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
+  const { user } = useUser();
   const form = useForm<SchemeFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData ? {
@@ -62,11 +63,11 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
   const action = initialData ? 'Simpan Perubahan' : 'Buat Skema';
 
   const onSubmit = (data: SchemeFormValues) => {
-    if (!firestore) {
+    if (!firestore || !user) {
         toast({
             variant: "destructive",
             title: "Gagal!",
-            description: "Koneksi ke database gagal.",
+            description: "Koneksi ke database gagal atau pengguna belum terautentikasi.",
         });
         return;
     }
@@ -78,6 +79,7 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
       unitCode: data.unitCode,
       price: priceAsNumber,
       updatedAt: serverTimestamp(),
+      userId: user.uid,
     };
 
     const operation = initialData
