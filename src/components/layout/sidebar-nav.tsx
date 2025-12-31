@@ -6,6 +6,7 @@ import {
   FileText,
   LayoutDashboard,
   FilePlus2,
+  MoreHorizontal
 } from 'lucide-react';
 import {
   Sidebar,
@@ -26,7 +27,7 @@ const navItems = [
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { isMobile } = useSidebar();
+  const { isMobile, state } = useSidebar();
 
   return (
     <Sidebar>
@@ -34,9 +35,11 @@ export function SidebarNav() {
         <div className="flex items-center justify-between p-2">
            <div className="flex items-center gap-2">
             <FileText className="h-6 w-6 text-primary" />
-            <span className="text-lg font-semibold">Greenskill</span>
+            <span className="text-lg font-semibold group-data-[collapsible=icon]:hidden">Greenskill</span>
           </div>
-          {!isMobile && <SidebarTrigger />}
+          <SidebarTrigger>
+            <MoreHorizontal />
+          </SidebarTrigger>
         </div>
       </SidebarHeader>
       <SidebarContent className="p-2">
