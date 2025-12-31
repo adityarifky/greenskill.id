@@ -141,6 +141,11 @@ export default function SessionOfferPreviewPage() {
                                             isTemporaryPreview={isTemporary}
                                         />
                                     )}
+                                    <DraggableParameter 
+                                        label="Parameter" 
+                                        value="" 
+                                        initialPosition={{ x: 50, y: 50 }} 
+                                    />
                                 </div>
                             </div>
                         );
