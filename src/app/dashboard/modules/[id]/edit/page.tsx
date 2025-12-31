@@ -5,8 +5,8 @@ import { doc } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { notFound } from 'next/navigation';
 import type { Module } from '@/lib/types';
-import { ModuleForm } from '../../_components/module-form';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ModuleFormDynamic } from '../../_components/module-form-dynamic';
 
 
 export default function EditModulePage({ params }: { params: { id: string } }) {
@@ -23,21 +23,12 @@ export default function EditModulePage({ params }: { params: { id: string } }) {
     notFound();
   }
   
-  const FormSkeleton = () => (
-    <div className="space-y-6">
-        <Skeleton className="h-12 w-1/3" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-96 w-full" />
-        <Skeleton className="h-12 w-full" />
-    </div>
-  );
-
   return (
     <div className="flex h-full flex-col">
       <Header title="Edit Modul" />
       <main className="flex-1 p-4 md:p-8">
          <div className="mx-auto max-w-4xl">
-            {isLoading ? <FormSkeleton /> : <ModuleForm initialData={module} />}
+            <ModuleFormDynamic initialData={module} isLoading={isLoading} />
          </div>
       </main>
     </div>
