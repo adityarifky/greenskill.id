@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
+import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -20,12 +21,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from '@/hooks/use-toast';
 import type { Scheme } from '@/lib/types';
 import { DataPreview } from './data-preview';
+import { useFirestore } from '@/firebase';
 
 const formSchema = z.object({
   name: z.string().min(3, { message: 'Nama skema harus memiliki setidaknya 3 karakter.' }),
   unitName: z.string().min(3, { message: 'Nama unit harus memiliki setidaknya 3 karakter.' }),
   unitCode: z.string().min(2, { message: 'Kode unit diperlukan.' }),
-  price: z.string().regex(/^Rp\s\d{1,3}(\.\d{3})*$/, { message: 'Format harga tidak valid. Contoh: Rp 1.500.000' }),
+  price: z.string().refine(val => /^(Rp\s)?\d{1,3}(\.\d{3})*$/.test(val), { message: 'Format harga tidak valid. Contoh: Rp 1.500.000' }),
 });
 
 type SchemeFormValues = z.infer<typeof formSchema>;
@@ -36,9 +38,13 @@ interface SchemeFormProps {
 
 export function SchemeForm({ initialData }: SchemeFormProps) {
   const router = useRouter();
+  const firestore = useFirestore();
   const form = useForm<SchemeFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {
+    defaultValues: initialData ? {
+      ...initialData,
+      price: `Rp ${Number(initialData.price).toLocaleString('id-ID')}`
+    } : {
       name: '',
       unitName: '',
       unitCode: '',
@@ -53,14 +59,39 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
   const toastMessage = initialData ? 'Skema berhasil diperbarui.' : 'Skema baru berhasil dibuat.';
   const action = initialData ? 'Simpan Perubahan' : 'Buat Skema';
 
-  const onSubmit = (data: SchemeFormValues) => {
-    // Mock server action
-    console.log(data);
-    toast({
-      title: 'Sukses!',
-      description: toastMessage,
-    });
-    router.push('/dashboard/schemes');
+  const onSubmit = async (data: SchemeFormValues) => {
+    try {
+      const priceAsNumber = parseInt(data.price.replace(/[^0-9]/g, ''), 10);
+      const schemeData = {
+        ...data,
+        price: priceAsNumber,
+        updatedAt: serverTimestamp(),
+      };
+
+      if (initialData) {
+        const docRef = doc(firestore, 'registration_schemas', initialData.id);
+        await setDoc(docRef, schemeData, { merge: true });
+      } else {
+        await addDoc(collection(firestore, 'registration_schemas'), {
+          ...schemeData,
+          createdAt: serverTimestamp(),
+        });
+      }
+
+      toast({
+        title: 'Sukses!',
+        description: toastMessage,
+      });
+      router.push('/dashboard/schemes');
+      router.refresh(); // To refetch server-side props
+    } catch (error) {
+      console.error("Error saving scheme: ", error);
+      toast({
+        variant: "destructive",
+        title: "Gagal!",
+        description: "Terjadi kesalahan saat menyimpan skema.",
+      });
+    }
   };
 
   return (

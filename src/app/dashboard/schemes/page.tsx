@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -7,7 +6,8 @@ import { id } from 'date-fns/locale';
 import { PlusCircle, MoreHorizontal } from 'lucide-react';
 import * as React from 'react';
 
-import { getSchemes } from '@/lib/data';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,14 +34,20 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import type { Scheme } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SchemesPage() {
-  const [schemes, setSchemes] = React.useState<Scheme[]>([]);
+  const firestore = useFirestore();
+  const schemesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'registration_schemas');
+  }, [firestore]);
+
+  const { data: schemes, isLoading } = useCollection<Scheme>(schemesQuery);
   const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
     setIsClient(true);
-    getSchemes().then(setSchemes);
   }, []);
 
   if (!isClient) {
@@ -82,16 +88,26 @@ export default function SchemesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {schemes.map((scheme) => (
+                {isLoading && (
+                  <>
+                    <TableRow>
+                      <TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell>
+                    </TableRow>
+                  </>
+                )}
+                {!isLoading && schemes && schemes.map((scheme) => (
                   <TableRow key={scheme.id}>
                     <TableCell className="font-medium">{scheme.name}</TableCell>
-                    <TableCell className="hidden md:table-cell">-</TableCell>
+                    <TableCell className="hidden md:table-cell">{scheme.unitName}</TableCell>
                     <TableCell className="hidden md:table-cell">
                       <Badge variant="outline">{scheme.unitCode}</Badge>
                     </TableCell>
                     <TableCell>{scheme.price}</TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {format(scheme.createdAt, "d MMMM yyyy", { locale: id })}
+                      {scheme.createdAt ? format(new Date(scheme.createdAt), "d MMMM yyyy", { locale: id }) : '-'}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -114,6 +130,11 @@ export default function SchemesPage() {
                 ))}
               </TableBody>
             </Table>
+             {!isLoading && (!schemes || schemes.length === 0) && (
+              <div className="py-10 text-center text-muted-foreground">
+                Belum ada skema yang dibuat.
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>

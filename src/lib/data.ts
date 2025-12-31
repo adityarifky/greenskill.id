@@ -1,22 +1,28 @@
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import type { Scheme, Offer } from './types';
+import { db } from './firebase'; // Assuming db is your firestore instance
 
 // Helper to create consistent dates
 const createDate = (dateString: string) => new Date(dateString);
-
-const schemes: Scheme[] = [];
 
 const offers: Offer[] = [];
 
 // Simulate async data fetching
 export const getSchemes = async (): Promise<Scheme[]> => {
-  return new Promise(resolve => setTimeout(() => resolve(schemes.map(s => ({...s, createdAt: new Date(s.createdAt)}))), 500));
+  const schemesCol = collection(db, 'registration_schemas');
+  const schemeSnapshot = await getDocs(schemesCol);
+  const schemeList = schemeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Scheme));
+  return schemeList;
 };
 
 export const getSchemeById = async (id: string): Promise<Scheme | undefined> => {
-  return new Promise(resolve => setTimeout(() => {
-    const scheme = schemes.find(s => s.id === id);
-    resolve(scheme ? {...scheme, createdAt: new Date(scheme.createdAt)} : undefined);
-  }, 300));
+  const schemeRef = doc(db, 'registration_schemas', id);
+  const schemeSnap = await getDoc(schemeRef);
+  if (schemeSnap.exists()) {
+    return { id: schemeSnap.id, ...schemeSnap.data() } as Scheme;
+  } else {
+    return undefined;
+  }
 };
 
 export const getOffers = async (): Promise<Offer[]> => {
