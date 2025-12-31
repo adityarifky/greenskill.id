@@ -3,8 +3,9 @@ export type Scheme = {
   name: string;
   unitName: string;
   unitCode: string;
-  price: string;
-  createdAt: Date;
+  price: number;
+  createdAt?: { seconds: number; nanoseconds: number; } | Date;
+  updatedAt?: { seconds: number; nanoseconds: number; } | Date;
   userId: string;
 };
 
@@ -14,4 +15,5 @@ export type Offer = {
   schemeName: string; // Denormalized for easy display
   userRequest: string;
   createdAt: Date;
+  userId: string;
 };

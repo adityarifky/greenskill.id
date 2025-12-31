@@ -6,20 +6,29 @@ import type { Scheme, Offer } from '@/lib/types';
 
 const OfferForm = dynamic(() => import('./offer-form').then(mod => mod.OfferForm), {
   ssr: false,
-  loading: () => (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-32 w-full" />
-      <Skeleton className="h-12 w-full" />
-    </div>
-  ),
+  loading: () => <OfferFormSkeleton />,
 });
 
 interface OfferFormDynamicProps {
   initialData?: Offer | null;
   schemes: Scheme[];
+  isLoading?: boolean;
 }
 
-export function OfferFormDynamic({ initialData, schemes }: OfferFormDynamicProps) {
+export function OfferFormDynamic({ initialData, schemes, isLoading }: OfferFormDynamicProps) {
+    if (isLoading) {
+        return <OfferFormSkeleton />;
+    }
   return <OfferForm initialData={initialData} schemes={schemes} />;
+}
+
+
+function OfferFormSkeleton() {
+    return (
+        <div className="mx-auto max-w-2xl space-y-6">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-12 w-full" />
+        </div>
+    )
 }

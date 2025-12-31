@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
+import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +27,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import type { Scheme, Offer } from '@/lib/types';
+import { useFirestore, useUser } from '@/firebase';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 const formSchema = z.object({
   schemeId: z.string().min(1, { message: 'Silakan pilih skema.' }),
@@ -41,6 +45,9 @@ interface OfferFormProps {
 
 export function OfferForm({ initialData, schemes }: OfferFormProps) {
   const router = useRouter();
+  const firestore = useFirestore();
+  const { user } = useUser();
+
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
@@ -53,14 +60,57 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
   const description = initialData ? 'Perbarui detail penawaran.' : 'Isi formulir untuk membuat penawaran baru.';
   const toastMessage = initialData ? 'Penawaran berhasil diperbarui.' : 'Penawaran baru berhasil dibuat.';
   const action = initialData ? 'Simpan Perubahan' : 'Buat Penawaran';
+  
+  const isLoading = form.formState.isSubmitting;
 
   const onSubmit = (data: OfferFormValues) => {
-    console.log(data);
-    toast({
-      title: 'Sukses!',
-      description: toastMessage,
+     if (!firestore || !user) {
+        toast({
+            variant: "destructive",
+            title: "Gagal!",
+            description: "Koneksi ke database gagal atau pengguna belum terautentikasi.",
+        });
+        return;
+    }
+
+    const selectedScheme = schemes.find(s => s.id === data.schemeId);
+    if (!selectedScheme) {
+         toast({
+            variant: "destructive",
+            title: "Gagal!",
+            description: "Skema yang dipilih tidak valid.",
+        });
+        return;
+    }
+
+    const offerData = {
+        schemeId: data.schemeId,
+        schemeName: selectedScheme.name, // Denormalized name
+        userRequest: data.userRequest,
+        userId: user.uid,
+        updatedAt: serverTimestamp(),
+    };
+
+    const operation = initialData
+      ? setDoc(doc(firestore, 'training_offers', initialData.id), offerData, { merge: true })
+      : addDoc(collection(firestore, 'training_offers'), { ...offerData, createdAt: serverTimestamp() });
+      
+    operation.then(() => {
+        toast({
+            title: 'Sukses!',
+            description: toastMessage,
+        });
+        router.push('/dashboard/offers');
+        router.refresh();
+    }).catch(serverError => {
+        console.error("Firestore operation failed:", serverError);
+        const contextualError = new FirestorePermissionError({
+            path: initialData ? `training_offers/${initialData.id}` : 'training_offers',
+            operation: initialData ? 'update' : 'create',
+            requestResourceData: offerData,
+        });
+        errorEmitter.emit('permission-error', contextualError);
     });
-    router.push('/dashboard/offers');
   };
 
   return (
@@ -78,10 +128,10 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Pilih Skema Pelatihan</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={schemes.length === 0}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Pilih skema yang akan digunakan" />
+                        <SelectValue placeholder={schemes.length > 0 ? "Pilih skema yang akan digunakan" : "Tidak ada skema tersedia"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -118,8 +168,8 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
                 </FormItem>
               )}
             />
-             <Button type="submit" className="w-full text-lg">
-              {action}
+             <Button type="submit" className="w-full text-lg" disabled={isLoading}>
+              {isLoading ? "Menyimpan..." : action}
             </Button>
           </CardContent>
         </Card>
