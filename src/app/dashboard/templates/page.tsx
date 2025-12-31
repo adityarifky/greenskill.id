@@ -7,7 +7,7 @@ import { LayoutTemplate, MoreHorizontal } from 'lucide-react';
 import * as React from 'react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, deleteDoc, doc } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,10 +34,22 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { OfferTemplate } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from '@/hooks/use-toast';
 
 export default function TemplatesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
+  const [templateToDelete, setTemplateToDelete] = React.useState<OfferTemplate | null>(null);
 
   const templatesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -47,6 +59,26 @@ export default function TemplatesPage() {
   const { data: templates, isLoading: isLoadingTemplates } = useCollection<OfferTemplate>(templatesQuery);
 
   const isLoading = isUserLoading || isLoadingTemplates;
+  
+  const handleDelete = async () => {
+    if (!templateToDelete || !firestore) return;
+    try {
+      await deleteDoc(doc(firestore, 'offer_templates', templateToDelete.id));
+      toast({
+        title: 'Sukses!',
+        description: `Templat "${templateToDelete.name}" berhasil dihapus.`,
+      });
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Gagal!',
+        description: 'Terjadi kesalahan saat menghapus templat.',
+      });
+    } finally {
+      setTemplateToDelete(null);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -99,7 +131,7 @@ export default function TemplatesPage() {
                           <DropdownMenuItem asChild>
                             <Link href={`/dashboard/templates/${template.id}/edit`}>Lihat/Edit</Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem disabled className="text-destructive">Hapus</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setTemplateToDelete(template)} className="text-destructive cursor-pointer">Hapus</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -119,6 +151,24 @@ export default function TemplatesPage() {
           </CardContent>
         </Card>
       </main>
+
+      <AlertDialog open={!!templateToDelete} onOpenChange={(open) => !open && setTemplateToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Anda yakin ingin menghapus templat ini?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini tidak dapat diurungkan. Templat "{templateToDelete?.name}" akan dihapus secara permanen dari database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
