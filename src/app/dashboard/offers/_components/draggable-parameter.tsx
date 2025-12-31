@@ -9,20 +9,25 @@ import { Input } from '@/components/ui/input';
 interface DraggableParameterProps {
   param: Parameter;
   onPositionChange: (id: string, position: { x: number; y: number }) => void;
+  onLabelChange: (id: string, label: string) => void;
   parentRef: React.RefObject<HTMLDivElement>;
 }
 
-export function DraggableParameter({ param, onPositionChange, parentRef }: DraggableParameterProps) {
+export function DraggableParameter({ 
+  param, 
+  onPositionChange, 
+  onLabelChange,
+  parentRef 
+}: DraggableParameterProps) {
   const dragStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const elementRef = React.useRef<HTMLDivElement>(null);
-  const [value, setValue] = React.useState(param.value || '');
+  const [isEditing, setIsEditing] = React.useState(!param.label); // Start editing if label is empty
+  const [label, setLabel] = React.useState(param.label || '');
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only allow dragging from the handle
     if (!(e.target as HTMLElement).closest('.drag-handle')) {
         return;
     }
-
     e.preventDefault();
     if (elementRef.current) {
       dragStartRef.current = {
@@ -41,11 +46,9 @@ export function DraggableParameter({ param, onPositionChange, parentRef }: Dragg
     const newX = e.clientX - dragStartRef.current.x;
     const newY = e.clientY - dragStartRef.current.y;
     
-    // Boundary checks
     const constrainedX = Math.max(0, Math.min(newX, parentRect.width - elementRef.current.offsetWidth));
     const constrainedY = Math.max(0, Math.min(newY, parentRect.height - elementRef.current.offsetHeight));
     
-    // The position is now managed by the parent, so we call the callback.
     onPositionChange(param.id, { x: constrainedX, y: constrainedY });
   };
 
@@ -55,6 +58,17 @@ export function DraggableParameter({ param, onPositionChange, parentRef }: Dragg
     document.removeEventListener('mouseup', handleMouseUp);
   };
   
+  const handleLabelBlur = () => {
+    onLabelChange(param.id, label);
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleLabelBlur();
+    }
+  };
+
   return (
     <div
       ref={elementRef}
@@ -72,12 +86,24 @@ export function DraggableParameter({ param, onPositionChange, parentRef }: Dragg
         >
             <GripVertical className="h-5 w-5 text-gray-400 opacity-0 group-hover/param:opacity-100 transition-opacity" />
         </div>
-        <Input 
-            placeholder="Ketik parameter..."
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className="w-48 bg-transparent border-dashed focus:bg-white"
-        />
+        {isEditing ? (
+             <Input 
+                placeholder="Beri nama parameter..."
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                onBlur={handleLabelBlur}
+                onKeyDown={handleKeyDown}
+                autoFocus
+                className="w-48 bg-white border-dashed"
+            />
+        ) : (
+            <div 
+                onClick={() => setIsEditing(true)} 
+                className="w-48 h-10 flex items-center px-3 rounded-md border border-dashed border-transparent group-hover/param:border-gray-300 cursor-pointer"
+            >
+                <span className="text-sm text-muted-foreground">{label || "Klik untuk menamai"}</span>
+            </div>
+        )}
     </div>
   );
 }

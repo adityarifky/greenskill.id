@@ -19,6 +19,7 @@ interface PrintContentProps {
   isTemporaryPreview?: boolean;
   activeParams: Parameter[];
   onPositionChange: (id: string, position: { x: number, y: number }) => void;
+  onLabelChange: (id: string, label: string) => void;
   parentRef: React.RefObject<HTMLDivElement>;
 }
 
@@ -28,6 +29,7 @@ export function PrintPreview({
   isTemporaryPreview = false,
   activeParams,
   onPositionChange,
+  onLabelChange,
   parentRef
 }: PrintContentProps) {
   const [printDate, setPrintDate] = React.useState('');
@@ -43,6 +45,7 @@ export function PrintPreview({
             key={param.id} 
             param={param} 
             onPositionChange={onPositionChange}
+            onLabelChange={onLabelChange}
             parentRef={parentRef}
           />
         ))}

@@ -105,6 +105,12 @@ export default function SessionOfferPreviewPage() {
         );
     };
 
+    const handleLabelChange = (id: string, newLabel: string) => {
+        setActiveParams(prev =>
+            prev.map(p => (p.id === id ? { ...p, label: newLabel } : p))
+        );
+    };
+
 
     const defaultTemplateImage = PlaceHolderImages.find(img => img.id === 'a4-template');
 
@@ -199,6 +205,7 @@ export default function SessionOfferPreviewPage() {
                                         isTemporaryPreview={isTemporary}
                                         activeParams={activeParams}
                                         onPositionChange={handlePositionChange}
+                                        onLabelChange={handleLabelChange}
                                         parentRef={printAreaRef}
                                     />
                                 </div>
