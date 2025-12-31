@@ -8,7 +8,7 @@ import { Header } from '@/components/layout/header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, ArrowLeft, Save, Pencil, Package } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Save, Pencil, PackagePlus, FileText, Calendar, User, Tag, List, MessageSquare } from 'lucide-react';
 import type { Offer, Scheme, TemplateParameter } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useFirestore, useUser } from '@/firebase';
@@ -23,14 +23,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-
 type PreviewData = Partial<Omit<Offer, 'createdAt' | 'userId'>> & {
-  scheme?: Scheme;
+  scheme?: Partial<Scheme>;
   isTemplateOnlyPreview?: boolean;
   backgroundUrls?: string[];
 };
@@ -76,9 +74,9 @@ export default function SessionOfferPreviewPage() {
       prev.map(p => (p.id === id ? { ...p, label: newLabel } : p))
     );
   }, []);
-
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, paramKey: string) => {
-    e.dataTransfer.setData("application/json", JSON.stringify({ paramKey }));
+  
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, paramKey: string, defaultLabel: string) => {
+    e.dataTransfer.setData("application/json", JSON.stringify({ paramKey, defaultLabel }));
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -86,14 +84,14 @@ export default function SessionOfferPreviewPage() {
     const dataString = e.dataTransfer.getData("application/json");
     if (!dataString) return;
 
-    const data = JSON.parse(dataString);
+    const { paramKey, defaultLabel } = JSON.parse(dataString);
     const parentRect = printAreaRef.current?.getBoundingClientRect();
     if (!parentRect) return;
 
     const newParam: Parameter = {
       id: `param-${Date.now()}`,
-      key: data.paramKey,
-      label: 'Label Baru',
+      key: paramKey,
+      label: defaultLabel,
       position: { x: e.clientX - parentRect.left, y: e.clientY - parentRect.top },
     };
     setActiveParams(prev => [...prev, newParam]);
@@ -188,7 +186,13 @@ export default function SessionOfferPreviewPage() {
     : 'Pratinjau Penawaran';
   
   const parameterItems = [
-    { key: 'generic', name: 'Parameter' },
+    { key: 'offerId', name: 'Nomor Surat', icon: FileText },
+    { key: 'offerDate', name: 'Tanggal Penawaran', icon: Calendar },
+    { key: 'customerName', name: 'Nama Customer', icon: User },
+    { key: 'schemeName', name: 'Nama Skema', icon: PackagePlus },
+    { key: 'schemePrice', name: 'Harga Skema', icon: Tag },
+    { key: 'schemeUnits', name: 'Unit Pelatihan', icon: List },
+    { key: 'userRequest', name: 'Permintaan User', icon: MessageSquare },
   ];
 
   return (
@@ -268,6 +272,8 @@ export default function SessionOfferPreviewPage() {
                     onPositionChange={handlePositionChange}
                     onLabelChange={handleLabelChange}
                     parentRef={printAreaRef}
+                    offer={previewData}
+                    scheme={previewData.scheme}
                   />
                 </div>
               </div>
@@ -289,7 +295,7 @@ export default function SessionOfferPreviewPage() {
         <PopoverContent className="w-60" side="top" align="start">
             <div className="grid gap-4">
               <div className="space-y-2">
-                <h4 className="font-medium leading-none">Parameter</h4>
+                <h4 className="font-medium leading-none">Parameter Surat</h4>
                 <p className="text-sm text-muted-foreground">
                   Seret parameter ke atas templat.
                 </p>
@@ -299,10 +305,10 @@ export default function SessionOfferPreviewPage() {
                    <div
                     key={param.key}
                     draggable
-                    onDragStart={(e) => handleDragStart(e, param.key)}
+                    onDragStart={(e) => handleDragStart(e, param.key, param.name)}
                     className="flex cursor-grab items-center gap-2 rounded-md border p-2 transition-colors hover:bg-accent"
                   >
-                    <Package className="h-4 w-4" />
+                    <param.icon className="h-4 w-4 text-muted-foreground" />
                     <span>{param.name}</span>
                    </div>
                  ))}

@@ -33,6 +33,7 @@ export type TemplateParameter = {
   label: string;
   position: { x: number; y: number };
   key: string;
+  value?: string; // Added for preview
 };
 
 export type OfferTemplate = {
@@ -41,5 +42,5 @@ export type OfferTemplate = {
   backgroundUrl: string;
   parameters: TemplateParameter[];
   userId: string;
-  createdAt: Date;
+  createdAt: { seconds: number; nanoseconds: number; } | Date;
 };

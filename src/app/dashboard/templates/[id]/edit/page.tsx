@@ -5,15 +5,17 @@ import { notFound, useParams, useRouter } from 'next/navigation';
 import * as React from 'react';
 import Image from 'next/image';
 import { doc, setDoc } from 'firebase/firestore';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Pencil, PackagePlus, FileText, Calendar, User, Tag, List, MessageSquare } from 'lucide-react';
 
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import type { OfferTemplate, TemplateParameter } from '@/lib/types';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DraggableParameter } from '@/app/dashboard/offers/_components/draggable-parameter';
+import { PrintPreview } from '@/app/dashboard/offers/_components/print-preview';
 import { toast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 
 export default function EditTemplatePage() {
   const params = useParams<{ id: string }>();
@@ -71,6 +73,32 @@ export default function EditTemplatePage() {
     }
   };
 
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, paramKey: string, defaultLabel: string) => {
+    e.dataTransfer.setData("application/json", JSON.stringify({ paramKey, defaultLabel }));
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const dataString = e.dataTransfer.getData("application/json");
+    if (!dataString) return;
+
+    const { paramKey, defaultLabel } = JSON.parse(dataString);
+    const parentRect = printAreaRef.current?.getBoundingClientRect();
+    if (!parentRect) return;
+
+    const newParam: TemplateParameter = {
+      id: `param-${Date.now()}`,
+      key: paramKey,
+      label: defaultLabel,
+      position: { x: e.clientX - parentRect.left, y: e.clientY - parentRect.top },
+    };
+    setActiveParams(prev => [...prev, newParam]);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault(); 
+  };
+  
   if (isLoading) {
     return (
       <div className="flex h-full flex-col bg-muted/40">
@@ -94,6 +122,16 @@ export default function EditTemplatePage() {
     notFound();
   }
 
+    const parameterItems = [
+    { key: 'offerId', name: 'Nomor Surat', icon: FileText },
+    { key: 'offerDate', name: 'Tanggal Penawaran', icon: Calendar },
+    { key: 'customerName', name: 'Nama Customer', icon: User },
+    { key: 'schemeName', name: 'Nama Skema', icon: PackagePlus },
+    { key: 'schemePrice', name: 'Harga Skema', icon: Tag },
+    { key: 'schemeUnits', name: 'Unit Pelatihan', icon: List },
+    { key: 'userRequest', name: 'Permintaan User', icon: MessageSquare },
+  ];
+
   return (
     <div className="flex h-full flex-col bg-muted/40">
       <Header title={`Edit Templat: ${template.name}`} />
@@ -116,6 +154,8 @@ export default function EditTemplatePage() {
           <div
             ref={printAreaRef}
             className="print-content relative aspect-[1/1.414] w-full"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
           >
             <Image
               src={template.backgroundUrl}
@@ -125,20 +165,50 @@ export default function EditTemplatePage() {
               priority
               className="object-cover pointer-events-none"
             />
-             <div className="absolute inset-0">
-                {activeParams.map(param => (
-                    <DraggableParameter
-                    key={param.id}
-                    param={param}
-                    onPositionChange={handlePositionChange}
-                    onLabelChange={handleLabelChange}
-                    parentRef={printAreaRef}
-                    />
-                ))}
-            </div>
+            <PrintPreview
+                activeParams={activeParams}
+                onPositionChange={handlePositionChange}
+                onLabelChange={handleLabelChange}
+                parentRef={printAreaRef}
+            />
           </div>
         </div>
       </main>
+
+       <Popover>
+        <PopoverTrigger asChild>
+            <Button
+                variant="default"
+                className="no-print fixed bottom-8 left-8 z-20 h-14 w-14 rounded-full p-4 shadow-lg"
+            >
+                <Pencil className="h-6 w-6" />
+                <span className="sr-only">Tambah Parameter</span>
+            </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-60" side="top" align="start">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium leading-none">Parameter Surat</h4>
+                <p className="text-sm text-muted-foreground">
+                  Seret parameter ke atas templat.
+                </p>
+              </div>
+              <div className="grid gap-2">
+                 {parameterItems.map((param) => (
+                   <div
+                    key={param.key}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, param.key, param.name)}
+                    className="flex cursor-grab items-center gap-2 rounded-md border p-2 transition-colors hover:bg-accent"
+                  >
+                    <param.icon className="h-4 w-4 text-muted-foreground" />
+                    <span>{param.name}</span>
+                   </div>
+                 ))}
+              </div>
+            </div>
+        </PopoverContent>
+    </Popover>
     </div>
   );
 }

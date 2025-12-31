@@ -10,6 +10,7 @@ export type Parameter = {
   label: string;
   position: { x: number; y: number };
   key: string;
+  value?: string;
 };
 
 
@@ -28,7 +29,7 @@ export function DraggableParameter({
 }: DraggableParameterProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [tempLabel, setTempLabel] = React.useState(param.label);
-  const dragStartRef = React.useRef<{ startX: number; startY: number; initialX: number; initialY: number } | null>(null);
+  const dragStartRef = React.useRef<{ initialX: number; initialY: number; offsetX: number; offsetY: number } | null>(null);
   const elementRef = React.useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -39,11 +40,12 @@ export function DraggableParameter({
     e.stopPropagation();
 
     if (elementRef.current) {
+        const rect = elementRef.current.getBoundingClientRect();
         dragStartRef.current = {
-            startX: e.clientX,
-            startY: e.clientY,
             initialX: elementRef.current.offsetLeft,
             initialY: elementRef.current.offsetTop,
+            offsetX: e.clientX - rect.left,
+            offsetY: e.clientY - rect.top,
         };
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
@@ -51,20 +53,19 @@ export function DraggableParameter({
   };
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (!dragStartRef.current || !parentRef.current || !elementRef.current) return;
+    if (!dragStartRef.current || !parentRef.current) return;
 
-    const dx = e.clientX - dragStartRef.current.startX;
-    const dy = e.clientY - dragStartRef.current.startY;
-    
     const parentRect = parentRef.current.getBoundingClientRect();
-    const elementRect = elementRef.current.getBoundingClientRect();
-
-    let newX = dragStartRef.current.initialX + dx;
-    let newY = dragStartRef.current.initialY + dy;
     
+    let newX = e.clientX - parentRect.left - dragStartRef.current.offsetX;
+    let newY = e.clientY - parentRect.top - dragStartRef.current.offsetY;
+
     // Constrain position within parent
-    newX = Math.max(0, Math.min(newX, parentRect.width - elementRect.width));
-    newY = Math.max(0, Math.min(newY, parentRect.height - elementRect.height));
+    if (elementRef.current) {
+        const elementRect = elementRef.current.getBoundingClientRect();
+        newX = Math.max(0, Math.min(newX, parentRect.width - elementRect.width));
+        newY = Math.max(0, Math.min(newY, parentRect.height - elementRect.height));
+    }
 
     onPositionChange(param.id, { x: newX, y: newY });
   };
@@ -109,12 +110,12 @@ export function DraggableParameter({
         cursor: 'grab',
         touchAction: 'none',
       }}
-      className="group/param z-10 flex items-center gap-1 rounded-md p-2 hover:bg-blue-100/50 hover:ring-1 hover:ring-blue-500 transition-all"
+      className="group/param z-10 flex items-center gap-1 rounded-md p-1 hover:bg-blue-100/50 hover:ring-1 hover:ring-blue-500 transition-all"
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
     >
       <GripVertical className="h-5 w-5 text-gray-400 opacity-0 group-hover/param:opacity-100 transition-opacity cursor-grab" />
-      <div className="flex flex-col text-sm w-48">
+      <div className="flex flex-col text-sm w-auto">
          {isEditing ? (
             <div className="flex items-center gap-1">
                 <Input 
@@ -129,14 +130,10 @@ export function DraggableParameter({
                 />
             </div>
         ) : (
-             <span
-                className={cn(
-                    "font-semibold text-gray-800 border border-dashed border-gray-400 p-2 rounded-md",
-                    param.label === 'Label Baru' && 'text-gray-500'
-                )}
-            >
-                {param.label}
-            </span>
+             <div className="font-semibold text-gray-800 border border-dashed border-gray-400 p-2 rounded-md bg-white/80">
+                <span className="text-gray-500">{param.label}: </span>
+                <span className="font-normal whitespace-pre-wrap">{param.value}</span>
+            </div>
         )}
       </div>
     </div>
