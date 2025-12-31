@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, ArrowLeft, Printer } from 'lucide-react';
 import type { Offer, Scheme } from '@/lib/types';
+import { DraggableParameterButton } from '../_components/parameter-button';
 
 
 type PreviewData = Partial<Omit<Offer, 'createdAt' | 'userId'>> & { 
@@ -140,6 +141,7 @@ export default function SessionOfferPreviewPage() {
                                             isTemporaryPreview={isTemporary}
                                         />
                                     )}
+                                    <DraggableParameterButton />
                                 </div>
                             </div>
                         );
@@ -149,4 +151,3 @@ export default function SessionOfferPreviewPage() {
         </div>
     );
 }
-
