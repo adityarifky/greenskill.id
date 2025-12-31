@@ -8,9 +8,8 @@ import { Header } from '@/components/layout/header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, ArrowLeft, Printer } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Printer, Pencil } from 'lucide-react';
 import type { Offer, Scheme } from '@/lib/types';
-import { DraggableParameter } from '../_components/draggable-parameter';
 
 
 type PreviewData = Partial<Omit<Offer, 'createdAt' | 'userId'>> & { 
@@ -141,17 +140,19 @@ export default function SessionOfferPreviewPage() {
                                             isTemporaryPreview={isTemporary}
                                         />
                                     )}
-                                    <DraggableParameter 
-                                        label="Parameter" 
-                                        value="" 
-                                        initialPosition={{ x: 50, y: 50 }} 
-                                    />
                                 </div>
                             </div>
                         );
                     })}
                 </div>
             </main>
+             <Button
+                size="icon"
+                className="no-print fixed bottom-8 left-8 z-50 h-14 w-14 rounded-full shadow-lg"
+            >
+                <Pencil className="h-6 w-6" />
+                <span className="sr-only">Edit Parameters</span>
+            </Button>
         </div>
     );
 }
