@@ -107,6 +107,65 @@
         "email",
         "name"
       ]
+    },
+     "OfferTemplate": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OfferTemplate",
+      "type": "object",
+      "description": "Represents a user-defined template for training offers.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Offer Template entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the template."
+        },
+        "backgroundUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the background image for the template."
+        },
+        "parameters": {
+          "type": "array",
+          "description": "Array of parameter objects with their positions and labels.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "string"},
+              "label": {"type": "string"},
+              "key": {"type": "string"},
+              "position": {
+                "type": "object",
+                "properties": {
+                  "x": {"type": "number"},
+                  "y": {"type": "number"}
+                },
+                "required": ["x", "y"]
+              }
+            },
+            "required": ["id", "label", "key", "position"]
+          }
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N OfferTemplate)"
+        },
+        "createdAt": {
+            "type": "string",
+            "description": "Date when the template was created.",
+            "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "backgroundUrl",
+        "parameters",
+        "userId",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -164,8 +223,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/offer_templates/{templateId}",
+        "definition": {
+          "entityName": "OfferTemplate",
+          "schema": {
+            "$ref": "#/backend/entities/OfferTemplate"
+          },
+          "description": "Stores user-created offer templates, including parameter layouts. The 'userId' field ensures users can only access their own templates.",
+          "params": [
+            {
+              "name": "templateId",
+              "description": "Unique identifier for the offer template."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support the application's core features while adhering to the principles of Authorization Independence, Clarity of Intent, and DBAC (Database-Based Access Control). It focuses on storing registration schemas, training offers, and user data in a structured and secure manner.\n\n*   **Authorization Independence:**  The `TrainingOffer` collection includes the `userId` field, denormalizing user information for authorization purposes. This avoids the need for `get()` calls to the `/users/{userId}` document to verify ownership, thus ensuring atomic operations and simplifying security rules.\n*   **Structural Segregation:** Each entity type is stored in its own dedicated collection, ensuring a homogeneous security posture. Registration schemas are stored in `/registration_schemas`, training offers are stored in `/training_offers`, and user data is stored in `/users/{userId}`.\n*   **Access Modeling:** User data is stored using path-based ownership (`/users/{userId}`), granting each user exclusive access to their own data. Training offers are also linked to a specific user (`/training_offers`) through the `userId` field, enabling secure listing and filtering of offers based on user ownership.\n*   **QAPs (Rules are not Filters):** Listing operations are secured by segregating data into separate collections based on type and ownership, and by including the `userId` in the training offers, which allows to restrict access to user-specific training offers.\n\nDenormalization is implemented to facilitate Authorization Independence, crucial for writing secure and efficient security rules. This approach avoids hierarchical authorization dependencies, enabling atomic operations and clear ownership management."
+    "reasoning": "The Firestore data structure is designed to support the application's core features while adhering to the principles of Authorization Independence, Clarity of Intent, and DBAC (Database-Based Access Control). It focuses on storing registration schemas, training offers, user data, and user-defined templates in a structured and secure manner.\n\n*   **Authorization Independence:**  The `TrainingOffer` and `OfferTemplate` collections include the `userId` field, denormalizing user information for authorization purposes. This avoids the need for `get()` calls to the `/users/{userId}` document to verify ownership, thus ensuring atomic operations and simplifying security rules.\n*   **Structural Segregation:** Each entity type is stored in its own dedicated collection, ensuring a homogeneous security posture.\n*   **Access Modeling:** User data is stored using path-based ownership (`/users/{userId}`), granting each user exclusive access to their own data. Training offers and offer templates are also linked to a specific user through the `userId` field, enabling secure listing and filtering based on user ownership.\n*   **QAPs (Rules are not Filters):** Listing operations are secured by segregating data into separate collections based on type and ownership, and by including the `userId` in the training offers and templates, which allows restricting access to user-specific content."
   }
 }

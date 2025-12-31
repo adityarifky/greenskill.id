@@ -27,3 +27,19 @@ export type Offer = {
   scheme?: Scheme; // Added for temporary preview
   key?: string; // Added for draggable parameter
 };
+
+export type TemplateParameter = {
+  id: string;
+  label: string;
+  position: { x: number; y: number };
+  key: string;
+};
+
+export type OfferTemplate = {
+  id: string;
+  name: string;
+  backgroundUrl: string;
+  parameters: TemplateParameter[];
+  userId: string;
+  createdAt: Date;
+};

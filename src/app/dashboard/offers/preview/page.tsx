@@ -9,8 +9,25 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, ArrowLeft, Save, Pencil, Package } from 'lucide-react';
-import type { Offer, Scheme } from '@/lib/types';
+import type { Offer, Scheme, TemplateParameter } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useFirestore, useUser } from '@/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { toast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
 
 type PreviewData = Partial<Omit<Offer, 'createdAt' | 'userId'>> & {
   scheme?: Scheme;
@@ -18,19 +35,18 @@ type PreviewData = Partial<Omit<Offer, 'createdAt' | 'userId'>> & {
   backgroundUrls?: string[];
 };
 
-export type Parameter = {
-  id: string;
-  label: string;
-  position: { x: number; y: number };
-  key: string;
-};
+export type Parameter = TemplateParameter;
 
 export default function SessionOfferPreviewPage() {
   const router = useRouter();
+  const firestore = useFirestore();
+  const { user } = useUser();
   const [previewData, setPreviewData] = React.useState<PreviewData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [activeParams, setActiveParams] = React.useState<Parameter[]>([]);
   const printAreaRef = React.useRef<HTMLDivElement>(null);
+  const [templateName, setTemplateName] = React.useState('');
+  const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
     try {
@@ -74,14 +90,11 @@ export default function SessionOfferPreviewPage() {
     const parentRect = printAreaRef.current?.getBoundingClientRect();
     if (!parentRect) return;
 
-    const offsetX = e.clientX - parentRect.left;
-    const offsetY = e.clientY - parentRect.top;
-
     const newParam: Parameter = {
       id: `param-${Date.now()}`,
       key: data.paramKey,
       label: 'Label Baru',
-      position: { x: offsetX, y: offsetY },
+      position: { x: e.clientX - parentRect.left, y: e.clientY - parentRect.top },
     };
     setActiveParams(prev => [...prev, newParam]);
   };
@@ -90,11 +103,40 @@ export default function SessionOfferPreviewPage() {
     e.preventDefault(); 
   };
   
-  const handleSaveTemplate = () => {
-    // This is where you'd implement the logic to save the template.
-    // For now, we'll just log it.
-    console.log("Saving template with parameters:", activeParams);
-    // You would likely save `activeParams` to Firestore here.
+  const handleSaveTemplate = async () => {
+    if (!user || !firestore || !previewData?.backgroundUrls?.[0] || !templateName) {
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Menyimpan',
+        description: 'Nama templat, gambar latar, dan data pengguna diperlukan.',
+      });
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const templateData = {
+        name: templateName,
+        backgroundUrl: previewData.backgroundUrls[0],
+        parameters: activeParams,
+        userId: user.uid,
+        createdAt: serverTimestamp(),
+      };
+      await addDoc(collection(firestore, 'offer_templates'), templateData);
+      toast({
+        title: 'Sukses!',
+        description: 'Templat berhasil disimpan.',
+      });
+      router.push('/dashboard/templates');
+    } catch (error) {
+      console.error('Error saving template:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Gagal!',
+        description: 'Terjadi kesalahan saat menyimpan templat.',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const defaultTemplateImage = PlaceHolderImages.find(img => img.id === 'a4-template');
@@ -160,10 +202,42 @@ export default function SessionOfferPreviewPage() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Kembali ke Formulir
           </Button>
-          <Button onClick={handleSaveTemplate}>
-            <Save className="mr-2 h-4 w-4" />
-            Simpan Tamplate
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button>
+                <Save className="mr-2 h-4 w-4" />
+                Simpan Tamplate
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Simpan Tamplate Surat</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Beri nama templat Anda untuk menyimpannya. Nama ini akan digunakan untuk mengidentifikasi templat di masa mendatang.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="template-name" className="text-right">
+                    Nama
+                  </Label>
+                  <Input
+                    id="template-name"
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    className="col-span-3"
+                    placeholder="Contoh: Templat Penawaran Standar"
+                  />
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction onClick={handleSaveTemplate} disabled={isSaving || !templateName}>
+                  {isSaving ? 'Menyimpan...' : 'Simpan'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
         <div className="space-y-8">
           {backgroundUrls.map((url, index) => {
