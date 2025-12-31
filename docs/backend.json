@@ -49,6 +49,15 @@
           "type": "string",
           "description": "Reference to RegistrationSchema. (Relationship: RegistrationSchema 1:N TrainingOffer)"
         },
+        "customerName": {
+            "type": "string",
+            "description": "Name of the customer for the training offer."
+        },
+        "offerDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of the training offer."
+        },
         "userRequest": {
           "type": "string",
           "description": "User's specific request for the training."
@@ -66,6 +75,8 @@
       "required": [
         "id",
         "registrationSchemaId",
+        "customerName",
+        "offerDate",
         "userRequest",
         "dateCreated",
         "userId"

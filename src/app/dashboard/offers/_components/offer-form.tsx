@@ -5,8 +5,12 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
-
+import { format } from "date-fns"
+import { CalendarIcon } from "lucide-react"
+ 
+import { cn } from "@/lib/utils"
 import { Button } from '@/components/ui/button';
+import { Calendar } from "@/components/ui/calendar"
 import {
   Form,
   FormControl,
@@ -16,6 +20,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Input } from "@/components/ui/input"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   Select,
   SelectContent,
@@ -33,6 +43,8 @@ import { errorEmitter } from '@/firebase/error-emitter';
 
 const formSchema = z.object({
   schemeId: z.string().min(1, { message: 'Silakan pilih skema.' }),
+  customerName: z.string().min(2, { message: 'Nama customer harus diisi.' }),
+  offerDate: z.date({ required_error: "Tanggal penawaran harus diisi."}),
   userRequest: z.string().min(10, { message: 'Permintaan pengguna harus memiliki setidaknya 10 karakter.' }),
 });
 
@@ -50,8 +62,13 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
 
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {
+    defaultValues: initialData ? {
+      ...initialData,
+      offerDate: initialData.offerDate instanceof Date ? initialData.offerDate : new Date(initialData.offerDate),
+    } : {
       schemeId: '',
+      customerName: '',
+      offerDate: new Date(),
       userRequest: '',
     },
   });
@@ -86,6 +103,8 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
     const offerData = {
         schemeId: data.schemeId,
         schemeName: selectedScheme.name, // Denormalized name
+        customerName: data.customerName,
+        offerDate: data.offerDate,
         userRequest: data.userRequest,
         userId: user.uid,
         updatedAt: serverTimestamp(),
@@ -143,6 +162,62 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
                     </SelectContent>
                   </Select>
                   <FormDescription>Penawaran akan didasarkan pada skema yang dipilih.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="customerName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nama Customer</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Contoh: PT Jaya Abadi" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="offerDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Tanggal Penawaran</FormLabel>
+                   <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pilih tanggal</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}

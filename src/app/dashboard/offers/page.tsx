@@ -80,9 +80,9 @@ export default function OffersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Customer</TableHead>
                   <TableHead>Skema</TableHead>
-                  <TableHead className="hidden md:table-cell">Permintaan Pengguna</TableHead>
-                  <TableHead className="hidden md:table-cell">Dibuat pada</TableHead>
+                  <TableHead className="hidden md:table-cell">Tanggal Penawaran</TableHead>
                   <TableHead>
                     <span className="sr-only">Aksi</span>
                   </TableHead>
@@ -101,13 +101,13 @@ export default function OffersPage() {
                 )}
                 {!isLoading && offers && offers.map((offer) => (
                   <TableRow key={offer.id}>
-                    <TableCell className="font-medium">{offer.schemeName}</TableCell>
-                    <TableCell className="hidden md:table-cell max-w-sm truncate">{offer.userRequest}</TableCell>
+                    <TableCell className="font-medium">{offer.customerName}</TableCell>
+                    <TableCell>{offer.schemeName}</TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {offer.createdAt instanceof Date
-                        ? format(offer.createdAt, "d MMMM yyyy", { locale: id })
-                        : offer.createdAt && typeof offer.createdAt === 'object' && 'seconds' in offer.createdAt
-                        ? format(new Date((offer.createdAt as any).seconds * 1000), "d MMMM yyyy", { locale: id })
+                      {offer.offerDate instanceof Date
+                        ? format(offer.offerDate, "d MMMM yyyy", { locale: id })
+                        : offer.offerDate && typeof offer.offerDate === 'object' && 'seconds' in offer.offerDate
+                        ? format(new Date((offer.offerDate as any).seconds * 1000), "d MMMM yyyy", { locale: id })
                         : '-'}
                     </TableCell>
                     <TableCell>
@@ -167,9 +167,9 @@ const OffersPageSkeleton = () => (
                      <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead><Skeleton className="h-5 w-24" /></TableHead>
-                                <TableHead><Skeleton className="h-5 w-48" /></TableHead>
                                 <TableHead><Skeleton className="h-5 w-32" /></TableHead>
+                                <TableHead><Skeleton className="h-5 w-32" /></TableHead>
+                                <TableHead><Skeleton className="h-5 w-48" /></TableHead>
                                 <TableHead><span className="sr-only">Aksi</span></TableHead>
                             </TableRow>
                         </TableHeader>

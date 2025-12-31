@@ -7,6 +7,8 @@ import * as React from 'react';
 import type { Offer, Scheme } from '@/lib/types';
 import type { ImagePlaceholder } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 
 interface PrintPreviewProps {
   offer: Offer;
@@ -24,6 +26,9 @@ export function PrintPreview({ offer, scheme, templateImage }: PrintPreviewProps
   const handlePrint = () => {
     window.print();
   };
+
+  const offerDateFormatted = offer.offerDate ? format(offer.offerDate instanceof Date ? offer.offerDate : new Date((offer.offerDate as any).seconds * 1000), "d MMMM yyyy", { locale: id }) : 'N/A';
+
 
   return (
     <>
@@ -55,19 +60,24 @@ export function PrintPreview({ offer, scheme, templateImage }: PrintPreviewProps
             {/* This is an example layout. Adjust positions with top/left/right/bottom */}
             <h1 className="absolute top-[15%] left-[10%] text-3xl font-bold">{scheme.name}</h1>
             
-            <div className="absolute top-[30%] left-[10%] text-sm">
+            <div className="absolute top-[25%] left-[10%] text-sm space-y-1">
+              <p><span className="font-semibold">Penawaran Untuk:</span> {offer.customerName}</p>
+              <p><span className="font-semibold">Tanggal Penawaran:</span> {offerDateFormatted}</p>
+            </div>
+
+            <div className="absolute top-[35%] left-[10%] text-sm">
               <p><span className="font-semibold">ID Penawaran:</span> {offer.id}</p>
               <p><span className="font-semibold">Kode Unit:</span> {scheme.unitCode}</p>
             </div>
 
-            <div className="absolute top-[45%] left-[10%] right-[10%]">
+            <div className="absolute top-[48%] left-[10%] right-[10%]">
               <h2 className="text-lg font-semibold border-b pb-1 mb-2">Permintaan Khusus</h2>
               <p className="text-sm text-gray-700 whitespace-pre-wrap">{offer.userRequest}</p>
             </div>
 
             <div className="absolute bottom-[20%] right-[10%] text-right">
               <p className="text-sm text-gray-600">Harga Dasar</p>
-              <p className="text-2xl font-bold text-primary">{scheme.price}</p>
+              <p className="text-2xl font-bold text-primary">Rp {Number(scheme.price).toLocaleString('id-ID')}</p>
             </div>
 
              <div className="absolute bottom-[5%] left-[10%] text-xs text-gray-500">

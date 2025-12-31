@@ -116,12 +116,26 @@ export default function OfferDetailsPage() {
           </div>
           <Card>
             <CardHeader>
-              <CardTitle>Penawaran untuk: {offer.schemeName}</CardTitle>
+              <CardTitle>Penawaran untuk: {offer.customerName}</CardTitle>
               <CardDescription>
                 Dibuat pada {offer.createdAt ? format(offer.createdAt, "d MMMM yyyy, HH:mm", { locale: id }) : 'N/A'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+               <div>
+                <h3 className="text-lg font-semibold">Detail Penawaran</h3>
+                <Separator className="my-2" />
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Nama Customer:</span>
+                    <span>{offer.customerName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tanggal Penawaran:</span>
+                    <span>{offer.offerDate ? format(offer.offerDate, "d MMMM yyyy", { locale: id }) : 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
               <div>
                 <h3 className="text-lg font-semibold">Detail Skema</h3>
                 <Separator className="my-2" />
