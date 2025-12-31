@@ -29,7 +29,14 @@ export default function OfferPreviewPage() {
 
     const { data: scheme, isLoading: isLoadingScheme } = useDoc<Scheme>(schemeRef);
 
-  const templateImage = PlaceHolderImages.find(img => img.id === 'a4-template');
+  const defaultTemplateImage = PlaceHolderImages.find(img => img.id === 'a4-template');
+
+  const templateImage = {
+      id: offer?.id || 'custom-template',
+      imageUrl: offer?.backgroundUrl || defaultTemplateImage?.imageUrl || '',
+      description: offer?.backgroundUrl ? 'Custom background template' : defaultTemplateImage?.description || '',
+      imageHint: offer?.backgroundUrl ? '' : defaultTemplateImage?.imageHint || '',
+  }
 
   if (isLoadingOffer || isLoadingScheme) {
       return (
@@ -52,7 +59,7 @@ export default function OfferPreviewPage() {
     notFound();
   }
   
-  if (!templateImage) {
+  if (!templateImage.imageUrl) {
     return (
       <div className="flex h-full flex-col">
         <Header title="Pratinjau Penawaran" />

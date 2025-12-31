@@ -5,8 +5,9 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
 import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format } from "date-fns"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, Upload } from "lucide-react"
  
 import { cn } from "@/lib/utils"
 import { Button } from '@/components/ui/button';
@@ -41,11 +42,23 @@ import { useFirestore, useUser } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg"];
+
+
 const formSchema = z.object({
   schemeId: z.string().min(1, { message: 'Silakan pilih skema.' }),
   customerName: z.string().min(2, { message: 'Nama customer harus diisi.' }),
   offerDate: z.date({ required_error: "Tanggal penawaran harus diisi."}),
   userRequest: z.string().min(10, { message: 'Permintaan pengguna harus memiliki setidaknya 10 karakter.' }),
+  backgroundFile: z
+    .any()
+    .refine((files) => !files || files?.length > 0, "File gambar diperlukan jika diisi.")
+    .refine((files) => !files || files?.[0]?.size <= MAX_FILE_SIZE, `Ukuran file maksimal 5MB.`)
+    .refine(
+      (files) => !files || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      "Hanya format .jpg dan .jpeg yang diterima."
+    ).optional(),
 });
 
 type OfferFormValues = z.infer<typeof formSchema>;
@@ -59,6 +72,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
+  const storage = getStorage();
 
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(formSchema),
@@ -80,7 +94,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
   
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = (data: OfferFormValues) => {
+  const onSubmit = async (data: OfferFormValues) => {
      if (!firestore || !user) {
         toast({
             variant: "destructive",
@@ -90,47 +104,68 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
         return;
     }
 
-    const selectedScheme = schemes.find(s => s.id === data.schemeId);
-    if (!selectedScheme) {
-         toast({
-            variant: "destructive",
-            title: "Gagal!",
-            description: "Skema yang dipilih tidak valid.",
-        });
-        return;
-    }
+    let backgroundUrl = initialData?.backgroundUrl || '';
 
-    const offerData = {
-        schemeId: data.schemeId,
-        schemeName: selectedScheme.name, // Denormalized name
-        customerName: data.customerName,
-        offerDate: data.offerDate,
-        userRequest: data.userRequest,
-        userId: user.uid,
-        updatedAt: serverTimestamp(),
-    };
+    try {
+        if (data.backgroundFile && data.backgroundFile.length > 0) {
+            const file = data.backgroundFile[0];
+            const storageRef = ref(storage, `offer_backgrounds/${user.uid}/${Date.now()}-${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            backgroundUrl = await getDownloadURL(snapshot.ref);
+        }
 
-    const operation = initialData
-      ? setDoc(doc(firestore, 'training_offers', initialData.id), offerData, { merge: true })
-      : addDoc(collection(firestore, 'training_offers'), { ...offerData, createdAt: serverTimestamp() });
-      
-    operation.then(() => {
+        const selectedScheme = schemes.find(s => s.id === data.schemeId);
+        if (!selectedScheme) {
+            toast({
+                variant: "destructive",
+                title: "Gagal!",
+                description: "Skema yang dipilih tidak valid.",
+            });
+            return;
+        }
+
+        const offerData = {
+            schemeId: data.schemeId,
+            schemeName: selectedScheme.name, // Denormalized name
+            customerName: data.customerName,
+            offerDate: data.offerDate,
+            userRequest: data.userRequest,
+            userId: user.uid,
+            ...(backgroundUrl && { backgroundUrl }),
+            updatedAt: serverTimestamp(),
+        };
+
+        const operation = initialData
+        ? setDoc(doc(firestore, 'training_offers', initialData.id), offerData, { merge: true })
+        : addDoc(collection(firestore, 'training_offers'), { ...offerData, createdAt: serverTimestamp() });
+        
+        await operation;
+
         toast({
             title: 'Sukses!',
             description: toastMessage,
         });
         router.push('/dashboard/offers');
         router.refresh();
-    }).catch(serverError => {
-        console.error("Firestore operation failed:", serverError);
+
+    } catch (serverError: any) {
+        console.error("Operation failed:", serverError);
+        const path = initialData ? `training_offers/${initialData.id}` : 'training_offers';
         const contextualError = new FirestorePermissionError({
-            path: initialData ? `training_offers/${initialData.id}` : 'training_offers',
+            path: path,
             operation: initialData ? 'update' : 'create',
-            requestResourceData: offerData,
+            requestResourceData: data,
         });
         errorEmitter.emit('permission-error', contextualError);
-    });
+         toast({
+            variant: "destructive",
+            title: "Gagal!",
+            description: serverError.message || "Terjadi kesalahan saat menyimpan penawaran.",
+        });
+    }
   };
+  
+  const fileRef = form.register("backgroundFile");
 
   return (
     <Form {...form}>
@@ -222,6 +257,27 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
                 </FormItem>
               )}
             />
+
+             <FormField
+              control={form.control}
+              name="backgroundFile"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Upload Template Background</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Upload className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input type="file" className="pl-10" {...fileRef} accept=".jpg, .jpeg" />
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Unggah gambar latar kustom (format .jpg). Jika kosong, template default akan digunakan.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
 
             <FormField
               control={form.control}

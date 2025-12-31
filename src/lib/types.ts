@@ -18,4 +18,5 @@ export type Offer = {
   userRequest: string;
   createdAt: Date;
   userId: string;
+  backgroundUrl?: string;
 };
