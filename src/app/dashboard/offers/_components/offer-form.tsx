@@ -43,7 +43,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg"];
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 
 
 const formSchema = z.object({
@@ -57,7 +57,7 @@ const formSchema = z.object({
     .refine((files) => !files || files?.[0]?.size <= MAX_FILE_SIZE, `Ukuran file maksimal 5MB.`)
     .refine(
       (files) => !files || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
-      "Hanya format .jpg dan .jpeg yang diterima."
+      "Hanya format .jpg, .jpeg, dan .png yang diterima."
     ).optional(),
 });
 
@@ -135,17 +135,27 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
             updatedAt: serverTimestamp(),
         };
 
-        const operation = initialData
-        ? setDoc(doc(firestore, 'training_offers', initialData.id), offerData, { merge: true })
-        : addDoc(collection(firestore, 'training_offers'), { ...offerData, createdAt: serverTimestamp() });
-        
-        await operation;
+        let offerId = initialData?.id;
+
+        if (initialData) {
+            // Update existing document
+            await setDoc(doc(firestore, 'training_offers', initialData.id), offerData, { merge: true });
+        } else {
+            // Create new document
+            const newDocRef = await addDoc(collection(firestore, 'training_offers'), { ...offerData, createdAt: serverTimestamp() });
+            offerId = newDocRef.id;
+        }
 
         toast({
             title: 'Sukses!',
             description: toastMessage,
         });
-        router.push('/dashboard/offers');
+
+        if (offerId) {
+            router.push(`/dashboard/offers/${offerId}/preview`);
+        } else {
+            router.push('/dashboard/offers');
+        }
         router.refresh();
 
     } catch (serverError: any) {
@@ -267,11 +277,11 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
                   <FormControl>
                     <div className="relative">
                       <Upload className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input type="file" className="pl-10" {...fileRef} accept=".jpg, .jpeg" />
+                      <Input type="file" className="pl-10" {...fileRef} accept=".jpg, .jpeg, .png" />
                     </div>
                   </FormControl>
                   <FormDescription>
-                    Unggah gambar latar kustom (format .jpg). Jika kosong, template default akan digunakan.
+                    Unggah gambar latar kustom (format .jpg, .png). Jika kosong, template default akan digunakan.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
