@@ -1,0 +1,155 @@
+{
+  "entities": {
+    "RegistrationSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RegistrationSchema",
+      "type": "object",
+      "description": "Represents a training schema with its details.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Registration Schema entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the training schema."
+        },
+        "unitCode": {
+          "type": "string",
+          "description": "Code representing the training unit."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the training schema."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "unitCode",
+        "price"
+      ]
+    },
+    "TrainingOffer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TrainingOffer",
+      "type": "object",
+      "description": "Represents a training offer linked to a registration schema and user request.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Training Offer entity."
+        },
+        "registrationSchemaId": {
+          "type": "string",
+          "description": "Reference to RegistrationSchema. (Relationship: RegistrationSchema 1:N TrainingOffer)"
+        },
+        "userRequest": {
+          "type": "string",
+          "description": "User's specific request for the training."
+        },
+        "dateCreated": {
+          "type": "string",
+          "description": "Date when the training offer was created.",
+          "format": "date-time"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N TrainingOffer)"
+        }
+      },
+      "required": [
+        "id",
+        "registrationSchemaId",
+        "userRequest",
+        "dateCreated",
+        "userId"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the user."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/registration_schemas/{registrationSchemaId}",
+        "definition": {
+          "entityName": "RegistrationSchema",
+          "schema": {
+            "$ref": "#/backend/entities/RegistrationSchema"
+          },
+          "description": "Stores registration schemas. No denormalized authorization fields are needed as these schemas are assumed to be managed by admins (whose roles would be checked via DBAC).",
+          "params": [
+            {
+              "name": "registrationSchemaId",
+              "description": "Unique identifier for the registration schema."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/training_offers/{trainingOfferId}",
+        "definition": {
+          "entityName": "TrainingOffer",
+          "schema": {
+            "$ref": "#/backend/entities/TrainingOffer"
+          },
+          "description": "Stores training offers. Includes denormalized 'userId' for authorization independence.  Allows listing and filtering training offers based on user ownership.",
+          "params": [
+            {
+              "name": "trainingOfferId",
+              "description": "Unique identifier for the training offer."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user data. Path-based ownership ensures only the user can access their own data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the application's core features while adhering to the principles of Authorization Independence, Clarity of Intent, and DBAC (Database-Based Access Control). It focuses on storing registration schemas, training offers, and user data in a structured and secure manner.\n\n*   **Authorization Independence:**  The `TrainingOffer` collection includes the `userId` field, denormalizing user information for authorization purposes. This avoids the need for `get()` calls to the `/users/{userId}` document to verify ownership, thus ensuring atomic operations and simplifying security rules.\n*   **Structural Segregation:** Each entity type is stored in its own dedicated collection, ensuring a homogeneous security posture. Registration schemas are stored in `/registration_schemas`, training offers are stored in `/training_offers`, and user data is stored in `/users/{userId}`.\n*   **Access Modeling:** User data is stored using path-based ownership (`/users/{userId}`), granting each user exclusive access to their own data. Training offers are also linked to a specific user (`/training_offers`) through the `userId` field, enabling secure listing and filtering of offers based on user ownership.\n*   **QAPs (Rules are not Filters):** Listing operations are secured by segregating data into separate collections based on type and ownership, and by including the `userId` in the training offers, which allows to restrict access to user-specific training offers.\n\nDenormalization is implemented to facilitate Authorization Independence, crucial for writing secure and efficient security rules. This approach avoids hierarchical authorization dependencies, enabling atomic operations and clear ownership management."
+  }
+}
