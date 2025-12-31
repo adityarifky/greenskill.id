@@ -46,7 +46,6 @@ export default function SchemesPage() {
   }, []);
 
   const schemesQuery = useMemoFirebase(() => {
-    // Hanya membuat query jika user sudah login dan firestore tersedia
     if (!firestore || !user) return null;
     return collection(firestore, 'registration_schemas');
   }, [firestore, user]);
@@ -56,7 +55,6 @@ export default function SchemesPage() {
   const isLoading = isUserLoading || isLoadingSchemes;
 
   if (!isClient) {
-    // Menampilkan placeholder loading di sisi server
     return (
        <div className="flex h-full flex-col">
         <Header title="Skema Registrasi" />
@@ -149,7 +147,11 @@ export default function SchemesPage() {
                     </TableCell>
                     <TableCell>Rp {Number(scheme.price).toLocaleString('id-ID')}</TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {scheme.createdAt ? format(new Date(scheme.createdAt), "d MMMM yyyy", { locale: id }) : '-'}
+                      {scheme.createdAt instanceof Date 
+                        ? format(scheme.createdAt, "d MMMM yyyy", { locale: id }) 
+                        : scheme.createdAt && typeof scheme.createdAt === 'object' && 'seconds' in scheme.createdAt
+                        ? format(new Date((scheme.createdAt as any).seconds * 1000), "d MMMM yyyy", { locale: id })
+                        : '-'}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>

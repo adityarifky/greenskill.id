@@ -22,6 +22,8 @@ import { toast } from '@/hooks/use-toast';
 import type { Scheme } from '@/lib/types';
 import { DataPreview } from './data-preview';
 import { useFirestore } from '@/firebase';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 const formSchema = z.object({
   name: z.string().min(3, { message: 'Nama skema harus memiliki setidaknya 3 karakter.' }),
@@ -59,7 +61,7 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
   const toastMessage = initialData ? 'Skema berhasil diperbarui.' : 'Skema baru berhasil dibuat.';
   const action = initialData ? 'Simpan Perubahan' : 'Buat Skema';
 
-  const onSubmit = async (data: SchemeFormValues) => {
+  const onSubmit = (data: SchemeFormValues) => {
     if (!firestore) {
         toast({
             variant: "destructive",
@@ -68,41 +70,35 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
         });
         return;
     }
-    try {
-      const priceAsNumber = parseInt(data.price.replace(/[^0-9]/g, ''), 10);
-      const schemeData = {
-        name: data.name,
-        unitName: data.unitName,
-        unitCode: data.unitCode,
-        price: priceAsNumber,
-        updatedAt: serverTimestamp(),
-      };
+    
+    const priceAsNumber = parseInt(data.price.replace(/[^0-9]/g, ''), 10);
+    const schemeData = {
+      name: data.name,
+      unitName: data.unitName,
+      unitCode: data.unitCode,
+      price: priceAsNumber,
+      updatedAt: serverTimestamp(),
+    };
 
-      if (initialData) {
-        const docRef = doc(firestore, 'registration_schemas', initialData.id);
-        await setDoc(docRef, schemeData, { merge: true });
-      } else {
-        const collectionRef = collection(firestore, 'registration_schemas');
-        await addDoc(collectionRef, {
-          ...schemeData,
-          createdAt: serverTimestamp(),
+    const operation = initialData
+      ? setDoc(doc(firestore, 'registration_schemas', initialData.id), schemeData, { merge: true })
+      : addDoc(collection(firestore, 'registration_schemas'), { ...schemeData, createdAt: serverTimestamp() });
+      
+    operation.then(() => {
+        toast({
+            title: 'Sukses!',
+            description: toastMessage,
         });
-      }
-
-      toast({
-        title: 'Sukses!',
-        description: toastMessage,
-      });
-      router.push('/dashboard/schemes');
-      router.refresh();
-    } catch (error) {
-      console.error("Error saving scheme: ", error);
-      toast({
-        variant: "destructive",
-        title: "Gagal!",
-        description: "Terjadi kesalahan saat menyimpan skema.",
-      });
-    }
+        router.push('/dashboard/schemes');
+        router.refresh();
+    }).catch(error => {
+        const contextualError = new FirestorePermissionError({
+            path: initialData ? `registration_schemas/${initialData.id}` : 'registration_schemas',
+            operation: initialData ? 'update' : 'create',
+            requestResourceData: schemeData,
+        });
+        errorEmitter.emit('permission-error', contextualError);
+    });
   };
 
   return (
