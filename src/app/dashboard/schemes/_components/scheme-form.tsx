@@ -18,11 +18,10 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from '@/hooks/use-toast';
 import type { Scheme } from '@/lib/types';
-import { DataPreview } from './data-preview';
 import { useFirestore, useUser } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -64,8 +63,6 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
     control: form.control,
     name: "units"
   });
-
-  const watchedValues = form.watch();
 
   const title = initialData ? 'Edit Skema' : 'Buat Skema Baru';
   const description = initialData ? 'Perbarui detail skema.' : 'Isi formulir untuk membuat skema baru.';
@@ -116,126 +113,119 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>{title}</CardTitle>
-                <CardDescription>{description}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nama Skema</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Contoh: Pelatihan Keselamatan Dasar" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Harga</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Rp 1.500.000" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Gunakan format: Rp [jumlah]. Contoh: Rp 1.500.000
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="space-y-4">
-                  <FormLabel>Unit Pelatihan</FormLabel>
-                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[50px]">No</TableHead>
-                        <TableHead>Kode Unit</TableHead>
-                        <TableHead>Nama Unit</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
+        <div className="mx-auto max-w-2xl">
+          <Card>
+            <CardHeader>
+              <CardTitle>{title}</CardTitle>
+              <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nama Skema</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Contoh: Pelatihan Keselamatan Dasar" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Harga</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Rp 1.500.000" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Gunakan format: Rp [jumlah]. Contoh: Rp 1.500.000
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="space-y-4">
+                <FormLabel>Unit Pelatihan</FormLabel>
+                  <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">No</TableHead>
+                      <TableHead>Kode Unit</TableHead>
+                      <TableHead>Nama Unit</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {fields.map((field, index) => (
+                      <TableRow key={field.id}>
+                        <TableCell className="font-medium">{index + 1}</TableCell>
+                        <TableCell>
+                            <FormField
+                            control={form.control}
+                            name={`units.${index}.unitCode`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Input placeholder="KSL-01" {...field} />
+                                </FormControl>
+                                  <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell>
+                            <FormField
+                            control={form.control}
+                            name={`units.${index}.unitName`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Input placeholder="Mengoperasikan Peralatan" {...field} />
+                                </FormControl>
+                                  <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {fields.map((field, index) => (
-                        <TableRow key={field.id}>
-                          <TableCell className="font-medium">{index + 1}</TableCell>
-                          <TableCell>
-                             <FormField
-                              control={form.control}
-                              name={`units.${index}.unitCode`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormControl>
-                                    <Input placeholder="KSL-01" {...field} />
-                                  </FormControl>
-                                   <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell>
-                             <FormField
-                              control={form.control}
-                              name={`units.${index}.unitName`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormControl>
-                                    <Input placeholder="Mengoperasikan Peralatan" {...field} />
-                                  </FormControl>
-                                   <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  {form.formState.errors.units?.root && (
-                     <p className="text-sm font-medium text-destructive">{form.formState.errors.units.root.message}</p>
-                  )}
+                    ))}
+                  </TableBody>
+                </Table>
+                {form.formState.errors.units?.root && (
+                    <p className="text-sm font-medium text-destructive">{form.formState.errors.units.root.message}</p>
+                )}
 
-                  <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => append({ unitCode: '', unitName: '' })}
-                      >
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Tambah Unit
-                      </Button>
-                  </div>
+                <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => append({ unitCode: '', unitName: '' })}
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Tambah Unit
+                    </Button>
                 </div>
+              </div>
 
-              </CardContent>
-            </Card>
-          </div>
-          <div className="space-y-8">
-            <DataPreview
-              name={watchedValues.name}
-              units={watchedValues.units}
-              price={watchedValues.price}
-            />
-             <Button type="submit" className="w-full text-lg">
-                {action}
+            </CardContent>
+            <CardFooter>
+              <Button type="submit" className="w-full text-lg">
+                  {action}
               </Button>
-          </div>
+            </CardFooter>
+          </Card>
         </div>
       </form>
     </Form>
