@@ -183,7 +183,7 @@ export default function SchemesPage() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {scheme.units.map((unit, index) => (
+                            {scheme.units && scheme.units.map((unit, index) => (
                               <TableRow key={index}>
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>{unit.unitCode}</TableCell>
