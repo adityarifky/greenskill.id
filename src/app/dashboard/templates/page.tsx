@@ -96,9 +96,9 @@ export default function TemplatesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                          {/* Add actions like Edit, Preview, Delete in the future */}
-                          <DropdownMenuItem disabled>Edit</DropdownMenuItem>
-                          <DropdownMenuItem disabled>Pratinjau</DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/templates/${template.id}/edit`}>Lihat/Edit</Link>
+                          </DropdownMenuItem>
                           <DropdownMenuItem disabled className="text-destructive">Hapus</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
