@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { ArrowLeft, Printer } from 'lucide-react';
 import Link from 'next/link';
+import * as React from 'react';
 import type { Offer, Scheme } from '@/lib/types';
 import type { ImagePlaceholder } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,12 @@ interface PrintPreviewProps {
 }
 
 export function PrintPreview({ offer, scheme, templateImage }: PrintPreviewProps) {
+  const [printDate, setPrintDate] = React.useState('');
+
+  React.useEffect(() => {
+    setPrintDate(new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric'}));
+  }, []);
+  
   const handlePrint = () => {
     window.print();
   };
@@ -64,7 +71,7 @@ export function PrintPreview({ offer, scheme, templateImage }: PrintPreviewProps
             </div>
 
              <div className="absolute bottom-[5%] left-[10%] text-xs text-gray-500">
-               <p>Dicetak pada: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric'})}</p>
+               <p>Dicetak pada: {printDate}</p>
                <p>Generator File Greenskill</p>
              </div>
           </div>
