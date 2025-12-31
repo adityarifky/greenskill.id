@@ -5,6 +5,7 @@ export type Scheme = {
   unitCode: string;
   price: string;
   createdAt: Date;
+  userId: string;
 };
 
 export type Offer = {

@@ -1,13 +1,25 @@
-import { getSchemeById } from '@/lib/data';
+
+'use client';
+
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { notFound } from 'next/navigation';
 import { SchemeFormDynamic } from '../../_components/scheme-form-dynamic';
+import { Scheme } from '@/lib/types';
 
 
-export default async function EditSchemePage({ params }: { params: { id: string } }) {
-  const scheme = await getSchemeById(params.id);
+export default function EditSchemePage({ params }: { params: { id: string } }) {
+  const firestore = useFirestore();
 
-  if (!scheme) {
+  const schemeRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'registration_schemas', params.id);
+  }, [firestore, params.id]);
+
+  const { data: scheme, isLoading } = useDoc<Scheme>(schemeRef);
+
+  if (!isLoading && !scheme) {
     notFound();
   }
 
