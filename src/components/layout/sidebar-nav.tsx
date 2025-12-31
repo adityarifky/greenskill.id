@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -28,6 +29,18 @@ const navItems = [
 export function SidebarNav() {
   const pathname = usePathname();
   const { isMobile, state } = useSidebar();
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+
+  if (!isClient) {
+    // You can return a loader or an empty fragment here
+    return null;
+  }
+
 
   return (
     <Sidebar>
