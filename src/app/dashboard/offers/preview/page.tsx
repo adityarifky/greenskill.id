@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, ArrowLeft, Printer } from 'lucide-react';
 import type { Offer, Scheme } from '@/lib/types';
-import { DraggableParameterButton } from '../_components/parameter-button';
+import { DraggableParameter } from '../_components/draggable-parameter';
 
 
 type PreviewData = Partial<Omit<Offer, 'createdAt' | 'userId'>> & { 
@@ -115,7 +115,7 @@ export default function SessionOfferPreviewPage() {
                         Cetak Halaman Ini
                     </Button>
                 </div>
-                 <div className="relative space-y-8">
+                 <div className="space-y-8">
                     {backgroundUrls.map((url, index) => {
                         const templateImage = {
                             id: `preview-template-${index}`,
@@ -145,7 +145,6 @@ export default function SessionOfferPreviewPage() {
                             </div>
                         );
                     })}
-                     <DraggableParameterButton />
                 </div>
             </main>
         </div>

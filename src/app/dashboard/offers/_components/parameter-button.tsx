@@ -1,35 +1,32 @@
 'use client';
 
 import * as React from 'react';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { GripVertical } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export function DraggableParameterButton() {
-  const [position, setPosition] = React.useState({ x: 50, y: 50 });
-  const [isDragging, setIsDragging] = React.useState(false);
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+interface DraggableParameterProps {
+    label: string;
+    value: string;
+    initialPosition: { x: number; y: number };
+    isTitle?: boolean;
+    isBody?: boolean;
+    isPrice?: boolean;
+    isFooter?: boolean;
+}
+
+export function DraggableParameter({ label, value, initialPosition, isTitle, isBody, isPrice, isFooter }: DraggableParameterProps) {
+  const [position, setPosition] = React.useState(initialPosition);
   const dragStartRef = React.useRef({ x: 0, y: 0 });
-  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const elementRef = React.useRef<HTMLDivElement>(null);
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // Prevent dialog from opening on drag start
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsDragging(true);
-    dragStartRef.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
-    };
+    if (elementRef.current) {
+        dragStartRef.current = {
+            x: e.clientX - elementRef.current.offsetLeft,
+            y: e.clientY - elementRef.current.offsetTop,
+        };
+    }
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   };
@@ -42,66 +39,40 @@ export function DraggableParameterButton() {
   };
 
   const handleMouseUp = () => {
-    setIsDragging(false);
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
   };
-  
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-     if (buttonRef.current) {
-        const { top, left, width, height } = buttonRef.current.getBoundingClientRect();
-        const movedX = Math.abs(e.clientX - (left + width / 2)) > 2;
-        const movedY = Math.abs(e.clientY - (top + height / 2)) > 2;
-        if (!movedX && !movedY) {
-            setIsDialogOpen(true);
-        }
-    }
-  };
+
+  const labelClass = cn({
+      'font-semibold': !isTitle && !isBody && !isPrice && !isFooter,
+      'text-lg font-semibold border-b pb-1 mb-2': isTitle,
+      'whitespace-pre-wrap text-sm text-gray-700': isBody,
+      'text-2xl font-bold text-primary': isPrice,
+      'text-xs text-gray-500': isFooter,
+      'text-sm': !isTitle && !isPrice && !isFooter,
+  });
 
   return (
-    <>
-      <Button
-        ref={buttonRef}
+    <div
+        ref={elementRef}
         onMouseDown={handleMouseDown}
-        onClick={handleClick}
         style={{
           position: 'absolute',
           top: `${position.y}px`,
           left: `${position.x}px`,
-          cursor: isDragging ? 'grabbing' : 'grab',
+          cursor: 'grab',
           touchAction: 'none',
         }}
-        className="z-10 no-print"
-        size="sm"
-      >
-        <Plus className="mr-2 h-4 w-4" />
-        Parameter
-      </Button>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] no-print">
-          <DialogHeader>
-            <DialogTitle>Edit Parameter</DialogTitle>
-            <DialogDescription>
-              Isi detail parameter yang akan ditampilkan pada dokumen.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-             <div className="grid grid-cols-4 items-center gap-4">
-               <Label htmlFor="param-name" className="text-right">
-                Nama
-               </Label>
-               <Input id="param-name" value="Contoh Parameter" className="col-span-3" />
-             </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-                <Button type="button" variant="secondary">Batal</Button>
-            </DialogClose>
-            <Button type="submit">Simpan</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        className="group/param no-print z-10 p-2 rounded-md hover:bg-blue-100/50 hover:ring-1 hover:ring-blue-500 transition-all"
+    >
+        <div className="relative">
+            <div className={cn(labelClass, "pointer-events-none")}>
+                {isTitle ? label : (label && <span className="font-semibold">{label}: </span>)}
+                {isBody || isPrice || isFooter ? value : (isTitle ? '' : <span>{value}</span>)}
+                {isTitle && value && <span>{value}</span>}
+            </div>
+            <GripVertical className="absolute -left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 opacity-0 group-hover/param:opacity-100 transition-opacity" />
+        </div>
+    </div>
   );
 }

@@ -1,14 +1,10 @@
 'use client';
 
-import Image from 'next/image';
-import { ArrowLeft, Printer } from 'lucide-react';
-import Link from 'next/link';
 import * as React from 'react';
 import type { Offer, Scheme } from '@/lib/types';
-import type { ImagePlaceholder } from '@/lib/placeholder-images';
-import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { DraggableParameter } from './draggable-parameter';
 
 interface PrintContentProps {
   offer: Offer;
@@ -25,37 +21,34 @@ export function PrintPreview({ offer, scheme, isTemporaryPreview = false }: Prin
   
   const offerDateFormatted = offer.offerDate ? format(offer.offerDate instanceof Date ? offer.offerDate : new Date(offer.offerDate), "d MMMM yyyy", { locale: id }) : 'N/A';
 
+  const parameters = [
+    { id: 'scheme-name', label: 'Nama Skema', value: scheme.name, initialPosition: { x: 50, y: 120 } },
+    { id: 'customer-name', label: 'Penawaran Untuk', value: offer.customerName, initialPosition: { x: 50, y: 180 } },
+    { id: 'offer-date', label: 'Tanggal Penawaran', value: offerDateFormatted, initialPosition: { x: 50, y: 205 } },
+    { id: 'offer-id', label: 'ID Penawaran', value: isTemporaryPreview ? 'TEMP-PREVIEW' : offer.id, initialPosition: { x: 50, y: 250 } },
+    { id: 'unit-codes', label: 'Kode Unit', value: scheme.units && scheme.units.length > 0 ? scheme.units.map(u => u.unitCode).join(', ') : 'N/A', initialPosition: { x: 50, y: 275 } },
+    { id: 'user-request-title', label: 'Permintaan Khusus', value: '', isTitle: true, initialPosition: { x: 50, y: 340 } },
+    { id: 'user-request-body', label: '', value: offer.userRequest, isBody: true, initialPosition: { x: 50, y: 370 } },
+    { id: 'price-label', label: 'Harga Dasar', value: '', initialPosition: { x: 550, y: 650 } },
+    { id: 'price-value', label: '', value: `Rp ${Number(scheme.price).toLocaleString('id-ID')}`, isPrice: true, initialPosition: { x: 550, y: 670 } },
+    { id: 'print-date', label: 'Dicetak pada', value: printDate, isFooter: true, initialPosition: { x: 50, y: 750 } },
+    { id: 'app-name', label: 'Generator File Greenskill', value: '', isFooter: true, initialPosition: { x: 50, y: 770 } },
+  ];
+
   return (
-      <div className="absolute inset-0 p-[10%] text-gray-800">
-        {/* This is an example layout. Adjust positions with top/left/right/bottom */}
-        <h1 className="absolute top-[15%] left-[10%] text-3xl font-bold">{scheme.name}</h1>
-        
-        <div className="absolute top-[25%] left-[10%] text-sm space-y-1">
-          <p><span className="font-semibold">Penawaran Untuk:</span> {offer.customerName}</p>
-          <p><span className="font-semibold">Tanggal Penawaran:</span> {offerDateFormatted}</p>
-        </div>
-
-        <div className="absolute top-[35%] left-[10%] text-sm">
-          <p><span className="font-semibold">ID Penawaran:</span> {isTemporaryPreview ? 'TEMP-PREVIEW' : offer.id}</p>
-          {scheme.units && scheme.units.length > 0 && (
-             <p><span className="font-semibold">Kode Unit:</span> {scheme.units.map(u => u.unitCode).join(', ')}</p>
-          )}
-        </div>
-
-        <div className="absolute top-[48%] left-[10%] right-[10%]">
-          <h2 className="text-lg font-semibold border-b pb-1 mb-2">Permintaan Khusus</h2>
-          <p className="text-sm text-gray-700 whitespace-pre-wrap">{offer.userRequest}</p>
-        </div>
-
-        <div className="absolute bottom-[20%] right-[10%] text-right">
-          <p className="text-sm text-gray-600">Harga Dasar</p>
-          <p className="text-2xl font-bold text-primary">Rp {Number(scheme.price).toLocaleString('id-ID')}</p>
-        </div>
-
-         <div className="absolute bottom-[5%] left-[10%] text-xs text-gray-500">
-           <p>Dicetak pada: {printDate}</p>
-           <p>Generator File Greenskill</p>
-         </div>
+      <div className="absolute inset-0 text-gray-800">
+        {parameters.map(param => (
+          <DraggableParameter 
+            key={param.id}
+            label={param.label}
+            value={param.value}
+            initialPosition={param.initialPosition}
+            isTitle={param.isTitle}
+            isBody={param.isBody}
+            isPrice={param.isPrice}
+            isFooter={param.isFooter}
+          />
+        ))}
       </div>
   );
 }
