@@ -6,7 +6,7 @@ import { id } from 'date-fns/locale';
 import { PlusCircle, MoreHorizontal } from 'lucide-react';
 import * as React from 'react';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
@@ -38,20 +38,62 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SchemesPage() {
   const firestore = useFirestore();
-  const schemesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'registration_schemas');
-  }, [firestore]);
-
-  const { data: schemes, isLoading } = useCollection<Scheme>(schemesQuery);
+  const { user, isUserLoading } = useUser();
   const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
     setIsClient(true);
   }, []);
 
+  const schemesQuery = useMemoFirebase(() => {
+    // Hanya membuat query jika user sudah login dan firestore tersedia
+    if (!firestore || !user) return null;
+    return collection(firestore, 'registration_schemas');
+  }, [firestore, user]);
+
+  const { data: schemes, isLoading: isLoadingSchemes } = useCollection<Scheme>(schemesQuery);
+  
+  const isLoading = isUserLoading || isLoadingSchemes;
+
   if (!isClient) {
-    return null;
+    // Menampilkan placeholder loading di sisi server
+    return (
+       <div className="flex h-full flex-col">
+        <Header title="Skema Registrasi" />
+        <main className="flex-1 p-4 md:p-8">
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <Skeleton className="h-10 w-64" />
+                        <Skeleton className="h-10 w-44" />
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead><Skeleton className="h-6 w-32" /></TableHead>
+                                <TableHead className="hidden md:table-cell"><Skeleton className="h-6 w-32" /></TableHead>
+                                <TableHead className="hidden md:table-cell"><Skeleton className="h-6 w-24" /></TableHead>
+                                <TableHead><Skeleton className="h-6 w-28" /></TableHead>
+                                <TableHead className="hidden md:table-cell"><Skeleton className="h-6 w-32" /></TableHead>
+                                <TableHead><span className="sr-only">Aksi</span></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow>
+                                <TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell>
+                            </TableRow>
+                            <TableRow>
+                                <TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </main>
+    </div>
+    );
   }
   
   return (
@@ -105,7 +147,7 @@ export default function SchemesPage() {
                     <TableCell className="hidden md:table-cell">
                       <Badge variant="outline">{scheme.unitCode}</Badge>
                     </TableCell>
-                    <TableCell>{scheme.price}</TableCell>
+                    <TableCell>Rp {Number(scheme.price).toLocaleString('id-ID')}</TableCell>
                     <TableCell className="hidden md:table-cell">
                       {scheme.createdAt ? format(new Date(scheme.createdAt), "d MMMM yyyy", { locale: id }) : '-'}
                     </TableCell>
