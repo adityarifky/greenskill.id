@@ -74,8 +74,12 @@ export default function EditTemplatePage() {
   if (isLoading) {
     return (
       <div className="flex h-full flex-col bg-muted/40">
-        <Header title="Edit Templat" />
+        <Header title="Memuat Editor Templat..." />
         <main className="flex-1 p-4 md:p-8">
+            <div className="mx-auto mb-6 flex max-w-4xl items-center justify-between">
+                <Skeleton className="h-10 w-40" />
+                <Skeleton className="h-10 w-44" />
+            </div>
             <div className="print-container mx-auto w-full max-w-4xl rounded-lg bg-white shadow-lg">
                 <div className="print-content relative aspect-[1/1.414] w-full">
                 <Skeleton className="h-full w-full" />
@@ -94,7 +98,7 @@ export default function EditTemplatePage() {
     <div className="flex h-full flex-col bg-muted/40">
       <Header title={`Edit Templat: ${template.name}`} />
       <main className="flex-1 p-4 md:p-8">
-        <div className="mx-auto mb-6 flex max-w-4xl items-center justify-between">
+        <div className="no-print mx-auto mb-6 flex max-w-4xl items-center justify-between">
             <Button variant="outline" onClick={() => router.push('/dashboard/templates')}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Kembali ke Daftar
@@ -119,7 +123,7 @@ export default function EditTemplatePage() {
               fill
               sizes="100vw"
               priority
-              className="object-cover"
+              className="object-cover pointer-events-none"
             />
              <div className="absolute inset-0">
                 {activeParams.map(param => (
