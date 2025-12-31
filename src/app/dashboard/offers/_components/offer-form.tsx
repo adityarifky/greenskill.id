@@ -85,7 +85,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
     },
   });
 
-  const { formState: { isSubmitting }, setError, clearErrors } = form;
+  const { formState: { isSubmitting }, handleSubmit, reset } = form;
 
   const title = initialData ? 'Edit Penawaran' : 'Buat Penawaran Baru';
   const description = initialData ? 'Perbarui detail penawaran.' : 'Isi formulir untuk membuat penawaran baru.';
@@ -149,7 +149,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
         });
 
         if (offerId) {
-            router.push(`/dashboard/offers/${offerId}`);
+            router.push(`/dashboard/offers/${offerId}/preview`);
         } else {
             router.push('/dashboard/offers');
         }
@@ -261,7 +261,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
              <FormField
               control={form.control}
               name="backgroundFile"
-              render={({ field }) => (
+              render={({ field })_=> (
                 <FormItem>
                   <FormLabel>Upload Template Background</FormLabel>
                   <FormControl>
