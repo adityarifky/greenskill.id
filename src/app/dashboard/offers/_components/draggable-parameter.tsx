@@ -22,7 +22,7 @@ export function DraggableParameter({
 }: DraggableParameterProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [tempLabel, setTempLabel] = React.useState(param.label);
-  const dragStartRef = React.useRef<{ x: number; y: number } | null>(null);
+  const dragStartRef = React.useRef<{ x: number; y: number, initialX: number, initialY: number } | null>(null);
   const elementRef = React.useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -34,10 +34,13 @@ export function DraggableParameter({
     e.stopPropagation(); // Stop propagation to parent
     
     if (elementRef.current) {
-      dragStartRef.current = {
-        x: e.clientX - elementRef.current.offsetLeft,
-        y: e.clientY - elementRef.current.offsetTop,
-      };
+        const rect = elementRef.current.getBoundingClientRect();
+        dragStartRef.current = {
+            x: e.clientX,
+            y: e.clientY,
+            initialX: param.position.x,
+            initialY: param.position.y,
+        };
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     }
@@ -47,8 +50,12 @@ export function DraggableParameter({
     if (!elementRef.current || !parentRef.current || !dragStartRef.current) return;
 
     const parentRect = parentRef.current.getBoundingClientRect();
-    const newX = e.clientX - dragStartRef.current.x;
-    const newY = e.clientY - dragStartRef.current.y;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    
+    const newX = dragStartRef.current.initialX + dx;
+    const newY = dragStartRef.current.initialY + dy;
+
 
     // Constrain position within parent
     const constrainedX = Math.max(0, Math.min(newX, parentRect.width - elementRef.current.offsetWidth));
