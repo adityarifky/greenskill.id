@@ -17,7 +17,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  SidebarTrigger,
+  useSidebar,
 } from '@/components/ui/sidebar';
 
 const navItems = [
@@ -28,6 +28,7 @@ const navItems = [
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const { toggleSidebar } = useSidebar();
 
   return (
     <Sidebar>
@@ -59,12 +60,10 @@ export function SidebarNav() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarTrigger asChild>
-              <SidebarMenuButton tooltip="Perkecil/Perbesar">
-                <MoreHorizontal />
-                <span>Perkecil sidebar</span>
-              </SidebarMenuButton>
-            </SidebarTrigger>
+            <SidebarMenuButton onClick={() => toggleSidebar()} tooltip="Perkecil/Perbesar">
+              <MoreHorizontal />
+              <span>Perkecil sidebar</span>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
