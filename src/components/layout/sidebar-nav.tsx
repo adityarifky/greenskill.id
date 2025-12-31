@@ -2,7 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FileText, LayoutDashboard, FilePlus2, LifeBuoy, Settings } from 'lucide-react';
+import {
+  FileText,
+  LayoutDashboard,
+  FilePlus2,
+  MoreHorizontal,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Sidebar,
@@ -12,6 +17,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 
 const navItems = [
@@ -51,20 +57,16 @@ export function SidebarNav() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
-         <SidebarMenu>
-           <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Pengaturan">
-                <Settings />
-                <span>Pengaturan</span>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarTrigger asChild>
+              <SidebarMenuButton tooltip="Perkecil/Perbesar">
+                <MoreHorizontal />
+                <span>Perkecil sidebar</span>
               </SidebarMenuButton>
-           </SidebarMenuItem>
-           <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Bantuan">
-                <LifeBuoy />
-                <span>Bantuan</span>
-              </SidebarMenuButton>
-           </SidebarMenuItem>
-         </SidebarMenu>
+            </SidebarTrigger>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );
