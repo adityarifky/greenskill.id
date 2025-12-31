@@ -32,7 +32,7 @@ service cloud.firestore {
     // Allow users to manage their own modules
     match /modules/{moduleId} {
       allow get, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow list: if request.auth != null && request.query.userId == request.auth.uid;
+      allow list: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
   }
