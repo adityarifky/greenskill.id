@@ -39,8 +39,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from '@/hooks/use-toast';
 import type { Scheme, Offer } from '@/lib/types';
 import { useFirestore, useUser } from '@/firebase';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
@@ -53,10 +51,10 @@ const formSchema = z.object({
   userRequest: z.string().min(10, { message: 'Permintaan pengguna harus memiliki setidaknya 10 karakter.' }),
   backgroundFile: z
     .any()
-    .refine((files) => !files || files?.length > 0, "File gambar diperlukan jika diisi.")
-    .refine((files) => !files || files?.[0]?.size <= MAX_FILE_SIZE, `Ukuran file maksimal 5MB.`)
+    .refine((files) => !files || (files && files.length > 0), "File gambar diperlukan jika diisi.")
+    .refine((files) => !files || !files[0] || files[0].size <= MAX_FILE_SIZE, `Ukuran file maksimal 5MB.`)
     .refine(
-      (files) => !files || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      (files) => !files || !files[0] || ACCEPTED_IMAGE_TYPES.includes(files[0].type),
       "Hanya format .jpg, .jpeg, dan .png yang diterima."
     ).optional(),
 });
@@ -87,12 +85,13 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
     },
   });
 
+  const { formState: { isSubmitting }, setError, clearErrors } = form;
+
   const title = initialData ? 'Edit Penawaran' : 'Buat Penawaran Baru';
   const description = initialData ? 'Perbarui detail penawaran.' : 'Isi formulir untuk membuat penawaran baru.';
   const toastMessage = initialData ? 'Penawaran berhasil diperbarui.' : 'Penawaran baru berhasil dibuat.';
   const action = initialData ? 'Simpan Perubahan' : 'Buat Penawaran';
   
-  const isLoading = form.formState.isSubmitting;
 
   const onSubmit = async (data: OfferFormValues) => {
      if (!firestore || !user) {
@@ -142,8 +141,8 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
             await setDoc(doc(firestore, 'training_offers', initialData.id), offerData, { merge: true });
         } else {
             // Create new document
-            const newDocRef = await addDoc(collection(firestore, 'training_offers'), { ...offerData, createdAt: serverTimestamp() });
-            offerId = newDocRef.id;
+            const docRef = await addDoc(collection(firestore, 'training_offers'), { ...offerData, createdAt: serverTimestamp() });
+            offerId = docRef.id;
         }
 
         toast({
@@ -158,19 +157,12 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
         }
         router.refresh();
 
-    } catch (serverError: any) {
-        console.error("Operation failed:", serverError);
-        const path = initialData ? `training_offers/${initialData.id}` : 'training_offers';
-        const contextualError = new FirestorePermissionError({
-            path: path,
-            operation: initialData ? 'update' : 'create',
-            requestResourceData: data,
-        });
-        errorEmitter.emit('permission-error', contextualError);
+    } catch (error: any) {
+        console.error("Operation failed:", error);
          toast({
             variant: "destructive",
             title: "Gagal!",
-            description: serverError.message || "Terjadi kesalahan saat menyimpan penawaran.",
+            description: error.message || "Terjadi kesalahan saat menyimpan penawaran.",
         });
     }
   };
@@ -309,8 +301,8 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
                 </FormItem>
               )}
             />
-             <Button type="submit" className="w-full text-lg" disabled={isLoading}>
-              {isLoading ? "Menyimpan..." : action}
+             <Button type="submit" className="w-full text-lg" disabled={isSubmitting}>
+              {isSubmitting ? "Menyimpan..." : action}
             </Button>
           </CardContent>
         </Card>
