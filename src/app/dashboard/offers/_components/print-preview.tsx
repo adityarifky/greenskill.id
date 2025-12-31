@@ -3,52 +3,33 @@
 import * as React from 'react';
 import type { Offer, Scheme } from '@/lib/types';
 import { DraggableParameter } from './draggable-parameter';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-
-export type Parameter = {
-  id: string;
-  label: string;
-  value: string;
-  position: { x: number; y: number };
-};
+import type { Parameter } from '../preview/page';
 
 interface PrintContentProps {
   offer: Offer;
   scheme: Scheme;
-  isTemporaryPreview?: boolean;
   activeParams: Parameter[];
-  onPositionChange: (id: string, position: { x: number, y: number }) => void;
-  onLabelChange: (id: string, label: string) => void;
+  onPositionChange: (id: string, position: { x: number; y: number }) => void;
+  onLabelChange: (id: string, label: string) => void; // Kept for API consistency
   parentRef: React.RefObject<HTMLDivElement>;
 }
 
-export function PrintPreview({ 
-  offer, 
-  scheme, 
-  isTemporaryPreview = false,
+export function PrintPreview({
   activeParams,
   onPositionChange,
-  onLabelChange,
-  parentRef
+  parentRef,
 }: PrintContentProps) {
-  const [printDate, setPrintDate] = React.useState('');
-
-  React.useEffect(() => {
-    setPrintDate(new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric'}));
-  }, []);
   
   return (
-      <div className="absolute inset-0 text-gray-800">
-        {activeParams.map((param) => (
-          <DraggableParameter 
-            key={param.id} 
-            param={param} 
-            onPositionChange={onPositionChange}
-            onLabelChange={onLabelChange}
-            parentRef={parentRef}
-          />
-        ))}
-      </div>
+    <div className="absolute inset-0 text-gray-800">
+      {activeParams.map(param => (
+        <DraggableParameter
+          key={param.id}
+          param={param}
+          onPositionChange={onPositionChange}
+          parentRef={parentRef}
+        />
+      ))}
+    </div>
   );
 }
