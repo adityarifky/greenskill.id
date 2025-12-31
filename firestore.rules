@@ -3,13 +3,13 @@
  *
  * Data Structure: The data is organized into three distinct top-level collections:
  * 1. `/users/{userId}`: Stores private user profile information.
- * 2. `/registration_schemas/{registrationSchemaId}`: A collection of public, read-only training schemas available to all authenticated users.
+ * 2. `/registration_schemas/{registrationSchemaId}`: A collection of training schemas. Authenticated users can read and create them.
  * 3. `/training_offers/{trainingOfferId}`: A collection of user-specific training requests.
  *
  * Key Security Decisions:
  * - User data is strictly private. Access to any document under `/users/{userId}` is restricted to the authenticated user whose UID matches the document ID.
  * - User enumeration is disallowed. The rule `allow list: if false;` on the `/users` collection prevents any client from downloading a list of all users.
- * - Training Schemas (`/registration_schemas`) are public and read-only for all authenticated users to browse. Writes are disabled for non-admins to prevent tampering.
+ * - Training Schemas (`/registration_schemas`) are readable by all authenticated users. Any authenticated user can create a new schema. Updates are restricted to owners (not yet fully implemented, but rule is in place for future use).
  * - Training Offers (`/training_offers`) are private to their creator. While stored in a global collection, each document contains a `userId` field that is used to enforce ownership for all reads and writes.
  *
  * Denormalization for Authorization: To ensure fast and secure access control, the `userId` is denormalized (copied) onto each `training_offers` document. This allows security rules to check for ownership directly on the document being requested, avoiding slow and costly `get()` calls to other parts of the database.
@@ -97,14 +97,15 @@ service cloud.firestore {
      * @description Controls access to training schemas.
      * @path /registration_schemas/{registrationSchemaId}
      * @allow (get, list) Any authenticated user can read or list training schemas.
-     * @deny (create, update, delete) No client can write to this collection.
-     * @principle Provides public read access to authenticated users while protecting data integrity.
+     * @allow (create) Any authenticated user can create a new schema.
+     * @deny (update, delete) No client can update or delete from this collection directly (yet).
+     * @principle Provides public read access and create access to authenticated users.
      */
     match /registration_schemas/{registrationSchemaId} {
       allow get, list: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isOwner(request.auth.uid);
-      allow delete: if false; //
+      allow update: if false; 
+      allow delete: if false;
     }
 
     /**
