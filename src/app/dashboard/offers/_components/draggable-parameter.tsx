@@ -4,7 +4,13 @@ import * as React from 'react';
 import { GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import type { Parameter } from '../preview/page';
+
+export type Parameter = {
+  id: string;
+  label: string;
+  position: { x: number; y: number };
+  key: string;
+};
 
 
 interface DraggableParameterProps {
@@ -22,7 +28,7 @@ export function DraggableParameter({
 }: DraggableParameterProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [tempLabel, setTempLabel] = React.useState(param.label);
-  const dragStartRef = React.useRef<{ x: number; y: number, initialX: number, initialY: number } | null>(null);
+  const dragStartRef = React.useRef<{ offsetX: number; offsetY: number } | null>(null);
   const elementRef = React.useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -36,10 +42,8 @@ export function DraggableParameter({
     if (elementRef.current) {
         const rect = elementRef.current.getBoundingClientRect();
         dragStartRef.current = {
-            x: e.clientX,
-            y: e.clientY,
-            initialX: param.position.x,
-            initialY: param.position.y,
+            offsetX: e.clientX - rect.left,
+            offsetY: e.clientY - rect.top,
         };
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
@@ -50,12 +54,9 @@ export function DraggableParameter({
     if (!elementRef.current || !parentRef.current || !dragStartRef.current) return;
 
     const parentRect = parentRef.current.getBoundingClientRect();
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
     
-    const newX = dragStartRef.current.initialX + dx;
-    const newY = dragStartRef.current.initialY + dy;
-
+    const newX = e.clientX - parentRect.left - dragStartRef.current.offsetX;
+    const newY = e.clientY - parentRect.top - dragStartRef.current.offsetY;
 
     // Constrain position within parent
     const constrainedX = Math.max(0, Math.min(newX, parentRect.width - elementRef.current.offsetWidth));
