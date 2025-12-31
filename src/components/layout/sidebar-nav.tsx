@@ -6,9 +6,7 @@ import {
   FileText,
   LayoutDashboard,
   FilePlus2,
-  MoreHorizontal,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import {
   Sidebar,
   SidebarContent,
@@ -16,7 +14,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarFooter,
+  SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
 
@@ -28,14 +26,17 @@ const navItems = [
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { toggleSidebar } = useSidebar();
+  const { isMobile } = useSidebar();
 
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-2 p-2">
-          <FileText className="h-6 w-6 text-primary" />
-          <span className="text-lg font-semibold">Greenskill</span>
+        <div className="flex items-center justify-between p-2">
+           <div className="flex items-center gap-2">
+            <FileText className="h-6 w-6 text-primary" />
+            <span className="text-lg font-semibold">Greenskill</span>
+          </div>
+          {!isMobile && <SidebarTrigger />}
         </div>
       </SidebarHeader>
       <SidebarContent className="p-2">
@@ -57,16 +58,6 @@ export function SidebarNav() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => toggleSidebar()} tooltip="Perkecil/Perbesar">
-              <MoreHorizontal />
-              <span>Perkecil sidebar</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   );
 }
