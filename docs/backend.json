@@ -108,65 +108,6 @@
         "name"
       ]
     },
-     "OfferTemplate": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "OfferTemplate",
-      "type": "object",
-      "description": "Represents a user-defined template for training offers.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Offer Template entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the template."
-        },
-        "backgroundUrl": {
-          "type": "string",
-          "format": "uri",
-          "description": "URL of the background image for the template."
-        },
-        "parameters": {
-          "type": "array",
-          "description": "Array of parameter objects with their positions and labels.",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {"type": "string"},
-              "label": {"type": "string"},
-              "key": {"type": "string"},
-              "position": {
-                "type": "object",
-                "properties": {
-                  "x": {"type": "number"},
-                  "y": {"type": "number"}
-                },
-                "required": ["x", "y"]
-              }
-            },
-            "required": ["id", "label", "key", "position"]
-          }
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N OfferTemplate)"
-        },
-        "createdAt": {
-            "type": "string",
-            "description": "Date when the template was created.",
-            "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "backgroundUrl",
-        "parameters",
-        "userId",
-        "createdAt"
-      ]
-    },
     "Module": {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "Module",
@@ -262,22 +203,6 @@
             {
               "name": "userId",
               "description": "Unique identifier for the user."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/offer_templates/{templateId}",
-        "definition": {
-          "entityName": "OfferTemplate",
-          "schema": {
-            "$ref": "#/backend/entities/OfferTemplate"
-          },
-          "description": "Stores user-created offer templates, including parameter layouts. The 'userId' field ensures users can only access their own templates.",
-          "params": [
-            {
-              "name": "templateId",
-              "description": "Unique identifier for the offer template."
             }
           ]
         }

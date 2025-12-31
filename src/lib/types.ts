@@ -36,15 +36,6 @@ export type TemplateParameter = {
   value?: string; // Added for preview
 };
 
-export type OfferTemplate = {
-  id: string;
-  name: string;
-  backgroundUrl: string;
-  parameters: TemplateParameter[];
-  userId: string;
-  createdAt: { seconds: number; nanoseconds: number; } | Date;
-};
-
 export type Module = {
   id: string;
   title: string;
