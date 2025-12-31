@@ -105,16 +105,15 @@ export default function SchemesPage() {
                                 <TableHead><Skeleton className="h-6 w-32" /></TableHead>
                                 <TableHead><Skeleton className="h-6 w-24" /></TableHead>
                                 <TableHead><Skeleton className="h-6 w-full" /></TableHead>
-                                <TableHead><Skeleton className="h-6 w-32" /></TableHead>
                                 <TableHead><span className="sr-only">Aksi</span></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             <TableRow>
-                                <TableCell colSpan={5}><Skeleton className="h-24 w-full" /></TableCell>
+                                <TableCell colSpan={4}><Skeleton className="h-24 w-full" /></TableCell>
                             </TableRow>
                             <TableRow>
-                                <TableCell colSpan={5}><Skeleton className="h-24 w-full" /></TableCell>
+                                <TableCell colSpan={4}><Skeleton className="h-24 w-full" /></TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
@@ -152,7 +151,6 @@ export default function SchemesPage() {
                     <TableHead>Nama Skema</TableHead>
                     <TableHead>Harga</TableHead>
                     <TableHead>Unit Pelatihan</TableHead>
-                    <TableHead className="hidden md:table-cell">Dibuat pada</TableHead>
                     <TableHead>
                       <span className="sr-only">Aksi</span>
                     </TableHead>
@@ -162,10 +160,10 @@ export default function SchemesPage() {
                   {isLoading && (
                     <>
                       <TableRow>
-                        <TableCell colSpan={5}><Skeleton className="h-20 w-full" /></TableCell>
+                        <TableCell colSpan={4}><Skeleton className="h-20 w-full" /></TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell colSpan={5}><Skeleton className="h-20 w-full" /></TableCell>
+                        <TableCell colSpan={4}><Skeleton className="h-20 w-full" /></TableCell>
                       </TableRow>
                     </>
                   )}
@@ -174,31 +172,26 @@ export default function SchemesPage() {
                       <TableCell className="font-medium align-top">{scheme.name}</TableCell>
                       <TableCell className="align-top">Rp {Number(scheme.price).toLocaleString('id-ID')}</TableCell>
                       <TableCell>
-                         <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-[50px]">No</TableHead>
-                              <TableHead>Kode Unit</TableHead>
-                              <TableHead>Nama Unit</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {scheme.units && scheme.units.map((unit, index) => (
-                              <TableRow key={index}>
-                                <TableCell>{index + 1}</TableCell>
-                                <TableCell>{unit.unitCode}</TableCell>
-                                <TableCell>{unit.unitName}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell align-top">
-                        {scheme.createdAt instanceof Date 
-                          ? format(scheme.createdAt, "d MMMM yyyy", { locale: id }) 
-                          : scheme.createdAt && typeof scheme.createdAt === 'object' && 'seconds' in scheme.createdAt
-                          ? format(new Date((scheme.createdAt as any).seconds * 1000), "d MMMM yyyy", { locale: id })
-                          : '-'}
+                         {scheme.units && scheme.units.length > 0 && (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="w-[50px]">No</TableHead>
+                                  <TableHead>Kode Unit</TableHead>
+                                  <TableHead>Nama Unit</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {scheme.units.map((unit, index) => (
+                                  <TableRow key={index}>
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell>{unit.unitCode}</TableCell>
+                                    <TableCell>{unit.unitName}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                         )}
                       </TableCell>
                       <TableCell className="align-top">
                         <DropdownMenu>
