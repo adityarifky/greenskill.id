@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { AtSign, FileText, KeyRound, AlertCircle } from 'lucide-react';
+import { AtSign, FileText, KeyRound, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -76,14 +77,22 @@ function LoginForm() {
           <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             placeholder="••••••••"
             required
-            className="pl-10"
+            className="pl-10 pr-10"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={isLoading}
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+            aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
         </div>
       </div>
       <Button type="submit" className="w-full text-lg" disabled={isLoading}>
@@ -100,6 +109,23 @@ export default function LoginPage() {
     setIsClient(true);
   }, []);
 
+  if (!isClient) {
+    return (
+       <main className="flex min-h-screen w-full items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md shadow-2xl">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <FileText className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="font-headline text-3xl">Generator File Greenskill</CardTitle>
+            <CardDescription>Selamat datang kembali! Silakan masuk untuk melanjutkan.</CardDescription>
+          </CardHeader>
+          <CardContent><div className="h-[258px]" /></CardContent>
+        </Card>
+      </main>
+    )
+  }
+
   return (
     <main className="flex min-h-screen w-full items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-2xl">
@@ -110,7 +136,7 @@ export default function LoginPage() {
           <CardTitle className="font-headline text-3xl">Generator File Greenskill</CardTitle>
           <CardDescription>Selamat datang kembali! Silakan masuk untuk melanjutkan.</CardDescription>
         </CardHeader>
-        <CardContent>{isClient ? <LoginForm /> : <div className="h-[258px]" />}</CardContent>
+        <CardContent><LoginForm /></CardContent>
       </Card>
     </main>
   );
