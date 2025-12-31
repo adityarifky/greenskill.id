@@ -2,16 +2,35 @@
 
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
+import Image from 'next/image';
 import { PrintPreview } from '../_components/print-preview';
 import { Header } from '@/components/layout/header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Printer } from 'lucide-react';
 import type { Offer, Scheme } from '@/lib/types';
 
 
-type PreviewData = Omit<Offer, 'createdAt' | 'userId'> & { scheme: Scheme };
+type PreviewData = Partial<Omit<Offer, 'createdAt' | 'userId'>> & { 
+  scheme?: Scheme;
+  isTemplateOnlyPreview?: boolean;
+};
+
+const dummyScheme: Scheme = {
+  id: 'dummy-scheme',
+  name: 'Nama Skema Belum Dipilih',
+  price: 0,
+  units: [{ unitCode: 'XXX-00', unitName: 'Nama Unit Belum Dipilih' }],
+  userId: 'dummy-user',
+};
+
+const dummyOffer: Omit<Offer, 'id'| 'schemeId' | 'userId' | 'createdAt'> = {
+    customerName: 'Nama Customer Belum Diisi',
+    offerDate: new Date(),
+    userRequest: 'Permintaan Pengguna Belum Diisi',
+    schemeName: 'Nama Skema Belum Dipilih',
+};
 
 export default function SessionOfferPreviewPage() {
     const router = useRouter();
@@ -22,7 +41,9 @@ export default function SessionOfferPreviewPage() {
         const storedData = sessionStorage.getItem('previewOffer');
         if (storedData) {
             const data = JSON.parse(storedData);
-            data.offerDate = new Date(data.offerDate);
+            if (data.offerDate) {
+                data.offerDate = new Date(data.offerDate);
+            }
             setPreviewData(data);
         }
         setIsLoading(false);
@@ -37,7 +58,7 @@ export default function SessionOfferPreviewPage() {
                     <Header title="Pratinjau Penawaran" />
                 </div>
                 <main className="flex-1 p-4 md:p-8">
-                    <div className="print-container w-full mx-auto max-w-4xl rounded-lg bg-white shadow-lg">
+                    <div className="print-container mx-auto w-full max-w-4xl rounded-lg bg-white shadow-lg">
                         <div className="print-content relative aspect-[1/1.414] w-full">
                             <Skeleton className="h-full w-full" />
                         </div>
@@ -67,21 +88,32 @@ export default function SessionOfferPreviewPage() {
         );
     }
     
-    const offerWithDate = {
-        ...previewData,
-        offerDate: previewData.offerDate instanceof Date ? previewData.offerDate : new Date(previewData.offerDate),
-    };
+    const offerForPreview = { ...dummyOffer, ...previewData };
+    const schemeForPreview = previewData.scheme || dummyScheme;
+    const isTemporary = !!previewData.id?.startsWith('temp-');
 
     const backgroundUrls = previewData.backgroundUrls && previewData.backgroundUrls.length > 0 
         ? previewData.backgroundUrls 
         : [defaultTemplateImage?.imageUrl || ''];
 
+    const headerTitle = previewData.isTemplateOnlyPreview ? "Pratinjau Template Latar" : "Pratinjau Penawaran";
+    
     return (
         <div className="flex h-full flex-col bg-muted/40">
             <div className="no-print">
-                <Header title="Pratinjau Penawaran (Sementara)" />
+                <Header title={headerTitle} />
             </div>
             <main className="flex-1 p-4 md:p-8">
+                 <div className="no-print mx-auto mb-6 flex max-w-4xl items-center justify-between">
+                    <Button variant="outline" onClick={() => router.back()}>
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Kembali ke Formulir
+                    </Button>
+                    <Button onClick={() => window.print()}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        Cetak Halaman Ini
+                    </Button>
+                </div>
                  <div className="space-y-8">
                     {backgroundUrls.map((url, index) => {
                         const templateImage = {
@@ -91,13 +123,25 @@ export default function SessionOfferPreviewPage() {
                             imageHint: '',
                         };
                         return (
-                            <PrintPreview 
-                                key={index}
-                                offer={offerWithDate} 
-                                scheme={previewData.scheme} 
-                                templateImage={templateImage} 
-                                isTemporaryPreview={true}
-                            />
+                             <div key={index} className="print-container mx-auto max-w-4xl rounded-lg bg-white shadow-lg">
+                                <div className="print-content relative aspect-[1/1.414] w-full">
+                                    <Image
+                                        src={templateImage.imageUrl}
+                                        alt={templateImage.description}
+                                        fill
+                                        sizes="100vw"
+                                        priority
+                                        className="object-cover"
+                                    />
+                                    {!previewData.isTemplateOnlyPreview && (
+                                        <PrintPreview 
+                                            offer={offerForPreview as Offer} 
+                                            scheme={schemeForPreview} 
+                                            isTemporaryPreview={isTemporary}
+                                        />
+                                    )}
+                                </div>
+                            </div>
                         );
                     })}
                 </div>
@@ -105,3 +149,4 @@ export default function SessionOfferPreviewPage() {
         </div>
     );
 }
+

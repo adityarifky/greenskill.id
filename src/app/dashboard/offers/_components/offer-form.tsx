@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format } from "date-fns"
-import { CalendarIcon, Upload } from "lucide-react"
+import { CalendarIcon, Upload, Eye } from "lucide-react"
 import * as React from 'react';
  
 import { cn } from "@/lib/utils"
@@ -82,6 +82,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [hasTemplateFiles, setHasTemplateFiles] = React.useState(false);
   
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(formSchema),
@@ -98,8 +99,38 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
 
   const title = initialData ? 'Edit Penawaran' : 'Buat Penawaran Baru';
   const description = initialData ? 'Perbarui detail penawaran.' : 'Isi formulir untuk membuat penawaran baru.';
-  const action = initialData ? 'Simpan Perubahan' : 'Buat Penawaran';
+  const action = initialData ? 'Simpan Perubahan' : 'Pratinjau & Simpan';
   
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      setHasTemplateFiles(true);
+      try {
+        const filePromises = Array.from(files).map(file => {
+          return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        });
+        const urls = await Promise.all(filePromises);
+        sessionStorage.setItem('previewOffer', JSON.stringify({ backgroundUrls: urls, isTemplateOnlyPreview: true }));
+      } catch (error) {
+        console.error("Error processing template files:", error);
+        setHasTemplateFiles(false);
+      }
+    } else {
+      setHasTemplateFiles(false);
+    }
+    // Also trigger react-hook-form's change handler
+    form.register('backgroundFiles').onChange(event);
+  };
+  
+  const handlePreviewTemplates = () => {
+    router.push('/dashboard/offers/preview');
+  };
 
   const onSubmit = async (data: OfferFormValues) => {
     setIsSubmitting(true);
@@ -135,13 +166,14 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
             schemeName: selectedScheme.name,
             scheme: selectedScheme,
             backgroundUrls: backgroundUrls,
+            isTemplateOnlyPreview: false, // Make sure this is false for full preview
         };
         
         sessionStorage.setItem('previewOffer', JSON.stringify(temporaryOfferData));
 
         toast({
             title: 'Mengarahkan ke Pratinjau',
-            description: 'Data tidak disimpan, hanya ditampilkan untuk pratinjau.',
+            description: 'Data akan disimpan setelah Anda mengkonfirmasi dari halaman pratinjau.',
         });
 
         router.push('/dashboard/offers/preview');
@@ -158,8 +190,6 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
     }
   };
   
-  const fileRef = form.register("backgroundFiles");
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -247,7 +277,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
-                </FormItem>
+                </Item>
               )}
             />
 
@@ -260,12 +290,18 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
                   <FormControl>
                     <div className="relative">
                       <Upload className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input type="file" className="pl-10" {...fileRef} accept=".jpg, .jpeg, .png" multiple />
+                      <Input type="file" className="pl-10" onChange={handleFileChange} accept=".jpg, .jpeg, .png" multiple />
                     </div>
                   </FormControl>
                   <FormDescription>
                     Unggah satu atau lebih gambar latar (format .jpg, .png). Jika kosong, template default akan digunakan.
                   </FormDescription>
+                   {hasTemplateFiles && (
+                    <Button type="button" variant="secondary" size="sm" onClick={handlePreviewTemplates} className="mt-2">
+                        <Eye className="mr-2 h-4 w-4" />
+                        Pratinjau Template
+                    </Button>
+                   )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -293,7 +329,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
               )}
             />
              <Button type="submit" className="w-full text-lg" disabled={isSubmitting}>
-              {isSubmitting ? "Menyimpan..." : action}
+              {isSubmitting ? "Memproses..." : action}
             </Button>
           </CardContent>
         </Card>
