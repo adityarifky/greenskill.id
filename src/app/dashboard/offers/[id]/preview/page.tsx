@@ -44,8 +44,8 @@ export default function OfferPreviewPage() {
             <div className="no-print">
                 <Header title="Pratinjau Penawaran" />
             </div>
-            <main className="flex-1 p-4 md:p-8">
-                 <div className="print-container mx-auto max-w-4xl rounded-lg bg-white shadow-lg">
+            <main className="flex-1 p-4 md:p-8 flex items-center justify-center">
+                 <div className="print-container w-full mx-auto max-w-4xl rounded-lg bg-white shadow-lg">
                     <div className="print-content relative aspect-[1/1.414] w-full">
                         <Skeleton className="h-full w-full" />
                     </div>
@@ -75,7 +75,7 @@ export default function OfferPreviewPage() {
       <div className="no-print">
         <Header title="Pratinjau Penawaran" />
       </div>
-      <main className="flex-1 p-4 md:p-8">
+      <main className="flex-1 p-4 md:p-8 flex items-center justify-center">
         <PrintPreview offer={offer} scheme={scheme} templateImage={templateImage} />
       </main>
     </div>
