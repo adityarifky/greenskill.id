@@ -28,7 +28,8 @@ export function PrintPreview({ offer, scheme, templateImage, isTemporaryPreview 
     window.print();
   };
 
-  const offerDateFormatted = offer.offerDate ? format(offer.offerDate instanceof Date ? offer.offerDate : new Date((offer.offerDate as any).seconds * 1000), "d MMMM yyyy", { locale: id }) : 'N/A';
+  const offerDateFormatted = offer.offerDate ? format(offer.offerDate instanceof Date ? offer.offerDate : new Date(offer.offerDate), "d MMMM yyyy", { locale: id }) : 'N/A';
+
 
   const backLink = isTemporaryPreview ? '/dashboard/offers/new' : `/dashboard/offers/${offer.id}`;
   const backText = isTemporaryPreview ? 'Kembali ke Formulir' : 'Kembali ke Detail';
