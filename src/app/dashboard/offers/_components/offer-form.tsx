@@ -85,7 +85,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
     },
   });
 
-  const { formState: { isSubmitting }, handleSubmit, reset } = form;
+  const { formState: { isSubmitting }, handleSubmit, reset, setError } = form;
 
   const title = initialData ? 'Edit Penawaran' : 'Buat Penawaran Baru';
   const description = initialData ? 'Perbarui detail penawaran.' : 'Isi formulir untuk membuat penawaran baru.';
@@ -261,7 +261,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
              <FormField
               control={form.control}
               name="backgroundFile"
-              render={({ field })_=> (
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel>Upload Template Background</FormLabel>
                   <FormControl>
