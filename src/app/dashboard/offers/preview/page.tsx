@@ -8,7 +8,7 @@ import { Header } from '@/components/layout/header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, ArrowLeft, Printer, Pencil, Package } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Save, Pencil, Package } from 'lucide-react';
 import type { Offer, Scheme } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
@@ -89,6 +89,13 @@ export default function SessionOfferPreviewPage() {
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault(); 
   };
+  
+  const handleSaveTemplate = () => {
+    // This is where you'd implement the logic to save the template.
+    // For now, we'll just log it.
+    console.log("Saving template with parameters:", activeParams);
+    // You would likely save `activeParams` to Firestore here.
+  };
 
   const defaultTemplateImage = PlaceHolderImages.find(img => img.id === 'a4-template');
 
@@ -153,9 +160,9 @@ export default function SessionOfferPreviewPage() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Kembali ke Formulir
           </Button>
-          <Button onClick={() => window.print()}>
-            <Printer className="mr-2 h-4 w-4" />
-            Cetak Halaman Ini
+          <Button onClick={handleSaveTemplate}>
+            <Save className="mr-2 h-4 w-4" />
+            Simpan Tamplate
           </Button>
         </div>
         <div className="space-y-8">
