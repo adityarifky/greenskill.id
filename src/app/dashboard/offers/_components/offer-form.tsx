@@ -103,9 +103,9 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
         return;
     }
 
-    let backgroundUrl = initialData?.backgroundUrl || '';
-
     try {
+        let backgroundUrl = initialData?.backgroundUrl || '';
+
         if (data.backgroundFile && data.backgroundFile.length > 0) {
             const file = data.backgroundFile[0];
             const storageRef = ref(storage, `offer_backgrounds/${user.uid}/${Date.now()}-${file.name}`);
@@ -137,10 +137,8 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
         let offerId = initialData?.id;
 
         if (initialData) {
-            // Update existing document
             await setDoc(doc(firestore, 'training_offers', initialData.id), offerData, { merge: true });
         } else {
-            // Create new document
             const docRef = await addDoc(collection(firestore, 'training_offers'), { ...offerData, createdAt: serverTimestamp() });
             offerId = docRef.id;
         }
@@ -151,7 +149,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
         });
 
         if (offerId) {
-            router.push(`/dashboard/offers/${offerId}/preview`);
+            router.push(`/dashboard/offers/${offerId}`);
         } else {
             router.push('/dashboard/offers');
         }

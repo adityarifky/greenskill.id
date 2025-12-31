@@ -23,7 +23,7 @@ import {
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dasbor' },
   { href: '/dashboard/schemes', icon: FileText, label: 'Skema Registrasi' },
-  { href: '/dashboard/offers', icon: FilePlus2, label: 'Pembuat Penawaran' },
+  { href: '/dashboard/offers', icon: FilePlus2, label: 'Daftar Penawaran' },
 ];
 
 export function SidebarNav() {
