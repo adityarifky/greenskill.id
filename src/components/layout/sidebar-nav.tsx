@@ -60,9 +60,8 @@ export function SidebarNav() {
         <SidebarMenu>
           {navItems.map((item) => (
              <SidebarMenuItem key={item.href}>
-              <Link href={item.href} legacyBehavior passHref>
+              <Link href={item.href}>
                   <SidebarMenuButton
-                    as="a"
                     isActive={
                       (item.href === '/dashboard' && pathname === item.href) ||
                       (item.href !== '/dashboard' && pathname.startsWith(item.href))
