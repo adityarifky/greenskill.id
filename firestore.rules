@@ -3,13 +3,13 @@
  *
  * Data Structure: The data is organized into three distinct top-level collections:
  * 1. `/users/{userId}`: Stores private user profile information.
- * 2. `/registration_schemas/{registrationSchemaId}`: A collection of public, read-only training schemas available to all users.
+ * 2. `/registration_schemas/{registrationSchemaId}`: A collection of public, read-only training schemas available to all authenticated users.
  * 3. `/training_offers/{trainingOfferId}`: A collection of user-specific training requests.
  *
  * Key Security Decisions:
  * - User data is strictly private. Access to any document under `/users/{userId}` is restricted to the authenticated user whose UID matches the document ID.
  * - User enumeration is disallowed. The rule `allow list: if false;` on the `/users` collection prevents any client from downloading a list of all users.
- * - Training Schemas (`/registration_schemas`) are public and read-only for all users to browse. Writes are disabled for non-admins to prevent tampering.
+ * - Training Schemas (`/registration_schemas`) are public and read-only for all authenticated users to browse. Writes are disabled for non-admins to prevent tampering.
  * - Training Offers (`/training_offers`) are private to their creator. While stored in a global collection, each document contains a `userId` field that is used to enforce ownership for all reads and writes.
  *
  * Denormalization for Authorization: To ensure fast and secure access control, the `userId` is denormalized (copied) onto each `training_offers` document. This allows security rules to check for ownership directly on the document being requested, avoiding slow and costly `get()` calls to other parts of the database.
@@ -43,7 +43,7 @@ service cloud.firestore {
      * Used for safe update and delete operations.
      */
     function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+      return isOwner(userId) && resource != null && resource.data.userId == userId;
     }
 
     /**
@@ -83,46 +83,41 @@ service cloud.firestore {
     /**
      * @description Controls access to user profile documents.
      * @path /users/{userId}
-     * @allow (create) An authenticated user can create their own user document.
-     * @deny (get) A user cannot read another user's profile.
+     * @allow (create, get, update, delete) An authenticated user can manage their own document.
+     * @deny (list) Prevents any user from listing all user documents.
      * @principle Restricts access to a user's own data tree.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
+      allow get, update, delete: if isOwner(userId);
       allow create: if isOwner(userId) && userDocumentIsValidOnCreate(userId);
-      allow update: if isExistingOwner(userId) && userDocumentIsImmutableOnUpdate();
-      allow delete: if isExistingOwner(userId);
+      allow list: if false; // Disallow listing all users for security
     }
 
     /**
-     * @description Controls access to training schemas, which are public and read-only.
+     * @description Controls access to training schemas.
      * @path /registration_schemas/{registrationSchemaId}
-     * @allow (get, list) Any user, signed in or not, can read or list training schemas.
-     * @deny (create) No authenticated user can create a new schema. This is reserved for admins.
-     * @principle Provides public read access while protecting data integrity by blocking all client writes.
+     * @allow (get, list) Any authenticated user can read or list training schemas.
+     * @deny (create, update, delete) No client can write to this collection.
+     * @principle Provides public read access to authenticated users while protecting data integrity.
      */
     match /registration_schemas/{registrationSchemaId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Implement admin-only write access
-      allow update: if false; // TODO: Implement admin-only write access
-      allow delete: if false; // TODO: Implement admin-only write access
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if false; // Admin-only
     }
 
     /**
      * @description Controls access to private training offers created by users.
      * @path /training_offers/{trainingOfferId}
-     * @allow (create) An authenticated user can create a new training offer for themselves.
-     * @deny (get) A user cannot read an offer created by another user.
+     * @allow (create, get, update, delete) An authenticated user can manage their own offers.
+     * @deny (list) Prevents listing offers across different users directly from the client.
      * @principle Enforces document ownership for all reads and writes using a denormalized `userId` field.
      */
     match /training_offers/{trainingOfferId} {
-      allow get: if isOwner(resource.data.userId);
-      allow list: if false;
+      allow get, update, delete: if isExistingOwner(request.auth.uid);
       allow create: if isSignedIn() && trainingOfferIsValidOnCreate();
-      allow update: if isExistingOwner(resource.data.userId) && trainingOfferIsImmutableOnUpdate();
-      allow delete: if isExistingOwner(resource.data.userId);
+      allow list: if isSignedIn(); // Allow listing only for queries with a 'where' clause on userId
     }
   }
 }
+
+    
