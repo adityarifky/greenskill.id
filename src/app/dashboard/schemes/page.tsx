@@ -7,7 +7,7 @@ import { PlusCircle, MoreHorizontal } from 'lucide-react';
 import * as React from 'react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, deleteDoc, doc } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,14 +32,25 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import type { Scheme } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function SchemesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const [isClient, setIsClient] = React.useState(false);
+  const [schemeToDelete, setSchemeToDelete] = React.useState<Scheme | null>(null);
 
   React.useEffect(() => {
     setIsClient(true);
@@ -53,6 +64,27 @@ export default function SchemesPage() {
   const { data: schemes, isLoading: isLoadingSchemes } = useCollection<Scheme>(schemesQuery);
   
   const isLoading = isUserLoading || isLoadingSchemes;
+  
+  const handleDelete = async () => {
+    if (!schemeToDelete || !firestore) return;
+    try {
+      await deleteDoc(doc(firestore, 'registration_schemas', schemeToDelete.id));
+      toast({
+        title: 'Sukses!',
+        description: 'Skema berhasil dihapus.',
+      });
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Gagal!',
+        description: 'Terjadi kesalahan saat menghapus skema.',
+      });
+      console.error("Error deleting document: ", error);
+    } finally {
+        setSchemeToDelete(null);
+    }
+  };
+
 
   if (!isClient) {
     return (
@@ -71,19 +103,18 @@ export default function SchemesPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead><Skeleton className="h-6 w-32" /></TableHead>
-                                <TableHead className="hidden md:table-cell"><Skeleton className="h-6 w-32" /></TableHead>
-                                <TableHead className="hidden md:table-cell"><Skeleton className="h-6 w-24" /></TableHead>
-                                <TableHead><Skeleton className="h-6 w-28" /></TableHead>
-                                <TableHead className="hidden md:table-cell"><Skeleton className="h-6 w-32" /></TableHead>
+                                <TableHead><Skeleton className="h-6 w-24" /></TableHead>
+                                <TableHead><Skeleton className="h-6 w-full" /></TableHead>
+                                <TableHead><Skeleton className="h-6 w-32" /></TableHead>
                                 <TableHead><span className="sr-only">Aksi</span></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             <TableRow>
-                                <TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell>
+                                <TableCell colSpan={5}><Skeleton className="h-24 w-full" /></TableCell>
                             </TableRow>
                             <TableRow>
-                                <TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell>
+                                <TableCell colSpan={5}><Skeleton className="h-24 w-full" /></TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
@@ -114,66 +145,83 @@ export default function SchemesPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nama Skema</TableHead>
-                  <TableHead className="hidden md:table-cell">Nama Unit</TableHead>
-                  <TableHead className="hidden md:table-cell">Kode Unit</TableHead>
-                  <TableHead>Harga</TableHead>
-                  <TableHead className="hidden md:table-cell">Dibuat pada</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Aksi</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading && (
-                  <>
-                    <TableRow>
-                      <TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell>
-                    </TableRow>
-                  </>
-                )}
-                {!isLoading && schemes && schemes.map((scheme) => (
-                  <TableRow key={scheme.id}>
-                    <TableCell className="font-medium">{scheme.name}</TableCell>
-                    <TableCell className="hidden md:table-cell">{scheme.unitName}</TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <Badge variant="outline">{scheme.unitCode}</Badge>
-                    </TableCell>
-                    <TableCell>Rp {Number(scheme.price).toLocaleString('id-ID')}</TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {scheme.createdAt instanceof Date 
-                        ? format(scheme.createdAt, "d MMMM yyyy", { locale: id }) 
-                        : scheme.createdAt && typeof scheme.createdAt === 'object' && 'seconds' in scheme.createdAt
-                        ? format(new Date((scheme.createdAt as any).seconds * 1000), "d MMMM yyyy", { locale: id })
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/dashboard/schemes/${scheme.id}/edit`}>Edit</Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">Hapus</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nama Skema</TableHead>
+                    <TableHead>Harga</TableHead>
+                    <TableHead>Unit Pelatihan</TableHead>
+                    <TableHead className="hidden md:table-cell">Dibuat pada</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Aksi</span>
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {isLoading && (
+                    <>
+                      <TableRow>
+                        <TableCell colSpan={5}><Skeleton className="h-20 w-full" /></TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell colSpan={5}><Skeleton className="h-20 w-full" /></TableCell>
+                      </TableRow>
+                    </>
+                  )}
+                  {!isLoading && schemes && schemes.map((scheme) => (
+                    <TableRow key={scheme.id}>
+                      <TableCell className="font-medium align-top">{scheme.name}</TableCell>
+                      <TableCell className="align-top">Rp {Number(scheme.price).toLocaleString('id-ID')}</TableCell>
+                      <TableCell>
+                         <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[50px]">No</TableHead>
+                              <TableHead>Kode Unit</TableHead>
+                              <TableHead>Nama Unit</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {scheme.units.map((unit, index) => (
+                              <TableRow key={index}>
+                                <TableCell>{index + 1}</TableCell>
+                                <TableCell>{unit.unitCode}</TableCell>
+                                <TableCell>{unit.unitName}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell align-top">
+                        {scheme.createdAt instanceof Date 
+                          ? format(scheme.createdAt, "d MMMM yyyy", { locale: id }) 
+                          : scheme.createdAt && typeof scheme.createdAt === 'object' && 'seconds' in scheme.createdAt
+                          ? format(new Date((scheme.createdAt as any).seconds * 1000), "d MMMM yyyy", { locale: id })
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                            <DropdownMenuItem asChild>
+                              <Link href={`/dashboard/schemes/${scheme.id}/edit`}>Edit</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => setSchemeToDelete(scheme)}>Hapus</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
              {!isLoading && (!schemes || schemes.length === 0) && (
               <div className="py-10 text-center text-muted-foreground">
                 Belum ada skema yang dibuat.
@@ -182,6 +230,23 @@ export default function SchemesPage() {
           </CardContent>
         </Card>
       </main>
+
+       <AlertDialog open={!!schemeToDelete} onOpenChange={(open) => !open && setSchemeToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Anda yakin ingin menghapus?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini tidak dapat diurungkan. Skema "{schemeToDelete?.name}" akan dihapus secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
