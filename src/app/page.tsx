@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { AtSign, FileText, KeyRound, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth, useUser } from '@/firebase';
-import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 
 function LoginForm() {
   const router = useRouter();
@@ -20,8 +20,9 @@ function LoginForm() {
   const [password, setPassword] = React.useState('password123');
   const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
   
-  const isLoading = isUserLoading;
+  const componentIsLoading = isUserLoading || isLoading;
 
   React.useEffect(() => {
     if (user) {
@@ -33,7 +34,25 @@ function LoginForm() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    initiateEmailSignIn(auth, email, password);
+    setIsLoading(true);
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged will handle the redirect
+    } catch (signInError: any) {
+      if (signInError.code === 'auth/user-not-found') {
+        try {
+          await createUserWithEmailAndPassword(auth, email, password);
+          // onAuthStateChanged will handle the redirect
+        } catch (signUpError: any) {
+          setError(signUpError.message);
+        }
+      } else {
+        setError(signInError.message);
+      }
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -56,7 +75,7 @@ function LoginForm() {
             className="pl-10"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            disabled={isLoading}
+            disabled={componentIsLoading}
           />
         </div>
       </div>
@@ -72,7 +91,7 @@ function LoginForm() {
             className="pl-10 pr-10"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            disabled={isLoading}
+            disabled={componentIsLoading}
           />
           <button
             type="button"
@@ -84,8 +103,8 @@ function LoginForm() {
           </button>
         </div>
       </div>
-      <Button type="submit" className="w-full text-lg" disabled={isLoading}>
-        {isLoading ? 'Memproses...' : 'Masuk'}
+      <Button type="submit" className="w-full text-lg" disabled={componentIsLoading}>
+        {componentIsLoading ? 'Memproses...' : 'Masuk'}
       </Button>
        <div className="text-center text-sm text-muted-foreground">
         Gunakan <strong>test@example.com</strong> dan <strong>password123</strong> untuk masuk.
