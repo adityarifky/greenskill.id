@@ -25,7 +25,7 @@ const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dasbor' },
   { href: '/dashboard/schemes', icon: FileText, label: 'Skema Registrasi' },
   { href: '/dashboard/offers', icon: FileText, label: 'Daftar Penawaran' },
-  { href: '/dashboard/modules', icon: BookOpen, label: 'Modul' },
+  { href: '/dashboard/modules', icon: BookOpen, label: 'Daftar Modul' },
 ];
 
 export function SidebarNav() {

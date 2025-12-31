@@ -82,14 +82,14 @@ export default function ModulesPage() {
   
   return (
     <div className="flex h-full flex-col">
-      <Header title="Modul Pelatihan" />
+      <Header title="Daftar Modul" />
       <main className="flex-1 p-4 md:p-8">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Daftar Modul</CardTitle>
-                <CardDescription>Kelola semua modul pelatihan Anda.</CardDescription>
+                <CardTitle>Daftar Modul Pelatihan</CardTitle>
+                <CardDescription>Kelola semua modul pelatihan Anda di sini.</CardDescription>
               </div>
               <Button asChild>
                 <Link href="/dashboard/modules/new">
