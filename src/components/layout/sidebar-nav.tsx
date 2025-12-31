@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import {
   FileText,
   LayoutDashboard,
-  FilePlus2,
   MoreHorizontal
 } from 'lucide-react';
 import {
@@ -24,7 +23,6 @@ const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dasbor' },
   { href: '/dashboard/schemes', icon: FileText, label: 'Skema Registrasi' },
   { href: '/dashboard/offers', icon: FileText, label: 'Daftar Penawaran' },
-  { href: '/dashboard/offers/new', icon: FilePlus2, label: 'Buat Penawaran' },
 ];
 
 export function SidebarNav() {
