@@ -23,9 +23,7 @@ export type Offer = {
   createdAt: Date;
   userId: string;
   backgroundUrl?: string; // For single background
-  backgroundUrls?: string[]; // For multiple backgrounds
-  scheme?: Scheme; // Added for temporary preview
-  key?: string; // Added for draggable parameter
+  module?: Partial<Module>;
 };
 
 export type TemplateParameter = {
