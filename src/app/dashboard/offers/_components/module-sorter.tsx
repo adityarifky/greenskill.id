@@ -42,8 +42,8 @@ export function ModuleSorter({ allModules, initialSelectedIds, onSave, onCancel 
             <CardTitle className="text-lg">Pilih Modul</CardTitle>
           </CardHeader>
           <CardContent className="flex-grow overflow-hidden">
-            <ScrollArea className="h-full pr-4">
-              <div className="space-y-2">
+            <ScrollArea className="h-full">
+              <div className="space-y-2 pr-4">
                 {allModules.map(module => {
                   const isSelected = selectedIds.has(module.id);
                   return (
@@ -56,7 +56,7 @@ export function ModuleSorter({ allModules, initialSelectedIds, onSave, onCancel 
                       onClick={() => handleToggleSelect(module.id)}
                     >
                       <span className="truncate pr-2 font-medium">{module.title}</span>
-                      {isSelected && <CheckCircle className="h-5 w-5 text-primary" />}
+                      {isSelected && <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />}
                     </div>
                   )
                 })}
