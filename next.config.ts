@@ -35,9 +35,6 @@ const nextConfig: NextConfig = {
       '*.cloudworkstations.dev',
     ]
   },
-  experimental: {
-    // Empty as allowedOrigins is not a valid key here in this Next.js version
-  }
 };
 
 export default nextConfig;
