@@ -168,7 +168,6 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
                             id="content-editor"
                             contentEditable={true}
                             onInput={handleContentChange}
-                            onBlur={handleContentChange}
                             suppressContentEditableWarning={true}
                             className={cn(
                                 "min-h-[400px] w-full rounded-b-md bg-transparent px-3 py-2 text-sm ring-offset-background",
