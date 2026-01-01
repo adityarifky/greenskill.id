@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { PlusCircle, MoreHorizontal, BookOpen, Trash2 } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, BookOpen, Trash2, Eye } from 'lucide-react';
 import * as React from 'react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -146,13 +146,27 @@ export default function ModulesPage() {
                                         size="icon" 
                                         variant="ghost" 
                                         className="h-8 w-8 -mt-2 -mr-2"
-                                        onClick={(e) => e.stopPropagation()} // Prevent link navigation
+                                        onClick={(e) => {
+                                          e.preventDefault(); 
+                                          e.stopPropagation();
+                                        }}
                                       >
                                         <MoreHorizontal className="h-4 w-4" />
                                         <span className="sr-only">Toggle menu</span>
                                       </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
+                                    <DropdownMenuItem 
+                                       asChild
+                                       onClick={(e) => {
+                                        e.stopPropagation();
+                                      }}
+                                    >
+                                       <Link href={`/dashboard/modules/${module.id}/preview`}>
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        Pratinjau
+                                      </Link>
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem 
                                       className="text-destructive focus:bg-destructive/10 focus:text-destructive" 
                                       onClick={(e) => {
