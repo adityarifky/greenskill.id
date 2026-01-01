@@ -9,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import type { Module } from '@/lib/types';
 import { useFirestore, useUser } from '@/firebase';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Bold, AlignLeft, AlignCenter, AlignRight, FontSize } from 'lucide-react';
+import { Bold, AlignLeft, AlignCenter, AlignRight, Baseline } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -239,7 +239,7 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
                             </ToggleGroup>
                             <Select value={currentFontSize} onValueChange={handleFontSizeChange}>
                                 <SelectTrigger className="w-24 h-9">
-                                    <FontSize className="h-4 w-4 mr-2" />
+                                    <Baseline className="h-4 w-4 mr-2" />
                                     <SelectValue placeholder="Size" />
                                 </SelectTrigger>
                                 <SelectContent>
