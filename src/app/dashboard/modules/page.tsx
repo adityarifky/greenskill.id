@@ -269,7 +269,10 @@ export default function ModulesPage() {
                                           <DropdownMenuLabel>Aksi Folder</DropdownMenuLabel>
                                            <DropdownMenuItem 
                                                 className="text-destructive focus:bg-destructive/10 focus:text-destructive" 
-                                                onClick={() => setFolderToDelete(folder)}
+                                                onSelect={(e) => {
+                                                    e.preventDefault();
+                                                    setFolderToDelete(folder);
+                                                }}
                                             >
                                             <Trash2 className="mr-2 h-4 w-4" />
                                             Hapus
@@ -473,3 +476,5 @@ export default function ModulesPage() {
 
     </div>
   );
+
+    
