@@ -4,16 +4,17 @@
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { SchemeFormDynamic } from '../../_components/scheme-form-dynamic';
 import type { Scheme } from '@/lib/types';
 
 
-export default function EditSchemePage({ params }: { params: { id: string } }) {
+export default function EditSchemePage() {
+  const params = useParams<{ id: string }>();
   const firestore = useFirestore();
 
   const schemeRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !params.id) return null;
     return doc(firestore, 'registration_schemas', params.id);
   }, [firestore, params.id]);
 

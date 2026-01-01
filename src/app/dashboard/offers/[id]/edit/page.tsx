@@ -3,15 +3,16 @@
 import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { OfferFormDynamic } from '../../_components/offer-form-dynamic';
 import type { Offer, Scheme } from '@/lib/types';
 
-export default function EditOfferPage({ params }: { params: { id: string } }) {
+export default function EditOfferPage() {
+  const params = useParams<{ id: string }>();
   const firestore = useFirestore();
 
   const offerRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !params.id) return null;
     return doc(firestore, 'training_offers', params.id);
   }, [firestore, params.id]);
 

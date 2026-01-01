@@ -5,18 +5,19 @@ import { ArrowLeft } from 'lucide-react';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import type { Module } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ModuleFormDynamic } from '../../_components/module-form-dynamic';
 import { Button } from '@/components/ui/button';
 
 
-export default function EditModulePage({ params }: { params: { id: string } }) {
+export default function EditModulePage() {
+  const params = useParams<{ id: string }>();
   const firestore = useFirestore();
 
   const moduleRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !params.id) return null;
     return doc(firestore, 'modules', params.id);
   }, [firestore, params.id]);
 

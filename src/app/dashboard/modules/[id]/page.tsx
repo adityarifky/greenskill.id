@@ -5,7 +5,7 @@ import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound, useRouter, useParams } from 'next/navigation';
 import type { Module } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -25,12 +25,13 @@ import {
 import * as React from 'react';
 
 
-export default function ModuleDetailsPage({ params }: { params: { id: string } }) {
+export default function ModuleDetailsPage() {
+  const params = useParams<{ id: string }>();
   const firestore = useFirestore();
   const router = useRouter();
 
   const moduleRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !params.id) return null;
     return doc(firestore, 'modules', params.id);
   }, [firestore, params.id]);
 
