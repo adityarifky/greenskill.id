@@ -270,6 +270,7 @@ export default function ModulesPage() {
                                            <DropdownMenuItem 
                                                 className="text-destructive focus:bg-destructive/10 focus:text-destructive" 
                                                 onSelect={(e) => {
+                                                    e.stopPropagation();
                                                     e.preventDefault();
                                                     setFolderToDelete(folder);
                                                 }}
