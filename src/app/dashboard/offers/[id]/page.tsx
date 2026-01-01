@@ -5,7 +5,7 @@ import { notFound, useParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { ArrowLeft, Printer, FileEdit } from 'lucide-react';
-import { doc, collection } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Offer, Scheme } from '@/lib/types';
@@ -24,11 +24,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function OfferDetailsPage() {
   const params = useParams<{ id: string }>();
   const firestore = useFirestore();
+  const offerId = params.id;
 
   const offerRef = useMemoFirebase(() => {
     if (!firestore) return null;
-    return doc(firestore, 'training_offers', params.id);
-  }, [firestore, params.id]);
+    return doc(firestore, 'training_offers', offerId);
+  }, [firestore, offerId]);
 
   const { data: offer, isLoading: isLoadingOffer } = useDoc<Offer>(offerRef);
 

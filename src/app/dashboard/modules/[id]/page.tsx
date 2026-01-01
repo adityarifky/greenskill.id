@@ -28,11 +28,12 @@ import * as React from 'react';
 export default function ModuleDetailsPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
   const router = useRouter();
+  const { id } = params;
 
   const moduleRef = useMemoFirebase(() => {
     if (!firestore) return null;
-    return doc(firestore, 'modules', params.id);
-  }, [firestore, params.id]);
+    return doc(firestore, 'modules', id);
+  }, [firestore, id]);
 
   const { data: module, isLoading } = useDoc<Module>(moduleRef);
 

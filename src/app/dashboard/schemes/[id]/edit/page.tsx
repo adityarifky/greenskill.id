@@ -11,11 +11,12 @@ import type { Scheme } from '@/lib/types';
 
 export default function EditSchemePage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
+  const { id } = params;
 
   const schemeRef = useMemoFirebase(() => {
     if (!firestore) return null;
-    return doc(firestore, 'registration_schemas', params.id);
-  }, [firestore, params.id]);
+    return doc(firestore, 'registration_schemas', id);
+  }, [firestore, id]);
 
   const { data: scheme, isLoading } = useDoc<Scheme>(schemeRef);
 
