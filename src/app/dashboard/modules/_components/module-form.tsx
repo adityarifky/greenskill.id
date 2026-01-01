@@ -174,7 +174,6 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
   const handleTableAction = (e: React.MouseEvent<HTMLButtonElement> | KeyboardEvent, action: 'insertTable' | 'addRow' | 'addColumn' | 'deleteRow' | 'deleteColumn' | 'deleteTable') => {
     e.preventDefault();
     const context = getSelectionContext();
-    let newRowRef: HTMLTableRowElement | null = null;
 
     switch (action) {
         case 'insertTable':
@@ -188,7 +187,6 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
                     (child as HTMLElement).innerHTML = '&nbsp;';
                 });
                 context.row.parentNode?.insertBefore(newRow, context.row.nextSibling);
-                newRowRef = newRow;
             }
             break;
         case 'addColumn':
@@ -229,7 +227,6 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
     }
     editorRef.current?.focus();
     updateToolbar();
-    return newRowRef;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -237,15 +234,7 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
       const context = getSelectionContext();
       if (context?.cell && context.row && context.cell.cellIndex === context.row.cells.length - 1) {
         e.preventDefault();
-        const newRow = handleTableAction(e, 'addRow');
-        if (newRow && newRow.cells[0]) {
-          const selection = window.getSelection();
-          const range = document.createRange();
-          range.setStart(newRow.cells[0], 0);
-          range.collapse(true);
-          selection?.removeAllRanges();
-          selection?.addRange(range);
-        }
+        handleTableAction(e, 'addRow');
       }
     }
   };
