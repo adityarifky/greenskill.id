@@ -50,7 +50,8 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
 
   const contentRef = React.useRef<HTMLTextAreaElement>(null);
 
-  const applyStyle = (style: 'bold' | 'h1' | 'h2' | 'p') => {
+  const applyStyle = (e: React.MouseEvent<HTMLButtonElement>, style: 'bold' | 'h1' | 'h2' | 'p') => {
+    e.preventDefault();
     const textarea = contentRef.current;
     if (!textarea) return;
 
@@ -80,15 +81,16 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
     }
     
     const updatedContent = before + newText + after;
-    form.setValue('content', updatedContent);
+    form.setValue('content', updatedContent, { shouldValidate: true });
     
     setTimeout(() => {
         textarea.focus();
-        textarea.setSelectionRange(start + newText.length - selectedText.length, start + newText.length);
+        textarea.setSelectionRange(start, start + newText.length);
     }, 0);
   };
   
-  const applyAlignment = (alignment: 'left' | 'center' | 'right') => {
+  const applyAlignment = (e: React.MouseEvent<HTMLButtonElement>, alignment: 'left' | 'center' | 'right') => {
+    e.preventDefault();
     const textarea = contentRef.current;
     if (!textarea) return;
     const start = textarea.selectionStart;
@@ -97,14 +99,13 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
     const before = textarea.value.substring(0, start);
     const after = textarea.value.substring(end);
 
-    // Wrap the selection in a div with the desired text alignment
     const newText = `<div style="text-align: ${alignment};">${selectedText}</div>`;
     const updatedContent = before + newText + after;
-    form.setValue('content', updatedContent);
+    form.setValue('content', updatedContent, { shouldValidate: true });
 
      setTimeout(() => {
         textarea.focus();
-        textarea.setSelectionRange(start + newText.length - selectedText.length, start + newText.length);
+        textarea.setSelectionRange(start, start + newText.length);
     }, 0);
   };
 
@@ -134,12 +135,13 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
             }, { merge: true });
         } else {
             // Create new document
-            await addDoc(collection(firestore, 'modules'), {
+            const newDocRef = await addDoc(collection(firestore, 'modules'), {
                 ...data,
                 userId: user.uid,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
+             // The ID is now available in newDocRef.id
         }
 
         toast({
@@ -189,28 +191,28 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
                     <div className="rounded-md border border-input">
                          <div className="p-2 border-b">
                             <ToggleGroup type="multiple" variant="outline" size="sm" className="justify-start">
-                                <ToggleGroupItem value="bold" aria-label="Toggle bold" onClick={() => applyStyle('bold')}>
-                                    <Bold className="h-4 w-4" />
+                                <ToggleGroupItem value="bold" aria-label="Toggle bold" asChild>
+                                    <button onClick={(e) => applyStyle(e, 'bold')}><Bold className="h-4 w-4" /></button>
                                 </ToggleGroupItem>
-                                <ToggleGroupItem value="h1" aria-label="Toggle H1" onClick={() => applyStyle('h1')}>
-                                    <Heading1 className="h-4 w-4" />
+                                <ToggleGroupItem value="h1" aria-label="Toggle H1" asChild>
+                                     <button onClick={(e) => applyStyle(e, 'h1')}><Heading1 className="h-4 w-4" /></button>
                                 </ToggleGroupItem>
-                                <ToggleGroupItem value="h2" aria-label="Toggle H2" onClick={() => applyStyle('h2')}>
-                                    <Heading2 className="h-4 w-4" />
+                                <ToggleGroupItem value="h2" aria-label="Toggle H2" asChild>
+                                     <button onClick={(e) => applyStyle(e, 'h2')}><Heading2 className="h-4 w-4" /></button>
                                 </ToggleGroupItem>
-                                <ToggleGroupItem value="p" aria-label="Toggle Paragraph" onClick={() => applyStyle('p')}>
-                                    <Pilcrow className="h-4 w-4" />
+                                <ToggleGroupItem value="p" aria-label="Toggle Paragraph" asChild>
+                                    <button onClick={(e) => applyStyle(e, 'p')}><Pilcrow className="h-4 w-4" /></button>
                                 </ToggleGroupItem>
                             </ToggleGroup>
                              <ToggleGroup type="single" variant="outline" size="sm" className="justify-start ml-2">
-                                <ToggleGroupItem value="left" aria-label="Align left" onClick={() => applyAlignment('left')}>
-                                    <AlignLeft className="h-4 w-4" />
+                                <ToggleGroupItem value="left" aria-label="Align left" asChild>
+                                    <button onClick={(e) => applyAlignment(e, 'left')}><AlignLeft className="h-4 w-4" /></button>
                                 </ToggleGroupItem>
-                                <ToggleGroupItem value="center" aria-label="Align center" onClick={() => applyAlignment('center')}>
-                                    <AlignCenter className="h-4 w-4" />
+                                <ToggleGroupItem value="center" aria-label="Align center" asChild>
+                                    <button onClick={(e) => applyAlignment(e, 'center')}><AlignCenter className="h-4 w-4" /></button>
                                 </ToggleGroupItem>
-                                <ToggleGroupItem value="right" aria-label="Align right" onClick={() => applyAlignment('right')}>
-                                    <AlignRight className="h-4 w-4" />
+                                <ToggleGroupItem value="right" aria-label="Align right" asChild>
+                                    <button onClick={(e) => applyAlignment(e, 'right')}><AlignRight className="h-4 w-4" /></button>
                                 </ToggleGroupItem>
                             </ToggleGroup>
                          </div>
