@@ -20,11 +20,20 @@ export function ModuleSorter({ allModules, initialSelectedIds, onSave, onCancel 
   const [focusedModuleId, setFocusedModuleId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    const initialSelected = initialSelectedIds.map(id => allModules.find(m => m.id === id)).filter(Boolean) as Module[];
-    const initialAvailable = allModules.filter(m => !initialSelectedIds.includes(m.id));
-    setSelected(initialSelected);
+    const initialSelected = initialSelectedIds
+        .map(id => allModules.find(m => m.id === id))
+        .filter(Boolean) as Module[];
+    const selectedIdsSet = new Set(initialSelectedIds);
+    const initialAvailable = allModules.filter(m => !selectedIdsSet.has(m.id));
+    
+    // Ensure the order of selected modules matches initialSelectedIds
+    const orderedSelected = initialSelectedIds
+        .map(id => initialSelected.find(m => m.id === id))
+        .filter(Boolean) as Module[];
+
+    setSelected(orderedSelected);
     setAvailable(initialAvailable);
-  }, [allModules, initialSelectedIds]);
+}, [allModules, initialSelectedIds]);
 
   const handleSelect = (module: Module) => {
     setAvailable(available.filter(m => m.id !== module.id));
@@ -34,7 +43,7 @@ export function ModuleSorter({ allModules, initialSelectedIds, onSave, onCancel 
 
   const handleDeselect = (module: Module) => {
     setSelected(selected.filter(m => m.id !== module.id));
-    setAvailable([...available, module]);
+    setAvailable([...available, module].sort((a, b) => a.title.localeCompare(b.title))); // Keep available list sorted
     setFocusedModuleId(null);
   };
 
@@ -58,11 +67,11 @@ export function ModuleSorter({ allModules, initialSelectedIds, onSave, onCancel 
   };
 
   return (
-    <div className="flex flex-grow flex-col gap-4 pt-2">
-      <div className="grid flex-grow grid-cols-2 gap-4">
+    <div className="flex h-full flex-col gap-4 pt-2">
+      <div className="grid flex-grow grid-cols-2 gap-4 overflow-hidden">
         {/* Available Modules */}
         <Card className="flex flex-col">
-          <CardHeader>
+          <CardHeader className="flex-shrink-0">
             <CardTitle className="text-lg">Modul Tersedia</CardTitle>
           </CardHeader>
           <CardContent className="flex-grow overflow-hidden">
@@ -71,7 +80,7 @@ export function ModuleSorter({ allModules, initialSelectedIds, onSave, onCancel 
                 {available.map(module => (
                   <div key={module.id} className="flex items-center justify-between rounded-md border p-2 text-sm">
                     <span className="truncate pr-2">{module.title}</span>
-                    <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => handleSelect(module)}>
+                    <Button size="icon" variant="outline" className="h-8 w-8 flex-shrink-0" onClick={() => handleSelect(module)}>
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </div>
@@ -84,7 +93,7 @@ export function ModuleSorter({ allModules, initialSelectedIds, onSave, onCancel 
 
         {/* Selected Modules */}
          <Card className="flex flex-col">
-          <CardHeader>
+          <CardHeader className="flex-shrink-0">
             <CardTitle className="text-lg">Modul Terpilih & Urutan</CardTitle>
           </CardHeader>
           <CardContent className="flex-grow overflow-hidden">
@@ -121,7 +130,7 @@ export function ModuleSorter({ allModules, initialSelectedIds, onSave, onCancel 
           </CardContent>
         </Card>
       </div>
-      <div className="flex justify-end gap-2 pt-4">
+      <div className="flex flex-shrink-0 justify-end gap-2 pt-4">
         <Button variant="outline" onClick={onCancel}>Batal</Button>
         <Button onClick={handleSave}>Simpan Urutan</Button>
       </div>
