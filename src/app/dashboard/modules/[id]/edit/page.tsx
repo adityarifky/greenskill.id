@@ -14,12 +14,11 @@ import { Button } from '@/components/ui/button';
 
 export default function EditModulePage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
-  const { id } = params;
 
   const moduleRef = useMemoFirebase(() => {
     if (!firestore) return null;
-    return doc(firestore, 'modules', id);
-  }, [firestore, id]);
+    return doc(firestore, 'modules', params.id);
+  }, [firestore, params.id]);
 
   const { data: module, isLoading } = useDoc<Module>(moduleRef);
 

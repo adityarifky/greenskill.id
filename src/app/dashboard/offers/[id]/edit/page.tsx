@@ -9,12 +9,11 @@ import type { Offer, Scheme } from '@/lib/types';
 
 export default function EditOfferPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
-  const { id } = params;
 
   const offerRef = useMemoFirebase(() => {
     if (!firestore) return null;
-    return doc(firestore, 'training_offers', id);
-  }, [firestore, id]);
+    return doc(firestore, 'training_offers', params.id);
+  }, [firestore, params.id]);
 
   const schemesQuery = useMemoFirebase(() => {
     if (!firestore) return null;

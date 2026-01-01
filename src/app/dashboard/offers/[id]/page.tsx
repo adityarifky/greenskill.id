@@ -24,12 +24,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function OfferDetailsPage() {
   const params = useParams<{ id: string }>();
   const firestore = useFirestore();
-  const offerId = params.id;
 
   const offerRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'training_offers', offerId);
-  }, [firestore, offerId]);
+    if (!firestore || !params.id) return null;
+    return doc(firestore, 'training_offers', params.id);
+  }, [firestore, params.id]);
 
   const { data: offer, isLoading: isLoadingOffer } = useDoc<Offer>(offerRef);
 
