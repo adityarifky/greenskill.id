@@ -58,11 +58,13 @@ export default function ModulesPage() {
   const [moduleToPreview, setModuleToPreview] = React.useState<Module | null>(null);
   const [moduleToEdit, setModuleToEdit] = React.useState<Module | null>(null);
   const [isFolderContentOpen, setIsFolderContentOpen] = React.useState(false);
+  const [isAddFolderOpen, setIsAddFolderOpen] = React.useState(false);
+  const [newFolderName, setNewFolderName] = React.useState('');
 
 
   const modulesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
+    return query(collection(firestore, 'modules'), where('userId', '==', user?.uid));
   }, [firestore, user]);
 
   const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
@@ -105,6 +107,25 @@ export default function ModulesPage() {
     }
     return '-';
   };
+
+  const handleSaveFolder = () => {
+    if (newFolderName.trim() === '') {
+        toast({
+            variant: 'destructive',
+            title: 'Gagal!',
+            description: 'Nama folder tidak boleh kosong.',
+        });
+        return;
+    }
+    // Logic to save the folder will be added here
+    console.log('Saving folder:', newFolderName);
+    toast({
+        title: 'Sukses!',
+        description: `Folder "${newFolderName}" berhasil dibuat.`,
+    });
+    setNewFolderName('');
+    setIsAddFolderOpen(false);
+  };
   
   return (
     <div className="flex h-full flex-col">
@@ -116,6 +137,10 @@ export default function ModulesPage() {
               <p className="text-muted-foreground">Kelola semua modul pelatihan Anda di sini.</p>
             </div>
             <div className="flex items-center gap-2">
+               <Button variant="outline" onClick={() => setIsAddFolderOpen(true)}>
+                <FolderPlus className="mr-2 h-4 w-4" />
+                Tambah Folder
+              </Button>
               <Button asChild>
                 <Link href="/dashboard/modules/new">
                   <PlusCircle className="mr-2 h-4 w-4" />
@@ -314,6 +339,37 @@ export default function ModulesPage() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+      
+      <Dialog open={isAddFolderOpen} onOpenChange={setIsAddFolderOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Buat Folder Baru</DialogTitle>
+                <DialogDescription>
+                    Masukkan nama untuk folder baru Anda, lalu klik simpan.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="folder-name" className="text-right">
+                        Nama Folder
+                    </Label>
+                    <Input
+                        id="folder-name"
+                        value={newFolderName}
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                        className="col-span-3"
+                        placeholder="Contoh: Modul K3"
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddFolderOpen(false)}>Batal</Button>
+                <Button onClick={handleSaveFolder}>Simpan Folder</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
-}
+
+    
