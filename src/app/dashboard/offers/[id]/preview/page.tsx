@@ -1,8 +1,9 @@
 'use client';
 
-import { notFound, useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { doc } from 'firebase/firestore';
+import { use } from 'react';
 
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Offer, Scheme } from '@/lib/types';
@@ -11,14 +12,14 @@ import { Header } from '@/components/layout/header';
 import { PrintPreview } from '../../_components/print-preview';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function OfferPreviewPage() {
-    const params = useParams<{ id: string }>();
+export default function OfferPreviewPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const firestore = useFirestore();
 
     const offerRef = useMemoFirebase(() => {
-        if (!firestore || !params.id) return null;
-        return doc(firestore, 'training_offers', params.id);
-    }, [firestore, params.id]);
+        if (!firestore || !id) return null;
+        return doc(firestore, 'training_offers', id);
+    }, [firestore, id]);
 
     const { data: offer, isLoading: isLoadingOffer } = useDoc<Offer>(offerRef);
 

@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { doc } from 'firebase/firestore';
+import { use } from 'react';
 
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Module } from '@/lib/types';
@@ -18,9 +19,9 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
-export default function ModulePreviewPage({ params }: { params: { id: string } }) {
+export default function ModulePreviewPage({ params }: { params: Promise<{ id: string }> }) {
   const firestore = useFirestore();
-  const { id } = params;
+  const { id } = use(params);
 
   const moduleRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -82,6 +83,7 @@ export default function ModulePreviewPage({ params }: { params: { id: string } }
                                 "[&_font[size='3']]:text-base",
                                 "[&_font[size='2']]:text-sm",
                                 "[&_font[size='1']]:text-xs",
+                                "prose max-w-none"
                             )}
                             dangerouslySetInnerHTML={{ __html: module?.content || '' }}
                         />

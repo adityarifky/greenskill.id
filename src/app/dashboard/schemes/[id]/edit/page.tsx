@@ -4,19 +4,20 @@
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
-import { notFound, useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { SchemeFormDynamic } from '../../_components/scheme-form-dynamic';
 import type { Scheme } from '@/lib/types';
+import { use } from 'react';
 
 
-export default function EditSchemePage() {
-  const params = useParams<{ id: string }>();
+export default function EditSchemePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const firestore = useFirestore();
 
   const schemeRef = useMemoFirebase(() => {
-    if (!firestore || !params.id) return null;
-    return doc(firestore, 'registration_schemas', params.id);
-  }, [firestore, params.id]);
+    if (!firestore || !id) return null;
+    return doc(firestore, 'registration_schemas', id);
+  }, [firestore, id]);
 
   const { data: scheme, isLoading } = useDoc<Scheme>(schemeRef);
 

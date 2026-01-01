@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { doc } from 'firebase/firestore';
+import { use } from 'react';
 
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Module } from '@/lib/types';
@@ -19,9 +20,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 
-export default function ModuleDetailPage({ params }: { params: { id: string } }) {
+export default function ModuleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const firestore = useFirestore();
-  const { id } = params;
+  const { id } = use(params);
 
   const moduleRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;

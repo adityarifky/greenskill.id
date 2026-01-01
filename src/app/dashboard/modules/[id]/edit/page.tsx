@@ -2,15 +2,16 @@
 
 import { doc } from 'firebase/firestore';
 import { notFound } from 'next/navigation';
+import { use } from 'react';
 
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { Header } from '@/components/layout/header';
 import { ModuleFormDynamic } from '../_components/module-form-dynamic';
 import type { Module } from '@/lib/types';
 
-export default function EditModulePage({ params }: { params: { id: string } }) {
+export default function EditModulePage({ params }: { params: Promise<{ id: string }> }) {
   const firestore = useFirestore();
-  const { id } = params;
+  const { id } = use(params);
 
   const moduleRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
