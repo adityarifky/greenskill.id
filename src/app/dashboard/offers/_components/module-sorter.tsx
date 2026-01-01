@@ -43,7 +43,7 @@ export function ModuleSorter({ allModules, initialSelectedIds, onSave, onCancel 
           </CardHeader>
           <CardContent className="flex-grow overflow-hidden">
             <ScrollArea className="h-full">
-              <div className="space-y-2 py-1 pr-4">
+              <div className="space-y-2 p-2">
                 {allModules.map(module => {
                   const isSelected = selectedIds.has(module.id);
                   return (
