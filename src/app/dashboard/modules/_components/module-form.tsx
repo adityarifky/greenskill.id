@@ -58,17 +58,20 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
         execCommand('formatBlock', 'p'); // Ensure we are modifying a paragraph
         execCommand('fontSize', size);
     }
-
+    
     const handleTableAction = (action: 'insert' | 'addRow' | 'addCol' | 'deleteRow' | 'deleteCol' | 'deleteTable') => {
         const selection = window.getSelection();
         if (!selection || selection.rangeCount === 0) return;
 
         const range = selection.getRangeAt(0);
         const node = range.startContainer;
-        const cell = (node.nodeName === 'TD' || node.nodeName === 'TH') ? node : node.parentElement?.closest('td, th');
-        const row = cell?.parentElement as HTMLTableRowElement;
-        const table = row?.closest('table');
+        let cell = (node.nodeName === 'TD' || node.nodeName === 'TH') ? node : node.parentElement?.closest('td, th');
         
+        // If selection is on text node inside a cell
+        if (node.nodeType === Node.TEXT_NODE && node.parentElement) {
+            cell = node.parentElement.closest('td, th');
+        }
+
         if (action === 'insert') {
             const newTable = `
                 <table style="border-collapse: collapse; width: 100%;">
@@ -87,13 +90,16 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
             return;
         }
 
+        const table = cell?.closest('table');
+        const row = cell?.parentElement as HTMLTableRowElement;
+
         if (!table || !row || !cell) return;
 
         const rowIndex = Array.from(table.rows).indexOf(row);
         const cellIndex = Array.from(row.cells).indexOf(cell as HTMLTableCellElement);
 
         switch (action) {
-            case 'addRow':
+            case 'addRow': {
                 const newRow = table.insertRow(rowIndex + 1);
                 for (let i = 0; i < row.cells.length; i++) {
                     const newCell = newRow.insertCell(i);
@@ -102,7 +108,8 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
                     newCell.innerHTML = '&nbsp;';
                 }
                 break;
-            case 'addCol':
+            }
+            case 'addCol': {
                 for (const r of Array.from(table.rows)) {
                     const newCell = r.insertCell(cellIndex + 1);
                     newCell.style.border = '1px solid black';
@@ -110,24 +117,67 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
                     newCell.innerHTML = '&nbsp;';
                 }
                 break;
-            case 'deleteRow':
+            }
+            case 'deleteRow': {
                 if (table.rows.length > 1) {
                     table.deleteRow(rowIndex);
+                } else {
+                    // if it's the last row, delete the table
+                    table.remove();
                 }
                 break;
-            case 'deleteCol':
+            }
+            case 'deleteCol': {
                 if (row.cells.length > 1) {
                     for (const r of Array.from(table.rows)) {
                         r.deleteCell(cellIndex);
                     }
+                } else {
+                     // if it's the last column, delete the table
+                    table.remove();
                 }
                 break;
-            case 'deleteTable':
+            }
+            case 'deleteTable': {
                 table.remove();
                 break;
+            }
         }
         editorRef.current?.focus();
     };
+
+    const handleDeleteClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.altKey) {
+            handleTableAction('deleteCol');
+        } else {
+            handleTableAction('deleteRow');
+        }
+    }
+    
+    const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === 'Enter') {
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0) return;
+
+            const range = selection.getRangeAt(0);
+            const node = range.startContainer;
+            let cell = (node.nodeName === 'TD' || node.nodeName === 'TH') ? node : node.parentElement?.closest('td, th');
+            if (node.nodeType === Node.TEXT_NODE && node.parentElement) {
+                cell = node.parentElement.closest('td, th');
+            }
+
+            if (cell) {
+                 const row = cell.parentElement as HTMLTableRowElement;
+                 if (cell.cellIndex === row.cells.length -1) {
+                    e.preventDefault();
+                    handleTableAction('addRow');
+                 }
+            }
+        }
+    }
+
 
     return (
         <TooltipProvider>
@@ -219,11 +269,11 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
                         </Tooltip>
                          <Tooltip>
                             <TooltipTrigger asChild>
-                                <ToggleGroupItem value="delete" aria-label="Delete" onClick={() => handleTableAction('deleteTable')} onDoubleClick={(e) => { e.preventDefault(); handleTableAction('deleteTable')}}>
+                                <ToggleGroupItem value="delete" aria-label="Delete" onClick={handleDeleteClick} onDoubleClick={(e) => { e.preventDefault(); handleTableAction('deleteTable')}}>
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                 </ToggleGroupItem>
                              </TooltipTrigger>
-                             <TooltipContent>Hapus Tabel (Klik), Baris (Ctrl+Klik), Kolom (Shift+Klik)</TooltipContent>
+                             <TooltipContent>Hapus Baris (Klik), Kolom (Alt+Klik), Tabel (Dbl Klik)</TooltipContent>
                         </Tooltip>
                     </ToggleGroup>
                 </div>
@@ -244,6 +294,7 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
                         "[&_font[size='1']]:text-xs",
                         "[&_table]:w-full [&_table]:border-collapse [&_table_td]:border [&_table_td]:p-2 [&_table_th]:border [&_table_th]:p-2"
                     )}
+                    onKeyDown={handleEditorKeyDown}
                     dangerouslySetInnerHTML={{ __html: initialContent }}
                 />
             </div>
