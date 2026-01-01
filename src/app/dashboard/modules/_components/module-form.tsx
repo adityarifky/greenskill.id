@@ -44,8 +44,38 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
     }));
 
     useEffect(() => {
-        if (editorRef.current && initialContent) {
+        if (editorRef.current) {
             editorRef.current.innerHTML = initialContent;
+
+            const handlePaste = (event: ClipboardEvent) => {
+                const items = event.clipboardData?.items;
+                if (!items) return;
+
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        event.preventDefault();
+                        const blob = items[i].getAsFile();
+                        if (blob) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                const dataUrl = e.target?.result as string;
+                                document.execCommand('insertImage', false, dataUrl);
+                            };
+                            reader.readAsDataURL(blob);
+                        }
+                        return;
+                    }
+                }
+            };
+            
+            editorRef.current.addEventListener('paste', handlePaste);
+
+            return () => {
+                // The check for editorRef.current is important for cleanup
+                if (editorRef.current) {
+                    editorRef.current.removeEventListener('paste', handlePaste);
+                }
+            };
         }
     }, [initialContent]);
 
@@ -283,7 +313,7 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
                     contentEditable={true}
                     suppressContentEditableWarning={true}
                     className={cn(
-                        "min-h-[400px] w-full rounded-b-md bg-transparent py-2 text-sm ring-offset-background",
+                        "min-h-[400px] w-full rounded-b-md bg-transparent p-3 text-sm ring-offset-background",
                         "focus-visible:outline-none",
                         "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
                         "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
@@ -292,10 +322,10 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
                         "[&_font[size='3']]:text-base",
                         "[&_font[size='2']]:text-sm",
                         "[&_font[size='1']]:text-xs",
-                        "[&_table]:w-full [&_table]:border-collapse [&_table_td]:border [&_table_td]:p-2 [&_table_th]:border [&_table_th]:p-2"
+                        "[&_table]:w-full [&_table]:border-collapse [&_table_td]:border [&_table_td]:p-2 [&_table_th]:border [&_table_th]:p-2",
+                        "[&_img]:max-w-full [&_img]:h-auto"
                     )}
                     onKeyDown={handleEditorKeyDown}
-                    dangerouslySetInnerHTML={{ __html: initialContent }}
                 />
             </div>
         </TooltipProvider>
@@ -446,7 +476,7 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
                       />
                     </FormControl>
                     <FormDescription>
-                        Gunakan tombol di atas untuk memformat teks Anda.
+                        Gunakan tombol di atas untuk memformat teks Anda. Anda juga bisa copy-paste gambar langsung ke editor.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
