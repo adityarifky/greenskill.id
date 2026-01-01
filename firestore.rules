@@ -22,34 +22,26 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // Rules for single module document operations
+    // Rules for modules. Client queries MUST filter by userId.
     match /modules/{moduleId} {
-      // User can get, update, or delete a module if they are the owner.
-      allow get, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      // User can create a module if the new module's userId matches their own.
+      // Allow read (get, list) if the user is authenticated.
+      // List security is enforced by client-side queries filtering on userId.
+      allow read: if request.auth != null;
+      
+      // Allow write (create, update, delete) if the user is the owner.
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-    }
-    
-    // Rules for querying the modules collection
-    match /modules/{document=**} {
-        // Allow a user to list (query) modules.
-        // The client-side query MUST enforce security by filtering by userId.
-        allow list: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
-    // Rules for single folder document operations
+    // Rules for user_folders. Client queries MUST filter by userId.
     match /user_folders/{folderId} {
-      // User can get, update, or delete a folder if they are the owner.
-      allow get, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      // User can create a folder if the new folder's userId matches their own.
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-    }
+      // Allow read (get, list) if the user is authenticated.
+      // List security is enforced by client-side queries filtering on userId.
+      allow read: if request.auth != null;
 
-    // Rules for querying the user_folders collection
-    match /user_folders/{document=**} {
-        // Allow a user to list (query) folders.
-        // The client-side query MUST enforce security by filtering by userId.
-        allow list: if request.auth != null;
+      // Allow write (create, update, delete) if the user is the owner.
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
   }
 }
