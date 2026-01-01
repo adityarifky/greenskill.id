@@ -7,7 +7,6 @@ import { doc } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { notFound, useParams } from 'next/navigation';
 import type { Module } from '@/lib/types';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ModuleFormDynamic } from '../../_components/module-form-dynamic';
 import { Button } from '@/components/ui/button';
 

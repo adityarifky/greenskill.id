@@ -125,7 +125,7 @@ export default function ModulesPage() {
                     <TableRow key={module.id}>
                       <TableCell className="font-medium">{module.title}</TableCell>
                       <TableCell>
-                        {module.createdAt ? format(module.createdAt, "d MMMM yyyy, HH:mm", { locale: id }) : '-'}
+                        {module.createdAt ? format(new Date((module.createdAt as any).seconds * 1000), "d MMMM yyyy, HH:mm", { locale: id }) : '-'}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
