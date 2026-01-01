@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit, X } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit } from 'lucide-react';
 import * as React from 'react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   CardFooter
@@ -24,7 +23,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -46,14 +44,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { ModuleFormDynamic } from './_components/module-form-dynamic';
 
 export default function ModulesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const [moduleToDelete, setModuleToDelete] = React.useState<Module | null>(null);
   const [moduleToPreview, setModuleToPreview] = React.useState<Module | null>(null);
+  const [moduleToEdit, setModuleToEdit] = React.useState<Module | null>(null);
 
   const modulesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -63,9 +62,14 @@ export default function ModulesPage() {
   const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
   
   const isLoading = isUserLoading || isLoadingModules;
+
+  const handleEditClick = (module: Module) => {
+    setModuleToPreview(null); // Close preview dialog if open
+    setModuleToEdit(module);
+  };
   
   const handleDelete = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click event
+    e.stopPropagation();
     if (!moduleToDelete || !firestore) return;
     try {
       await deleteDoc(doc(firestore, 'modules', moduleToDelete.id));
@@ -87,11 +91,9 @@ export default function ModulesPage() {
 
   const getFormattedDate = (date: any) => {
     if (!date) return '-';
-    // If it's a Firestore timestamp, convert it
     if (date.seconds) {
       return format(new Date(date.seconds * 1000), "d MMMM yyyy, HH:mm", { locale: id });
     }
-    // If it's already a Date object
     if (date instanceof Date) {
       return format(date, "d MMMM yyyy, HH:mm", { locale: id });
     }
@@ -169,6 +171,20 @@ export default function ModulesPage() {
                                   </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={(e) => {
+                                    e.stopPropagation();
+                                    setModuleToPreview(module);
+                                }}>
+                                    <BookOpen className="mr-2 h-4 w-4" />
+                                    Pratinjau
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditClick(module);
+                                }}>
+                                    <FileEdit className="mr-2 h-4 w-4" />
+                                    Edit
+                                </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   className="text-destructive focus:bg-destructive/10 focus:text-destructive" 
                                   onClick={(e) => {
@@ -221,7 +237,7 @@ export default function ModulesPage() {
             <div
                 className={cn(
                     "min-h-full w-full bg-transparent text-sm ring-offset-background",
-                    "prose prose-sm max-w-none",
+                    "prose-h1:font-bold prose-h2:font-semibold prose-h3:font-medium prose-h4:font-normal",
                     "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
                     "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
                     "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
@@ -234,13 +250,29 @@ export default function ModulesPage() {
             />
           </ScrollArea>
            <DialogFooter className="pt-4">
-              <Button asChild variant="outline">
-                <Link href={`/dashboard/modules/${moduleToPreview?.id}`}>
+              <Button variant="outline" onClick={() => moduleToPreview && handleEditClick(moduleToPreview)}>
                   <FileEdit className="mr-2 h-4 w-4" />
                   Edit
-                </Link>
               </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!moduleToEdit} onOpenChange={(open) => {
+        if (!open) {
+          setModuleToEdit(null);
+        }
+      }}>
+        <DialogContent className="max-w-4xl">
+           <DialogHeader>
+             <DialogTitle>Edit Modul</DialogTitle>
+           </DialogHeader>
+            <div className="max-h-[80vh] overflow-y-auto p-1">
+              <ModuleFormDynamic 
+                  initialData={moduleToEdit} 
+                  onSave={() => setModuleToEdit(null)}
+              />
+            </div>
         </DialogContent>
       </Dialog>
 

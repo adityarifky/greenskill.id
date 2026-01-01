@@ -36,9 +36,10 @@ type ModuleFormValues = z.infer<typeof formSchema>;
 
 interface ModuleFormProps {
   initialData?: Module | null;
+  onSave?: () => void;
 }
 
-export function ModuleForm({ initialData }: ModuleFormProps) {
+export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
@@ -182,21 +183,25 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
             }, { merge: true });
         } else {
             // Create new document
-            const newDocRef = await addDoc(collection(firestore, 'modules'), {
+            await addDoc(collection(firestore, 'modules'), {
                 ...data,
                 userId: user.uid,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
-             // The ID is now available in newDocRef.id
         }
 
         toast({
             title: 'Sukses!',
             description: toastMessage,
         });
-        router.push('/dashboard/modules');
-        router.refresh(); // Refresh the page to show the new data
+
+        if (onSave) {
+          onSave();
+        } else {
+          router.push('/dashboard/modules');
+        }
+        router.refresh(); 
     } catch (error) {
          console.error("Error saving module: ", error);
          toast({
