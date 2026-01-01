@@ -15,21 +15,26 @@ service cloud.firestore {
     }
 
     // Users can only manage their own training offers.
-    // The query from the client MUST include `where('userId', '==', request.auth.uid)`.
     match /training_offers/{offerId} {
-      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow read/write on single documents if user is the owner
+      allow get, update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow create if the new document's userId matches the user's uid
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow list (collection query) for authenticated users.
+      // The client query MUST enforce ownership via a 'where' clause.
+      allow list: if request.auth != null;
     }
 
     // Users can only manage their own modules.
     // The query from the client MUST include `where('userId', '==', request.auth.uid)`.
     match /modules/{moduleId} {
-       allow read, write: if request.auth.uid == request.resource.data.userId;
+       allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
     // Users can only manage their own folders.
     // The query from the client MUST include `where('userId', '==', request.auth.uid)`.
     match /user_folders/{folderId} {
-        allow read, write: if request.auth.uid == request.resource.data.userId;
+        allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
   }
 }

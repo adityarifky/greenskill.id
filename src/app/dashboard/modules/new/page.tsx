@@ -8,13 +8,21 @@ import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebas
 import { collection, query, where } from 'firebase/firestore';
 
 export default function NewModulePage() {
-  const { isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
 
-  // TEMPORARILY DISABLED QUERIES
-  const folders: UserFolder[] | null = [];
-  const modules: Module[] | null = [];
-  const isLoadingFolders = false;
-  const isLoadingModules = false;
+  const foldersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid));
+  }, [firestore, user]);
+
+  const modulesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
+  }, [firestore, user]);
+
+  const { data: folders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
+  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
 
   const isLoading = isUserLoading || isLoadingFolders || isLoadingModules;
 

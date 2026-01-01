@@ -66,11 +66,18 @@ export default function ModulesPage() {
   const [folderModules, setFolderModules] = React.useState<Module[]>([]);
   const [draggedModule, setDraggedModule] = React.useState<Module | null>(null);
 
-  // TEMPORARILY DISABLED QUERIES
-  const modules: Module[] | null = [];
-  const userFolders: UserFolder[] | null = [];
-  const isLoadingModules = false;
-  const isLoadingFolders = false;
+  const modulesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'modules'), where('userId', '==', user.uid), orderBy('position'));
+  }, [firestore, user]);
+
+  const foldersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+  }, [firestore, user]);
+
+  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
+  const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
 
   const isLoading = isUserLoading || isLoadingModules || isLoadingFolders;
   
@@ -253,8 +260,20 @@ export default function ModulesPage() {
           {!isLoading && (!modules || modules.length === 0) && (!userFolders || userFolders.length === 0) ? (
               <div className="py-20 text-center text-muted-foreground flex flex-col items-center justify-center border-2 border-dashed rounded-lg h-full">
                 <BookOpen className="h-16 w-16 text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold">Fitur Modul Dinonaktifkan Sementara</h3>
-                <p className="mb-4">Fitur ini sedang dalam perbaikan. Silakan coba lagi nanti.</p>
+                <h3 className="text-lg font-semibold">Belum Ada Modul</h3>
+                <p className="mb-4">Anda belum membuat modul atau folder apapun. Mulai dengan membuat folder atau modul baru.</p>
+                 <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={() => setIsAddFolderOpen(true)}>
+                        <FolderPlus className="mr-2 h-4 w-4" />
+                        Tambah Folder
+                    </Button>
+                    <Button asChild>
+                        <Link href="/dashboard/modules/new">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Buat Modul Baru
+                        </Link>
+                    </Button>
+                </div>
               </div>
           ) : (
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
