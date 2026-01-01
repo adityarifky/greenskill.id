@@ -153,7 +153,7 @@ export default function ModulesPage() {
                         onClick={() => setModuleToPreview(module)}
                       >
                           <CardHeader className="flex-row items-start justify-between">
-                            <CardTitle className="text-lg leading-tight break-words">{module.title}</CardTitle>
+                            <CardTitle className="text-base leading-snug break-words">{module.title}</CardTitle>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                   <Button 
