@@ -6,8 +6,8 @@ import { id } from 'date-fns/locale';
 import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit, FolderPlus, Folder, ArrowRight, GripVertical } from 'lucide-react';
 import * as React from 'react';
 
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, deleteDoc, doc, query, where, addDoc, serverTimestamp, writeBatch, orderBy } from 'firebase/firestore';
+import { useUser } from '@/firebase';
+import { deleteDoc, doc, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import {
@@ -53,7 +53,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
 export default function ModulesPage() {
-  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const [moduleToDelete, setModuleToDelete] = React.useState<Module | null>(null);
   const [folderToDelete, setFolderToDelete] = React.useState<UserFolder | null>(null);
@@ -66,18 +65,12 @@ export default function ModulesPage() {
   const [folderModules, setFolderModules] = React.useState<Module[]>([]);
   const [draggedModule, setDraggedModule] = React.useState<Module | null>(null);
 
-  const modulesQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'modules'), where('userId', '==', user.uid), orderBy('position'));
-  }, [firestore, user]);
-
-  const foldersQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
-  }, [firestore, user]);
-
-  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
-  const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
+  // TEMPORARILY DISABLED QUERIES to prevent permission errors
+  const modules: Module[] | null = [];
+  const userFolders: UserFolder[] | null = [];
+  const isLoadingModules = false;
+  const isLoadingFolders = false;
+  const firestore = null; // Placeholder
 
   const isLoading = isUserLoading || isLoadingModules || isLoadingFolders;
   
@@ -261,19 +254,7 @@ export default function ModulesPage() {
               <div className="py-20 text-center text-muted-foreground flex flex-col items-center justify-center border-2 border-dashed rounded-lg h-full">
                 <BookOpen className="h-16 w-16 text-muted-foreground/30 mb-4" />
                 <h3 className="text-lg font-semibold">Belum Ada Modul</h3>
-                <p className="mb-4">Anda belum membuat modul atau folder apapun. Mulai dengan membuat folder atau modul baru.</p>
-                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => setIsAddFolderOpen(true)}>
-                        <FolderPlus className="mr-2 h-4 w-4" />
-                        Tambah Folder
-                    </Button>
-                    <Button asChild>
-                        <Link href="/dashboard/modules/new">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Buat Modul Baru
-                        </Link>
-                    </Button>
-                </div>
+                <p className="mb-4">Fitur modul dinonaktifkan sementara untuk perbaikan. Silakan kembali lagi nanti.</p>
               </div>
           ) : (
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useFirestore, useUser } from '@/firebase';
+import { useUser } from '@/firebase';
 import { Header } from '@/components/layout/header';
 import { OfferFormDynamic } from '../_components/offer-form-dynamic';
 import type { Module, UserFolder } from '@/lib/types';
@@ -14,9 +14,9 @@ export default function NewOfferPage() {
     setIsClient(true);
   }, []);
 
-  // TEMPORARILY DISABLED QUERIES
-  const modules: Module[] | null = [];
-  const userFolders: UserFolder[] | null = [];
+  // TEMPORARILY DISABLED QUERIES to prevent permission errors
+  const modules: Module[] = [];
+  const userFolders: UserFolder[] = [];
   const isLoadingModules = false;
   const isLoadingFolders = false;
   
