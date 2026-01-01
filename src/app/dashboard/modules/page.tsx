@@ -33,7 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { Module } from '@/lib/types';
+import type { Module, UserFolder } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import {
@@ -51,11 +51,6 @@ import { ModuleFormDynamic } from './_components/module-form-dynamic';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
-type UserFolder = {
-  id: string;
-  name: string;
-};
-
 export default function ModulesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -67,6 +62,16 @@ export default function ModulesPage() {
   const [newFolderName, setNewFolderName] = React.useState('');
   const [userFolders, setUserFolders] = React.useState<UserFolder[]>([]);
 
+  React.useEffect(() => {
+    try {
+      const storedFolders = localStorage.getItem('userFolders');
+      if (storedFolders) {
+        setUserFolders(JSON.parse(storedFolders));
+      }
+    } catch (error) {
+      console.error("Failed to parse folders from localStorage", error);
+    }
+  }, []);
 
   const modulesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -128,7 +133,10 @@ export default function ModulesPage() {
       id: Date.now().toString(),
       name: newFolderName,
     };
-    setUserFolders(prevFolders => [...prevFolders, newFolder]);
+    
+    const updatedFolders = [...userFolders, newFolder];
+    setUserFolders(updatedFolders);
+    localStorage.setItem('userFolders', JSON.stringify(updatedFolders));
     
     toast({
         title: 'Sukses!',
@@ -300,7 +308,8 @@ export default function ModulesPage() {
            </DialogHeader>
             <div className="max-h-[80vh] overflow-y-auto p-1">
               <ModuleFormDynamic 
-                  initialData={moduleToEdit} 
+                  initialData={moduleToEdit}
+                  folders={userFolders}
                   onSave={() => setModuleToEdit(null)}
               />
             </div>
@@ -406,3 +415,4 @@ export default function ModulesPage() {
   );
 
     
+

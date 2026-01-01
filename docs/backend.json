@@ -126,6 +126,10 @@
                 "type": "string",
                 "description": "The content of the module, can be plain text or markdown."
             },
+            "folderId": {
+                "type": "string",
+                "description": "The ID of the folder this module belongs to."
+            },
             "userId": {
                 "type": "string",
                 "description": "Reference to User. (Relationship: User 1:N Module)"

@@ -32,6 +32,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { UserFolder } from '@/lib/types';
+
 
 // --- Text Editor Component ---
 const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { initialContent: string }, ref) {
@@ -337,6 +340,7 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
 // --- Main Module Form Component ---
 const formSchema = z.object({
   title: z.string().min(3, { message: 'Judul modul harus memiliki setidaknya 3 karakter.' }),
+  folderId: z.string().optional(),
   content: z.string(), // This field is now just for passing initial data
 });
 
@@ -347,10 +351,11 @@ type ModuleFormValues = z.infer<typeof formSchema>;
 
 interface ModuleFormProps {
   initialData?: Module | null;
+  folders: UserFolder[];
   onSave?: () => void;
 }
 
-export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
+export function ModuleForm({ initialData, folders, onSave }: ModuleFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
@@ -361,6 +366,7 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
     defaultValues: initialData || {
       title: '',
       content: '',
+      folderId: 'folder-surat-penawaran',
     },
   });
 
@@ -464,6 +470,32 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
                   </FormItem>
                 )}
               />
+              <FormField
+                  control={form.control}
+                  name="folderId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Pilih Folder</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih folder untuk menyimpan modul ini" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                           <SelectItem value="folder-surat-penawaran">Surat Penawaran (Default)</SelectItem>
+                           {folders.map(folder => (
+                             <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>
+                           ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Modul akan disimpan di dalam folder yang Anda pilih.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               <FormField
                 control={form.control}
                 name="content"

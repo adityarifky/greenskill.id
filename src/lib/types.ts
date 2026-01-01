@@ -39,6 +39,12 @@ export type Module = {
   title: string;
   content: string;
   userId: string;
+  folderId?: string;
   createdAt: { seconds: number; nanoseconds: number; } | Date;
   updatedAt: { seconds: number; nanoseconds: number; } | Date;
+};
+
+export type UserFolder = {
+  id: string;
+  name: string;
 };
