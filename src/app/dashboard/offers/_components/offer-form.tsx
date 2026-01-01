@@ -4,8 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format } from "date-fns"
 import { CalendarIcon, Upload, Eye } from "lucide-react"
 import * as React from 'react';
@@ -39,7 +37,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import type { Scheme, Offer } from '@/lib/types';
-import { useFirestore, useUser } from '@/firebase';
+import { useUser } from '@/firebase';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
@@ -79,7 +77,6 @@ interface OfferFormProps {
 
 export function OfferForm({ initialData, schemes }: OfferFormProps) {
   const router = useRouter();
-  const firestore = useFirestore();
   const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [hasTemplateFiles, setHasTemplateFiles] = React.useState(false);
@@ -88,6 +85,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: initialData ? {
       ...initialData,
+      schemeId: initialData.schemeId,
       offerDate: initialData.offerDate instanceof Date ? initialData.offerDate : new Date(initialData.offerDate),
     } : {
       schemeId: '',
@@ -99,7 +97,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
 
   const title = initialData ? 'Edit Penawaran' : 'Buat Penawaran Baru';
   const description = initialData ? 'Perbarui detail penawaran.' : 'Isi formulir untuk membuat penawaran baru.';
-  const action = initialData ? 'Simpan Perubahan' : 'Pratinjau & Simpan';
+  const action = initialData ? 'Pratinjau & Simpan Perubahan' : 'Pratinjau & Buat Penawaran';
   
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,6 +146,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
     
     try {
         let backgroundUrls: string[] = [];
+        // If there are files in the input, read them as data URLs
         if (data.backgroundFiles && data.backgroundFiles.length > 0) {
             const filePromises = Array.from(data.backgroundFiles).map(file => {
                 return new Promise<string>((resolve, reject) => {
@@ -162,11 +161,13 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
     
         const temporaryOfferData = {
             ...data,
-            id: `temp-${Date.now()}`,
-            schemeName: selectedScheme.name,
+            id: initialData?.id || `temp-${Date.now()}`,
             scheme: selectedScheme,
-            backgroundUrls: backgroundUrls,
-            isTemplateOnlyPreview: false, // Make sure this is false for full preview
+            // Pass backgroundUrls to preview page. If empty, preview page will use existing/default
+            backgroundUrls: backgroundUrls, 
+            // Also pass existing backgroundUrl if editing, so preview can use it if no new file is uploaded
+            backgroundUrl: initialData?.backgroundUrl, 
+            isTemplateOnlyPreview: false,
         };
         
         sessionStorage.setItem('previewOffer', JSON.stringify(temporaryOfferData));
@@ -286,7 +287,7 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
               name="backgroundFiles"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Upload Template Background</FormLabel>
+                  <FormLabel>Upload Template Background (Opsional)</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Upload className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -294,12 +295,12 @@ export function OfferForm({ initialData, schemes }: OfferFormProps) {
                     </div>
                   </FormControl>
                   <FormDescription>
-                    Unggah satu atau lebih gambar latar (format .jpg, .png). Jika kosong, template default akan digunakan.
+                    Unggah gambar latar baru jika ingin mengubah. Jika kosong, template yang ada atau default akan digunakan.
                   </FormDescription>
                    {hasTemplateFiles && (
                     <Button type="button" variant="secondary" size="sm" onClick={handlePreviewTemplates} className="mt-2">
                         <Eye className="mr-2 h-4 w-4" />
-                        Pratinjau Template
+                        Pratinjau Template Baru
                     </Button>
                    )}
                   <FormMessage />

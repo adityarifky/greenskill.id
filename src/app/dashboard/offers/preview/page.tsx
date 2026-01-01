@@ -8,25 +8,13 @@ import { Header } from '@/components/layout/header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, ArrowLeft, Save, Pencil, Plus } from 'lucide-react';
-import type { Offer, Scheme, TemplateParameter } from '@/lib/types';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { AlertTriangle, ArrowLeft, Save } from 'lucide-react';
+import type { Offer, Scheme } from '@/lib/types';
 import { useFirestore, useUser } from '@/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { toast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { SignatureSection } from '../_components/signature-section';
 
 type PreviewData = Partial<Omit<Offer, 'createdAt' | 'userId'>> & {
   scheme?: Partial<Scheme>;
@@ -34,17 +22,12 @@ type PreviewData = Partial<Omit<Offer, 'createdAt' | 'userId'>> & {
   backgroundUrls?: string[];
 };
 
-export type Parameter = TemplateParameter;
-
 export default function SessionOfferPreviewPage() {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
   const [previewData, setPreviewData] = React.useState<PreviewData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [activeParams, setActiveParams] = React.useState<Parameter[]>([]);
-  const printAreaRef = React.useRef<HTMLDivElement>(null);
-  const [templateName, setTemplateName] = React.useState('');
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -64,78 +47,82 @@ export default function SessionOfferPreviewPage() {
     }
   }, []);
 
-  const handlePositionChange = React.useCallback((id: string, newPosition: { x: number; y: number }) => {
-    setActiveParams(prev =>
-      prev.map(p => (p.id === id ? { ...p, position: newPosition } : p))
-    );
-  }, []);
-  
-  const handleLabelChange = React.useCallback((id: string, newLabel: string) => {
-    setActiveParams(prev =>
-      prev.map(p => (p.id === id ? { ...p, label: newLabel } : p))
-    );
-  }, []);
-  
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    // We only need to know that we are dragging a new parameter.
-    // The key and label will be generic and editable later.
-    e.dataTransfer.setData("application/json", JSON.stringify({ isNew: true }));
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const dataString = e.dataTransfer.getData("application/json");
-    if (!dataString) return;
-
-    const { isNew } = JSON.parse(dataString);
-    if (!isNew) return;
-    
-    const parentRect = printAreaRef.current?.getBoundingClientRect();
-    if (!parentRect) return;
-
-    const newParam: Parameter = {
-      id: `param-${Date.now()}`,
-      key: `custom-${Date.now()}`, // Generic key
-      label: "Label Baru", // Generic label
-      position: { x: e.clientX - parentRect.left, y: e.clientY - parentRect.top },
-    };
-    setActiveParams(prev => [...prev, newParam]);
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault(); 
-  };
-  
-  const handleSaveTemplate = async () => {
-    if (!user || !firestore || !previewData?.backgroundUrls?.[0] || !templateName) {
+  const handleSaveOffer = async () => {
+    if (!previewData || !user || !firestore) {
       toast({
         variant: 'destructive',
         title: 'Gagal Menyimpan',
-        description: 'Nama templat, gambar latar, dan data pengguna diperlukan.',
+        description: 'Data pratinjau, pengguna, atau koneksi database tidak ditemukan.',
       });
       return;
     }
     setIsSaving(true);
+    
     try {
-      const templateData = {
-        name: templateName,
-        backgroundUrl: previewData.backgroundUrls[0],
-        parameters: activeParams,
+      let finalBackgroundUrl: string | undefined = undefined;
+
+      // Check if there's a new background to upload
+      if (previewData.backgroundUrls && previewData.backgroundUrls.length > 0) {
+        const storage = getStorage();
+        const firstFile = previewData.backgroundUrls[0];
+        const storageRef = ref(storage, `offer_backgrounds/${user.uid}/${Date.now()}`);
+        
+        // Upload the base64 data URL
+        const snapshot = await uploadString(storageRef, firstFile, 'data_url');
+        finalBackgroundUrl = await getDownloadURL(snapshot.ref);
+      }
+
+      const offerDataToSave = {
+        schemeId: previewData.schemeId,
+        schemeName: previewData.scheme?.name,
+        customerName: previewData.customerName,
+        offerDate: previewData.offerDate,
+        userRequest: previewData.userRequest,
         userId: user.uid,
-        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        backgroundUrl: finalBackgroundUrl // Can be new URL or undefined
       };
-      await addDoc(collection(firestore, 'offer_templates'), templateData);
+
+      let docId = previewData.id;
+      let toastMessage = 'Penawaran berhasil diperbarui.';
+
+      if (docId && docId.startsWith('temp-')) {
+          // This is a new offer
+          const docRef = await addDoc(collection(firestore, 'training_offers'), {
+              ...offerDataToSave,
+              createdAt: serverTimestamp(),
+          });
+          docId = docRef.id;
+          toastMessage = 'Penawaran baru berhasil disimpan.';
+      } else if (docId) {
+          // This is an existing offer, update it
+          const docRef = doc(firestore, 'training_offers', docId);
+          // If no new background was uploaded, we don't want to overwrite the existing URL
+          if (!finalBackgroundUrl) {
+            const existingDoc = await getDoc(docRef);
+            offerDataToSave.backgroundUrl = existingDoc.data()?.backgroundUrl;
+          }
+          await updateDoc(docRef, offerDataToSave);
+      } else {
+         throw new Error("ID penawaran tidak valid.");
+      }
+
       toast({
         title: 'Sukses!',
-        description: 'Templat berhasil disimpan.',
+        description: toastMessage,
       });
-      router.push('/dashboard/templates');
+
+      // Cleanup session storage and redirect
+      sessionStorage.removeItem('previewOffer');
+      router.push(`/dashboard/offers/${docId}`);
+      router.refresh();
+
     } catch (error) {
-      console.error('Error saving template:', error);
+      console.error('Error saving offer:', error);
       toast({
         variant: 'destructive',
         title: 'Gagal!',
-        description: 'Terjadi kesalahan saat menyimpan templat.',
+        description: 'Terjadi kesalahan saat menyimpan penawaran.',
       });
     } finally {
       setIsSaving(false);
@@ -180,64 +167,50 @@ export default function SessionOfferPreviewPage() {
       </div>
     );
   }
+  
+  const isExistingOfferWithoutNewTemplate = !previewData.id?.startsWith('temp-') && (!previewData.backgroundUrls || previewData.backgroundUrls.length === 0);
+
+  // If it's an existing offer and no new template is being previewed, fetch its backgroundUrl
+  if (isExistingOfferWithoutNewTemplate && !previewData.backgroundUrl) {
+    // This part is tricky as we can't easily fetch here.
+    // The logic in offer-form should pass the original backgroundUrl.
+    // For now, we assume if backgroundUrls is empty, we use the default.
+  }
 
   const backgroundUrls =
     previewData.backgroundUrls && previewData.backgroundUrls.length > 0
       ? previewData.backgroundUrls
-      : [defaultTemplateImage?.imageUrl || ''];
+      : (previewData.backgroundUrl ? [previewData.backgroundUrl] : [defaultTemplateImage?.imageUrl || '']);
 
   const headerTitle = previewData.isTemplateOnlyPreview
     ? 'Pratinjau Template Latar'
     : 'Pratinjau Penawaran';
-  
+
   return (
     <div className="flex h-full flex-col bg-muted/40">
       <div className="no-print">
         <Header title={headerTitle} />
       </div>
       <main className="flex-1 p-4 md:p-8">
-        <div className="no-print mx-auto mb-6 flex max-w-4xl items-center justify-between">
-          <Button variant="outline" onClick={() => router.back()}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Kembali ke Formulir
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button>
-                <Save className="mr-2 h-4 w-4" />
-                Simpan Tamplate
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Simpan Tamplate Surat</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Beri nama templat Anda untuk menyimpannya. Nama ini akan digunakan untuk mengidentifikasi templat di masa mendatang.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="template-name" className="text-right">
-                    Nama
-                  </Label>
-                  <Input
-                    id="template-name"
-                    value={templateName}
-                    onChange={(e) => setTemplateName(e.target.value)}
-                    className="col-span-3"
-                    placeholder="Contoh: Templat Penawaran Standar"
-                  />
-                </div>
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Batal</AlertDialogCancel>
-                <AlertDialogAction onClick={handleSaveTemplate} disabled={isSaving || !templateName}>
-                  {isSaving ? 'Menyimpan...' : 'Simpan'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+        {!previewData.isTemplateOnlyPreview && (
+            <div className="no-print mx-auto mb-6 flex max-w-4xl items-center justify-between">
+            <Button variant="outline" onClick={() => router.back()}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Kembali ke Formulir
+            </Button>
+            <Button onClick={handleSaveOffer} disabled={isSaving}>
+                {isSaving ? 'Menyimpan...' : <><Save className="mr-2 h-4 w-4" /> Simpan & Konfirmasi</>}
+            </Button>
+            </div>
+        )}
+         {previewData.isTemplateOnlyPreview && (
+             <div className="no-print mx-auto mb-6 flex max-w-4xl items-center justify-end">
+                <Button variant="outline" onClick={() => router.back()}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Kembali ke Formulir
+                </Button>
+             </div>
+         )}
         <div className="space-y-8">
           {backgroundUrls.map((url, index) => {
             const templateImage = {
@@ -249,10 +222,7 @@ export default function SessionOfferPreviewPage() {
             return (
               <div key={index} className="print-container mx-auto max-w-4xl rounded-lg bg-white shadow-lg">
                 <div
-                  ref={printAreaRef}
                   className="print-content relative aspect-[1/1.414] w-full"
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
                 >
                   <Image
                     src={templateImage.imageUrl}
@@ -262,52 +232,21 @@ export default function SessionOfferPreviewPage() {
                     priority
                     className="object-cover pointer-events-none"
                   />
-                  <PrintPreview
-                    activeParams={activeParams}
-                    onPositionChange={handlePositionChange}
-                    onLabelChange={handleLabelChange}
-                    parentRef={printAreaRef}
-                    offer={previewData}
-                    scheme={previewData.scheme}
-                  />
+                  {!previewData.isTemplateOnlyPreview && previewData.scheme && (
+                     <PrintPreview
+                        offer={previewData}
+                        scheme={previewData.scheme}
+                      />
+                  )}
+                  {!previewData.isTemplateOnlyPreview && (
+                    <SignatureSection />
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       </main>
-
-      <Popover>
-        <PopoverTrigger asChild>
-            <Button
-                variant="default"
-                className="no-print fixed bottom-8 left-8 z-20 h-14 w-14 rounded-full p-4 shadow-lg"
-            >
-                <Pencil className="h-6 w-6" />
-                <span className="sr-only">Tambah Parameter</span>
-            </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-60" side="top" align="start">
-            <div className="grid gap-4">
-              <div className="space-y-2">
-                <h4 className="font-medium leading-none">Parameter Surat</h4>
-                <p className="text-sm text-muted-foreground">
-                  Seret parameter ke atas templat.
-                </p>
-              </div>
-              <div className="grid gap-2">
-                 <div
-                    draggable
-                    onDragStart={handleDragStart}
-                    className="flex cursor-grab items-center gap-2 rounded-md border p-2 transition-colors hover:bg-accent"
-                  >
-                    <Plus className="h-4 w-4 text-muted-foreground" />
-                    <span>Tambah Parameter</span>
-                   </div>
-              </div>
-            </div>
-        </PopoverContent>
-    </Popover>
     </div>
   );
 }

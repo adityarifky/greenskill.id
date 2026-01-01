@@ -11,6 +11,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Header } from '@/components/layout/header';
 import { PrintPreview } from '../../_components/print-preview';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SignatureSection } from '../../_components/signature-section';
 
 export default function OfferPreviewPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -77,7 +78,20 @@ export default function OfferPreviewPage({ params }: { params: Promise<{ id: str
         <Header title="Pratinjau Penawaran" />
       </div>
       <main className="flex-1 p-4 md:p-8 flex items-center justify-center">
-        <PrintPreview offer={offer} scheme={scheme} templateImage={templateImage} />
+        <div className="print-container w-full mx-auto max-w-4xl rounded-lg bg-white shadow-lg">
+            <div className="print-content relative aspect-[1/1.414] w-full">
+                <Image
+                    src={templateImage.imageUrl}
+                    alt={templateImage.description}
+                    fill
+                    sizes="100vw"
+                    priority
+                    className="object-cover pointer-events-none"
+                  />
+                  <PrintPreview offer={offer} scheme={scheme} />
+                  <SignatureSection />
+            </div>
+        </div>
       </main>
     </div>
   );
