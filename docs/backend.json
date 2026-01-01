@@ -134,6 +134,10 @@
                 "type": "string",
                 "description": "Reference to User. (Relationship: User 1:N Module)"
             },
+            "position": {
+                "type": "number",
+                "description": "The order of the module within a folder."
+            },
             "createdAt": {
                 "type": "string",
                 "description": "Date when the module was created.",
@@ -150,6 +154,7 @@
             "title",
             "content",
             "userId",
+            "position",
             "createdAt",
             "updatedAt"
         ]

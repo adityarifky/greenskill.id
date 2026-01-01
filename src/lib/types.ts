@@ -40,6 +40,7 @@ export type Module = {
   content: string;
   userId: string;
   folderId?: string;
+  position: number;
   createdAt: { seconds: number; nanoseconds: number; } | Date;
   updatedAt: { seconds: number; nanoseconds: number; } | Date;
 };

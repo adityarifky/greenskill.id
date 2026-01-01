@@ -12,15 +12,16 @@ const ModuleForm = dynamic(() => import('./module-form').then(mod => mod.ModuleF
 interface ModuleFormDynamicProps {
   initialData?: Module | null;
   folders: UserFolder[];
+  moduleCount?: number;
   isLoading?: boolean;
   onSave?: () => void;
 }
 
-export function ModuleFormDynamic({ initialData, folders, isLoading, onSave }: ModuleFormDynamicProps) {
+export function ModuleFormDynamic({ initialData, folders, moduleCount, isLoading, onSave }: ModuleFormDynamicProps) {
     if (isLoading) {
         return <ModuleFormSkeleton />;
     }
-  return <ModuleForm initialData={initialData} folders={folders} onSave={onSave} />;
+  return <ModuleForm initialData={initialData} folders={folders} moduleCount={moduleCount} onSave={onSave} />;
 }
 
 function ModuleFormSkeleton() {

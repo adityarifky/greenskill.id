@@ -7,7 +7,7 @@ import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit, FolderPlus, Fol
 import * as React from 'react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, deleteDoc, doc, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, deleteDoc, doc, query, where, addDoc, serverTimestamp, writeBatch, orderBy } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import {
@@ -69,7 +69,7 @@ export default function ModulesPage() {
 
   const modulesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'modules'), where('userId', '==', user?.uid));
+    return query(collection(firestore, 'modules'), where('userId', '==', user?.uid), orderBy('position', 'asc'));
   }, [firestore, user]);
 
   const foldersQuery = useMemoFirebase(() => {
@@ -95,11 +95,14 @@ export default function ModulesPage() {
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
   };
   
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetModule: Module) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>, targetModule: Module) => {
     e.preventDefault();
-    if (!draggedModule || draggedModule.id === targetModule.id) {
+    e.stopPropagation();
+    
+    if (!draggedModule || draggedModule.id === targetModule.id || !firestore) {
       setDraggedModule(null);
       return;
     }
@@ -107,18 +110,37 @@ export default function ModulesPage() {
     const newModules = [...folderModules];
     const draggedIndex = newModules.findIndex(m => m.id === draggedModule.id);
     const targetIndex = newModules.findIndex(m => m.id === targetModule.id);
-    
-    // Remove the dragged module and insert it at the target position
+
     newModules.splice(draggedIndex, 1);
     newModules.splice(targetIndex, 0, draggedModule);
-
+    
+    // Update local state for immediate UI feedback
     setFolderModules(newModules);
     setDraggedModule(null);
-     // Here you would typically save the new order to Firestore
-    toast({
-        title: "Urutan Diubah",
-        description: `Modul "${draggedModule.title}" dipindahkan.`,
-    });
+    
+    try {
+        const batch = writeBatch(firestore);
+        newModules.forEach((module, index) => {
+            const docRef = doc(firestore, 'modules', module.id);
+            batch.update(docRef, { position: index });
+        });
+        await batch.commit();
+
+        toast({
+            title: "Urutan Disimpan",
+            description: `Urutan modul telah diperbarui di database.`,
+        });
+    } catch (error) {
+        console.error("Error updating module positions: ", error);
+        toast({
+            variant: "destructive",
+            title: "Gagal Menyimpan Urutan",
+            description: "Terjadi kesalahan saat menyimpan urutan modul baru.",
+        });
+        // Optionally, revert the local state if the DB update fails
+        const originalModules = modules?.filter(m => openedFolder && m.folderId === openedFolder.id) || [];
+        setFolderModules(originalModules);
+    }
   };
 
 

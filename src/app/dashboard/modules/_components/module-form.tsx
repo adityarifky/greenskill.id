@@ -352,10 +352,11 @@ type ModuleFormValues = z.infer<typeof formSchema>;
 interface ModuleFormProps {
   initialData?: Module | null;
   folders: UserFolder[];
+  moduleCount?: number;
   onSave?: () => void;
 }
 
-export function ModuleForm({ initialData, folders, onSave }: ModuleFormProps) {
+export function ModuleForm({ initialData, folders, moduleCount = 0, onSave }: ModuleFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
@@ -424,6 +425,7 @@ export function ModuleForm({ initialData, folders, onSave }: ModuleFormProps) {
                 userId: user.uid,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
+                position: moduleCount,
             });
         }
 

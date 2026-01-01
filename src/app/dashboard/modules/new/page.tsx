@@ -3,7 +3,7 @@
 import { Header } from '@/components/layout/header';
 import { ModuleFormDynamic } from '../_components/module-form-dynamic';
 import * as React from 'react';
-import type { UserFolder } from '@/lib/types';
+import type { Module, UserFolder } from '@/lib/types';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 
@@ -18,7 +18,15 @@ export default function NewModulePage() {
 
   const { data: folders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
   
-  const isLoading = isUserLoading || isLoadingFolders;
+  // Also fetch all modules to determine the next position
+  const modulesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
+  }, [firestore, user]);
+
+  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
+
+  const isLoading = isUserLoading || isLoadingFolders || isLoadingModules;
 
 
   return (
@@ -26,7 +34,7 @@ export default function NewModulePage() {
       <Header title="Buat Modul Baru" />
       <main className="flex-1 p-4 md:p-8">
          <div className="mx-auto max-w-4xl">
-            <ModuleFormDynamic folders={folders || []} isLoading={isLoading} />
+            <ModuleFormDynamic folders={folders || []} moduleCount={modules?.length || 0} isLoading={isLoading} />
          </div>
       </main>
     </div>
