@@ -79,6 +79,19 @@ export default function ModulesPage() {
         setModuleToDelete(null);
     }
   };
+
+  const getFormattedDate = (date: any) => {
+    if (!date) return '-';
+    // If it's a Firestore timestamp, convert it
+    if (date.seconds) {
+      return format(new Date(date.seconds * 1000), "d MMMM yyyy, HH:mm", { locale: id });
+    }
+    // If it's already a Date object
+    if (date instanceof Date) {
+      return format(date, "d MMMM yyyy, HH:mm", { locale: id });
+    }
+    return '-';
+  };
   
   return (
     <div className="flex h-full flex-col">
@@ -125,7 +138,7 @@ export default function ModulesPage() {
                     <TableRow key={module.id}>
                       <TableCell className="font-medium">{module.title}</TableCell>
                       <TableCell>
-                        {module.createdAt ? format(new Date((module.createdAt as any).seconds * 1000), "d MMMM yyyy, HH:mm", { locale: id }) : '-'}
+                        {getFormattedDate(module.createdAt)}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
