@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { PlusCircle, MoreHorizontal, BookOpen, Edit } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, BookOpen, Trash2 } from 'lucide-react';
 import * as React from 'react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -16,20 +16,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { Module } from '@/lib/types';
@@ -46,10 +38,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export default function ModulesPage() {
   const firestore = useFirestore();
-  const router = useRouter();
   const { user, isUserLoading } = useUser();
   const [moduleToDelete, setModuleToDelete] = React.useState<Module | null>(null);
 
@@ -62,7 +54,8 @@ export default function ModulesPage() {
   
   const isLoading = isUserLoading || isLoadingModules;
   
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click event
     if (!moduleToDelete || !firestore) return;
     try {
       await deleteDoc(doc(firestore, 'modules', moduleToDelete.id));
@@ -99,92 +92,92 @@ export default function ModulesPage() {
     <div className="flex h-full flex-col">
       <Header title="Daftar Modul" />
       <main className="flex-1 p-4 md:p-8">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Daftar Modul Pelatihan</CardTitle>
-                <CardDescription>Kelola semua modul pelatihan Anda di sini.</CardDescription>
-              </div>
-              <Button asChild>
-                <Link href="/dashboard/modules/new">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Buat Modul Baru
-                </Link>
-              </Button>
+        <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Daftar Modul Pelatihan</h2>
+              <p className="text-muted-foreground">Kelola semua modul pelatihan Anda di sini.</p>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="border rounded-md">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Judul Modul</TableHead>
-                    <TableHead>Tanggal Dibuat</TableHead>
-                    <TableHead>
-                      <span className="sr-only">Aksi</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading && (
-                    <>
-                      {[...Array(3)].map((_, i) => (
-                        <TableRow key={i}>
-                            <TableCell colSpan={3}><Skeleton className="h-8 w-full" /></TableCell>
-                        </TableRow>
-                      ))}
-                    </>
-                  )}
-                  {!isLoading && modules?.map((module) => (
-                    <TableRow key={module.id}>
-                      <TableCell className="font-medium">{module.title}</TableCell>
-                      <TableCell>
-                        {getFormattedDate(module.createdAt)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/modules/${module.id}/edit`} className="cursor-pointer">
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  <span>Edit</span>
-                              </Link>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem onClick={() => router.push(`/dashboard/modules/${module.id}`)} className="cursor-pointer">
-                                <BookOpen className="mr-2 h-4 w-4" />
-                                <span>Lihat</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => setModuleToDelete(module)}>Hapus</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-             {!isLoading && (!modules || modules.length === 0) && (
-              <div className="py-20 text-center text-muted-foreground flex flex-col items-center">
+            <Button asChild>
+              <Link href="/dashboard/modules/new">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Buat Modul Baru
+              </Link>
+            </Button>
+          </div>
+
+          {!isLoading && (!modules || modules.length === 0) ? (
+              <div className="py-20 text-center text-muted-foreground flex flex-col items-center justify-center border-2 border-dashed rounded-lg h-full">
                 <BookOpen className="h-16 w-16 text-muted-foreground/30 mb-4" />
                 <h3 className="text-lg font-semibold">Belum Ada Modul</h3>
-                <p>Mulai buat modul pelatihan pertama Anda.</p>
-                 <Button asChild variant="link">
+                <p className="mb-4">Mulai buat modul pelatihan pertama Anda.</p>
+                 <Button asChild>
                     <Link href="/dashboard/modules/new">
+                        <PlusCircle className="mr-2 h-4 w-4" />
                         Buat Modul Baru
                     </Link>
                  </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+          ) : (
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {isLoading && (
+                    <>
+                      {[...Array(4)].map((_, i) => (
+                        <Card key={i}>
+                            <CardHeader>
+                                <Skeleton className="h-6 w-3/4" />
+                                <Skeleton className="h-4 w-1/2" />
+                            </CardHeader>
+                            <CardFooter>
+                                <Skeleton className="h-4 w-full" />
+                            </CardFooter>
+                        </Card>
+                      ))}
+                    </>
+                  )}
+                  {!isLoading && modules?.map((module) => (
+                      <Link href={`/dashboard/modules/${module.id}`} key={module.id} className="block group">
+                          <Card className="flex flex-col h-full transition-all duration-200 group-hover:shadow-xl group-hover:-translate-y-1">
+                              <CardHeader className="flex-row items-start justify-between">
+                                <CardTitle className="text-lg leading-tight break-words">{module.title}</CardTitle>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                      <Button 
+                                        aria-haspopup="true" 
+                                        size="icon" 
+                                        variant="ghost" 
+                                        className="h-8 w-8 -mt-2 -mr-2"
+                                        onClick={(e) => e.stopPropagation()} // Prevent link navigation
+                                      >
+                                        <MoreHorizontal className="h-4 w-4" />
+                                        <span className="sr-only">Toggle menu</span>
+                                      </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem 
+                                      className="text-destructive focus:bg-destructive/10 focus:text-destructive" 
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setModuleToDelete(module)
+                                      }}
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Hapus
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </CardHeader>
+                              <CardContent className="flex-grow"></CardContent>
+                              <CardFooter>
+                                <p className="text-xs text-muted-foreground">
+                                    Dibuat pada {getFormattedDate(module.createdAt)}
+                                </p>
+                              </CardFooter>
+                          </Card>
+                      </Link>
+                  ))}
+             </div>
+          )}
       </main>
 
        <AlertDialog open={!!moduleToDelete} onOpenChange={(open) => !open && setModuleToDelete(null)}>
@@ -196,7 +189,7 @@ export default function ModulesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Batal</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
               Hapus
             </AlertDialogAction>
