@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit, FolderPlus, Folder, ArrowRight } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit, FolderPlus, Folder, ArrowRight, GripVertical } from 'lucide-react';
 import * as React from 'react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -59,10 +59,14 @@ export default function ModulesPage() {
   const [folderToDelete, setFolderToDelete] = React.useState<UserFolder | null>(null);
   const [moduleToPreview, setModuleToPreview] = React.useState<Module | null>(null);
   const [moduleToEdit, setModuleToEdit] = React.useState<Module | null>(null);
-  const [isFolderContentOpen, setIsFolderContentOpen] = React.useState(false);
   const [isAddFolderOpen, setIsAddFolderOpen] = React.useState(false);
   const [newFolderName, setNewFolderName] = React.useState('');
   
+  const [openedFolder, setOpenedFolder] = React.useState<{id: string, name: string} | null>(null);
+  const [folderModules, setFolderModules] = React.useState<Module[]>([]);
+  const [draggedModule, setDraggedModule] = React.useState<Module | null>(null);
+
+
   const modulesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'modules'), where('userId', '==', user?.uid));
@@ -77,8 +81,49 @@ export default function ModulesPage() {
   const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
   
   const isLoading = isUserLoading || isLoadingModules || isLoadingFolders;
+  
+  const openFolderContent = (folder: {id: string, name: string}) => {
+    setOpenedFolder(folder);
+    const filteredModules = modules?.filter(m => (folder.id === 'folder-surat-penawaran') ? (m.folderId === 'folder-surat-penawaran' || !m.folderId) : m.folderId === folder.id) || [];
+    setFolderModules(filteredModules);
+  }
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, module: Module) => {
+    setDraggedModule(module);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+  
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetModule: Module) => {
+    e.preventDefault();
+    if (!draggedModule || draggedModule.id === targetModule.id) {
+      setDraggedModule(null);
+      return;
+    }
+
+    const newModules = [...folderModules];
+    const draggedIndex = newModules.findIndex(m => m.id === draggedModule.id);
+    const targetIndex = newModules.findIndex(m => m.id === targetModule.id);
+    
+    // Remove the dragged module and insert it at the target position
+    newModules.splice(draggedIndex, 1);
+    newModules.splice(targetIndex, 0, draggedModule);
+
+    setFolderModules(newModules);
+    setDraggedModule(null);
+     // Here you would typically save the new order to Firestore
+    toast({
+        title: "Urutan Diubah",
+        description: `Modul "${draggedModule.title}" dipindahkan.`,
+    });
+  };
+
 
   const handleEditClick = (module: Module) => {
+    setOpenedFolder(null); // Close folder content dialog if open
     setModuleToPreview(null); // Close preview dialog if open
     setModuleToEdit(module);
   };
@@ -231,7 +276,7 @@ export default function ModulesPage() {
                       <Card 
                         key="folder-surat-penawaran" 
                         className="flex flex-col h-full transition-all duration-200 hover:shadow-xl hover:-translate-y-1 cursor-pointer bg-amber-50/50"
-                        onClick={() => setIsFolderContentOpen(true)}
+                        onClick={() => openFolderContent({id: 'folder-surat-penawaran', name: 'Surat Penawaran'})}
                       >
                           <CardHeader className="flex-row items-start justify-between">
                              <CardTitle className="text-base leading-snug break-words">Surat Penawaran</CardTitle>
@@ -252,7 +297,7 @@ export default function ModulesPage() {
                             className="flex flex-col h-full transition-all duration-200 hover:shadow-xl hover:-translate-y-1 bg-amber-50/50 group"
                           >
                               <CardHeader className="flex-row items-start justify-between">
-                                 <CardTitle className="text-base leading-snug break-words cursor-pointer flex-grow" onClick={() => { /* Logic to open this specific folder's content */ }}>{folder.name}</CardTitle>
+                                 <CardTitle className="text-base leading-snug break-words cursor-pointer flex-grow" onClick={() => openFolderContent(folder)}>{folder.name}</CardTitle>
                                  <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
                                         <Button 
@@ -281,10 +326,10 @@ export default function ModulesPage() {
                                       </DropdownMenuContent>
                                   </DropdownMenu>
                               </CardHeader>
-                              <CardContent className="flex-grow flex items-center justify-center cursor-pointer" onClick={() => { /* Logic to open this specific folder's content */ }}>
+                              <CardContent className="flex-grow flex items-center justify-center cursor-pointer" onClick={() => openFolderContent(folder)}>
                                  <Folder className="h-16 w-16 text-amber-200" />
                               </CardContent>
-                              <CardFooter className="flex justify-between items-center w-full cursor-pointer" onClick={() => { /* Logic to open this specific folder's content */ }}>
+                              <CardFooter className="flex justify-between items-center w-full cursor-pointer" onClick={() => openFolderContent(folder)}>
                                  <p className="text-xs text-muted-foreground">{modules?.filter(m => m.folderId === folder.id).length || 0} Modul</p>
                                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
                               </CardFooter>
@@ -380,18 +425,26 @@ export default function ModulesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isFolderContentOpen} onOpenChange={setIsFolderContentOpen}>
+      <Dialog open={!!openedFolder} onOpenChange={(open) => !open && setOpenedFolder(null)}>
         <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Isi Folder: Surat Penawaran</DialogTitle>
+            <DialogTitle>Isi Folder: {openedFolder?.name}</DialogTitle>
             <DialogDescription>
               Berikut adalah daftar semua modul yang ada di dalam folder ini.
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="flex-grow">
               <div className="space-y-3 pr-4">
-                {!isLoading && modules?.filter(m => m.folderId === 'folder-surat-penawaran' || !m.folderId).map((module, index) => (
-                  <Card key={module.id} className="flex items-center p-3 gap-4">
+                {!isLoading && folderModules.map((module, index) => (
+                  <Card 
+                    key={module.id} 
+                    className="flex items-center p-3 gap-4 group/item transition-shadow duration-200"
+                    draggable={true}
+                    onDragStart={(e) => handleDragStart(e, module)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, module)}
+                  >
+                      <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab opacity-0 group-hover/item:opacity-100 transition-opacity"/>
                       <span className="text-lg font-bold text-muted-foreground w-6 text-center">{index + 1}.</span>
                       <div className="flex-grow">
                           <h4 className="font-semibold text-base">{module.title}</h4>
@@ -422,7 +475,11 @@ export default function ModulesPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-destructive focus:bg-destructive/10 focus:text-destructive" 
-                              onClick={() => setModuleToDelete(module)}
+                              onSelect={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                setModuleToDelete(module);
+                              }}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Hapus
@@ -441,6 +498,9 @@ export default function ModulesPage() {
                         <Skeleton className="h-8 w-8" />
                     </Card>
                 ))}
+                {!isLoading && folderModules.length === 0 && (
+                    <div className="text-center py-10 text-muted-foreground">Folder ini kosong.</div>
+                )}
               </div>
           </ScrollArea>
         </DialogContent>
@@ -474,7 +534,6 @@ export default function ModulesPage() {
             </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }
