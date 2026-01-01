@@ -135,7 +135,7 @@ export default function ModulesPage() {
                     </>
                   )}
                   {!isLoading && modules?.map((module) => (
-                      <Link href={`/dashboard/modules/${module.id}`} key={module.id} className="block group">
+                      <Link href={`/dashboard/modules/${module.id}/preview`} key={module.id} className="block group">
                           <Card className="flex flex-col h-full transition-all duration-200 group-hover:shadow-xl group-hover:-translate-y-1">
                               <CardHeader className="flex-row items-start justify-between">
                                 <CardTitle className="text-lg leading-tight break-words">{module.title}</CardTitle>

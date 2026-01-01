@@ -12,15 +12,13 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
-
-export default function ModuleDetailPage() {
+export default function ModulePreviewPage() {
   const params = useParams<{ id: string }>();
   const firestore = useFirestore();
   const id = params?.id;
@@ -37,15 +35,15 @@ export default function ModuleDetailPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <Header title="Detail Modul" />
+    <div className="flex h-full flex-col bg-muted/20">
+      <Header title="Pratinjau Modul" />
       <main className="flex-1 p-4 md:p-8">
         <div className="mx-auto max-w-4xl">
            <div className="mb-6 flex items-center justify-between">
                 <Button variant="outline" asChild>
                     <Link href="/dashboard/modules">
                         <ArrowLeft className="mr-2 h-4 w-4" />
-                        Kembali ke Daftar
+                        Kembali ke Daftar Modul
                     </Link>
                 </Button>
                 <Button asChild>
@@ -58,25 +56,23 @@ export default function ModuleDetailPage() {
             {isLoading ? (
                 <Card>
                     <CardHeader>
-                        <Skeleton className="h-8 w-3/4" />
+                        <Skeleton className="h-8 w-3/4 mb-4" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            <Skeleton className="h-6 w-full" />
-                            <Skeleton className="h-6 w-5/6" />
-                            <Skeleton className="h-6 w-full" />
-                        </div>
+                    <CardContent className="prose prose-sm max-w-none">
+                        <Skeleton className="h-6 w-full mb-2" />
+                        <Skeleton className="h-6 w-5/6 mb-2" />
+                        <Skeleton className="h-6 w-full" />
                     </CardContent>
                 </Card>
             ) : (
                 <Card>
                     <CardHeader>
-                        <CardTitle>{module?.title}</CardTitle>
+                        <CardTitle className="text-2xl font-bold">{module?.title}</CardTitle>
                     </CardHeader>
                     <CardContent>
                          <div
                             className={cn(
-                                "min-h-[400px] w-full rounded-b-md bg-transparent text-sm",
+                                "w-full bg-transparent",
                                 "prose prose-sm max-w-none",
                                 "prose-h1:font-bold prose-h2:font-semibold prose-h3:font-medium prose-h4:font-normal",
                                 "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
