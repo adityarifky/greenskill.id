@@ -245,6 +245,7 @@ export default function ModulesPage() {
                     "[&_font[size='3']]:text-base",
                     "[&_font[size='2']]:text-sm",
                     "[&_font[size='1']]:text-xs",
+                    "[&_table]:w-full [&_table]:border-collapse [&_table]:border [&_table_td]:border [&_table_td]:p-2 [&_table_th]:border [&_table_th]:p-2"
                 )}
                 dangerouslySetInnerHTML={{ __html: moduleToPreview?.content || '' }}
             />

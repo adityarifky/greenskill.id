@@ -9,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import type { Module } from '@/lib/types';
 import { useFirestore, useUser } from '@/firebase';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Bold, AlignLeft, AlignCenter, AlignRight, Baseline } from 'lucide-react';
+import { Bold, AlignLeft, AlignCenter, AlignRight, Baseline, Table, PlusSquare, Trash2, Pilcrow, MinusSquare } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -55,6 +55,7 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
   const [activeStyles, setActiveStyles] = useState<string[]>([]);
   const [currentFontSize, setCurrentFontSize] = useState('3'); // Default to paragraph size
   const [textAlign, setTextAlign] = useState('left');
+  const [isTableFocused, setIsTableFocused] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -83,6 +84,7 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
     const styles: string[] = [];
     let alignment = 'left';
     let fontSize = '3'; // Default paragraph size
+    let inTable = false;
 
     let current: Node | null = parentNode;
     while (current && current !== editorRef.current) {
@@ -101,12 +103,18 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
             alignment = align;
         }
       }
+
+      if (['td', 'th', 'table'].includes(nodeName)) {
+        inTable = true;
+      }
+
       current = el.parentNode;
     }
     
     setActiveStyles(styles);
     setCurrentFontSize(fontSize);
     setTextAlign(alignment);
+    setIsTableFocused(inTable);
   }, []);
 
 
@@ -150,6 +158,75 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
         execCommand(`justify${alignment.charAt(0).toUpperCase() + alignment.slice(1)}`);
         setTextAlign(alignment);
     }
+  };
+  
+  const getSelectionContext = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return null;
+    const node = selection.getRangeAt(0).startContainer;
+    const element = (node.nodeType === 3 ? node.parentNode : node) as HTMLElement;
+    const cell = element.closest('td, th');
+    const row = element.closest('tr');
+    const table = element.closest('table');
+    return { cell, row, table };
+  };
+
+  const handleTableAction = (e: React.MouseEvent<HTMLButtonElement>, action: 'insertTable' | 'addRow' | 'addColumn' | 'deleteRow' | 'deleteColumn' | 'deleteTable') => {
+    e.preventDefault();
+    const context = getSelectionContext();
+
+    switch (action) {
+        case 'insertTable':
+            const newTable = `<table style="width:100%; border-collapse: collapse;" border="1"><tbody><tr><td style="padding: 5px;">&nbsp;</td><td style="padding: 5px;">&nbsp;</td></tr><tr><td style="padding: 5px;">&nbsp;</td><td style="padding: 5px;">&nbsp;</td></tr></tbody></table><p><br></p>`;
+            document.execCommand('insertHTML', false, newTable);
+            break;
+        case 'addRow':
+            if (context?.row) {
+                const newRow = context.row.cloneNode(true) as HTMLTableRowElement;
+                newRow.childNodes.forEach(child => {
+                    (child as HTMLElement).innerHTML = '&nbsp;';
+                });
+                context.row.parentNode?.insertBefore(newRow, context.row.nextSibling);
+            }
+            break;
+        case 'addColumn':
+            if (context?.table && context?.cell) {
+                const cellIndex = context.cell.cellIndex;
+                for (const row of Array.from(context.table.rows)) {
+                    const newCell = row.insertCell(cellIndex + 1);
+                    newCell.innerHTML = '&nbsp;';
+                    newCell.style.padding = '5px';
+                    newCell.setAttribute('border', '1');
+                }
+            }
+            break;
+        case 'deleteRow':
+             if (context?.row && context.table && context.table.rows.length > 1) {
+                context.row.remove();
+            } else if (context?.table) {
+                context.table.remove();
+            }
+            break;
+        case 'deleteColumn':
+            if (context?.table && context?.cell) {
+                const cellIndex = context.cell.cellIndex;
+                if (context.table.rows[0].cells.length > 1) {
+                    for (const row of Array.from(context.table.rows)) {
+                        row.deleteCell(cellIndex);
+                    }
+                } else {
+                     context.table.remove();
+                }
+            }
+            break;
+        case 'deleteTable':
+            if (context?.table) {
+                context.table.remove();
+            }
+            break;
+    }
+    editorRef.current?.focus();
+    updateToolbar();
   };
 
   const handleContentChange = (e: React.FormEvent<HTMLDivElement>) => {
@@ -241,15 +318,15 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
                   <FormItem>
                     <FormLabel>Konten Modul</FormLabel>
                     <div className="rounded-md border border-input">
-                         <div className="p-2 border-b flex items-center gap-2">
+                         <div className="p-2 border-b flex items-center gap-1 flex-wrap">
                             <ToggleGroup type="multiple" variant="outline" size="sm" className="justify-start" value={activeStyles}>
                                 <ToggleGroupItem value="bold" aria-label="Toggle bold" asChild>
                                     <button onClick={(e) => handleFormat(e, 'bold')}><Bold className="h-4 w-4" /></button>
                                 </ToggleGroupItem>
                             </ToggleGroup>
                             <Select value={currentFontSize} onValueChange={handleFontSizeChange}>
-                                <SelectTrigger className="w-24 h-9">
-                                    <Baseline className="h-4 w-4 mr-2" />
+                                <SelectTrigger className="w-auto h-9 gap-1">
+                                    <Baseline className="h-4 w-4" />
                                     <SelectValue placeholder="Size" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -273,6 +350,31 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
                                     <AlignRight className="h-4 w-4" />
                                 </ToggleGroupItem>
                             </ToggleGroup>
+                            <div className="w-[1px] h-6 bg-border mx-1"></div>
+                            <ToggleGroup type="single" variant="outline" size="sm" className="justify-start">
+                                 <ToggleGroupItem value="table" aria-label="Insert table" asChild>
+                                    <button onClick={(e) => handleTableAction(e, 'insertTable')}><Table className="h-4 w-4" /></button>
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                            {isTableFocused && (
+                                <ToggleGroup type="single" variant="outline" size="sm" className="justify-start">
+                                    <ToggleGroupItem value="add-row" aria-label="Add row" asChild>
+                                        <button onClick={(e) => handleTableAction(e, 'addRow')}><Pilcrow className="h-4 w-4" /></button>
+                                    </ToggleGroupItem>
+                                    <ToggleGroupItem value="add-col" aria-label="Add column" asChild>
+                                        <button onClick={(e) => handleTableAction(e, 'addColumn')}><PlusSquare className="h-4 w-4" /></button>
+                                    </ToggleGroupItem>
+                                     <ToggleGroupItem value="delete-row" aria-label="Delete row" asChild>
+                                        <button onClick={(e) => handleTableAction(e, 'deleteRow')}><MinusSquare className="h-4 w-4 text-destructive" /></button>
+                                    </ToggleGroupItem>
+                                    <ToggleGroupItem value="delete-col" aria-label="Delete column" asChild>
+                                        <button onClick={(e) => handleTableAction(e, 'deleteColumn')}><MinusSquare className="h-4 w-4 text-destructive" /></button>
+                                    </ToggleGroupItem>
+                                    <ToggleGroupItem value="delete-table" aria-label="Delete table" asChild>
+                                        <button onClick={(e) => handleTableAction(e, 'deleteTable')}><Trash2 className="h-4 w-4 text-destructive" /></button>
+                                    </ToggleGroupItem>
+                                </ToggleGroup>
+                            )}
                          </div>
                         <FormControl>
                           <div
@@ -284,8 +386,7 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
                             suppressContentEditableWarning={true}
                             className={cn(
                                 "min-h-[400px] w-full rounded-b-md bg-transparent px-3 py-2 text-sm ring-offset-background",
-                                "prose prose-sm max-w-none focus-visible:outline-none",
-                                "prose-h1:font-bold prose-h2:font-semibold prose-h3:font-medium prose-h4:font-normal", // Example styles
+                                "prose-h1:font-bold prose-h2:font-semibold prose-h3:font-medium prose-h4:font-normal",
                                 "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
                                 "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
                                 "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
@@ -293,6 +394,8 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
                                 "[&_font[size='3']]:text-base",
                                 "[&_font[size='2']]:text-sm",
                                 "[&_font[size='1']]:text-xs",
+                                "focus-visible:outline-none",
+                                "[&_table]:w-full [&_table]:border-collapse [&_table]:border [&_table_td]:border [&_table_td]:p-2 [&_table_th]:border [&_table_th]:p-2"
                             )}
                           >
                           </div>
