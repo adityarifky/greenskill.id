@@ -8,7 +8,7 @@ import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/fires
 import { toast } from '@/hooks/use-toast';
 import type { Module } from '@/lib/types';
 import { useFirestore, useUser } from '@/firebase';
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, memo, forwardRef, useImperativeHandle } from 'react';
 import { Bold } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,56 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
+// --- Text Editor Component ---
+// This component is memoized to prevent re-renders on every keystroke,
+// which was causing the cursor to jump.
+const TextEditor = memo(forwardRef(function TextEditor({ initialContent, onContentChange }: { initialContent: string, onContentChange: (content: string) => void }, ref) {
+    const editorRef = useRef<HTMLDivElement>(null);
+
+    // Expose a method to get the current content, which can be called by the parent form
+    useImperativeHandle(ref, () => ({
+        getContent: () => {
+            return editorRef.current?.innerHTML || '';
+        }
+    }));
+
+    // Set initial content only once
+    useEffect(() => {
+        if (editorRef.current && initialContent) {
+            editorRef.current.innerHTML = initialContent;
+        }
+    }, [initialContent]);
+
+    const execCommand = (command: string, value?: string) => {
+        document.execCommand(command, false, value);
+        editorRef.current?.focus();
+    };
+    
+    return (
+        <div className="rounded-md border border-input">
+            <div className="p-2 border-b">
+                <ToggleGroup type="multiple" variant="outline" size="sm">
+                    <ToggleGroupItem value="bold" aria-label="Toggle bold" onClick={() => execCommand('bold')}>
+                        <Bold className="h-4 w-4" />
+                    </ToggleGroupItem>
+                </ToggleGroup>
+            </div>
+            <div
+                ref={editorRef}
+                id="content-editor"
+                contentEditable={true}
+                onInput={(e) => onContentChange(e.currentTarget.innerHTML)}
+                suppressContentEditableWarning={true}
+                className={cn(
+                    "min-h-[400px] w-full rounded-b-md bg-transparent px-3 py-2 text-sm ring-offset-background",
+                    "focus-visible:outline-none"
+                )}
+            />
+        </div>
+    );
+}));
+
+// --- Main Module Form Component ---
 const formSchema = z.object({
   title: z.string().min(3, { message: 'Judul modul harus memiliki setidaknya 3 karakter.' }),
   content: z.string().min(10, { message: 'Konten modul harus memiliki setidaknya 10 karakter.' }),
@@ -42,6 +92,8 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
+  const editorComponentRef = useRef<{ getContent: () => string }>(null);
+
   const form = useForm<ModuleFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
@@ -50,27 +102,12 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
     },
   });
 
-  const editorRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (initialData) {
       form.reset(initialData);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = initialData.content;
-      }
     }
   }, [initialData, form]);
 
-  const execCommand = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-    editorRef.current?.focus();
-  };
-
-  const handleContentChange = (e: React.FormEvent<HTMLDivElement>) => {
-    const newContent = e.currentTarget.innerHTML;
-    form.setValue('content', newContent, { shouldValidate: true, shouldDirty: true });
-  };
-  
   const title = initialData ? 'Edit Modul' : 'Buat Modul Baru';
   const description = initialData ? 'Perbarui detail modul.' : 'Isi formulir untuk membuat modul baru.';
   const toastMessage = initialData ? 'Modul berhasil diperbarui.' : 'Modul baru berhasil dibuat.';
@@ -85,20 +122,30 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
         });
         return;
     }
+
+    // Get the latest content directly from the editor component on submit
+    const currentContent = editorComponentRef.current?.getContent() || '';
+    
+    // Manually trigger validation for the content field
+    const isContentValid = await form.trigger('content');
+    if (!isContentValid) {
+        form.setValue('content', currentContent, { shouldValidate: true });
+        return; // Stop submission if content is invalid
+    }
     
     try {
+        const finalData = { ...data, content: currentContent };
+
         if (initialData) {
-            // Update existing document
             const docRef = doc(firestore, 'modules', initialData.id);
             await setDoc(docRef, { 
-                ...data, 
+                ...finalData, 
                 updatedAt: serverTimestamp(),
-                userId: user.uid // ensure userId is preserved
+                userId: user.uid
             }, { merge: true });
         } else {
-            // Create new document
             await addDoc(collection(firestore, 'modules'), {
-                ...data,
+                ...finalData,
                 userId: user.uid,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
@@ -154,30 +201,17 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Konten Modul</FormLabel>
-                    <div className="rounded-md border border-input">
-                         <div className="p-2 border-b">
-                            <ToggleGroup type="multiple" variant="outline" size="sm">
-                                <ToggleGroupItem value="bold" aria-label="Toggle bold" onClick={() => execCommand('bold')}>
-                                    <Bold className="h-4 w-4" />
-                                </ToggleGroupItem>
-                            </ToggleGroup>
-                         </div>
-                        <FormControl>
-                          <div
-                            ref={editorRef}
-                            id="content-editor"
-                            contentEditable={true}
-                            onInput={handleContentChange}
-                            suppressContentEditableWarning={true}
-                            className={cn(
-                                "min-h-[400px] w-full rounded-b-md bg-transparent px-3 py-2 text-sm ring-offset-background",
-                                "focus-visible:outline-none"
-                            )}
-                            dangerouslySetInnerHTML={{ __html: form.getValues('content') }}
-                          >
-                          </div>
-                        </FormControl>
-                    </div>
+                    <FormControl>
+                      <TextEditor 
+                        ref={editorComponentRef}
+                        initialContent={field.value} 
+                        onContentChange={(content) => {
+                            // We update the form value for validation purposes,
+                            // but the component itself doesn't re-render thanks to memo.
+                            form.setValue('content', content, { shouldValidate: true, shouldDirty: true });
+                        }}
+                      />
+                    </FormControl>
                     <FormDescription>
                         Gunakan tombol di atas untuk memformat teks Anda.
                     </FormDescription>
