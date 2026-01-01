@@ -121,15 +121,10 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
   useEffect(() => {
     const editor = editorRef.current;
     if (editor) {
-      const handleSelectionChange = () => {
-          updateToolbar();
-      };
-      document.addEventListener('selectionchange', handleSelectionChange);
       editor.addEventListener('keyup', updateToolbar);
       editor.addEventListener('click', updateToolbar);
 
       return () => {
-        document.removeEventListener('selectionchange', handleSelectionChange);
         editor.removeEventListener('keyup', updateToolbar);
         editor.removeEventListener('click', updateToolbar);
       };
