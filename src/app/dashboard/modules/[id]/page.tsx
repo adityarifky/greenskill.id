@@ -62,7 +62,13 @@ export default function ModuleDetailsPage() {
               <Header title="Detail Modul" />
               <main className="flex-1 p-4 md:p-8">
                   <div className="mx-auto max-w-4xl space-y-6">
-                      <Skeleton className="h-10 w-48" />
+                      <div className="mb-6 flex justify-between items-center">
+                        <Skeleton className="h-10 w-48" />
+                        <div className="flex items-center gap-2">
+                            <Skeleton className="h-10 w-24" />
+                            <Skeleton className="h-10 w-24" />
+                        </div>
+                      </div>
                       <Card>
                           <CardHeader>
                               <Skeleton className="h-8 w-3/4" />
