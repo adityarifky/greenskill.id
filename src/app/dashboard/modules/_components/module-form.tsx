@@ -8,6 +8,8 @@ import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/fires
 import { toast } from '@/hooks/use-toast';
 import type { Module } from '@/lib/types';
 import { useFirestore, useUser } from '@/firebase';
+import React from 'react';
+import { Bold, AlignLeft, AlignCenter, AlignRight, Heading1, Heading2, Pilcrow } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +22,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 
 const formSchema = z.object({
@@ -45,6 +47,66 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
       content: '',
     },
   });
+
+  const contentRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const applyStyle = (style: 'bold' | 'h1' | 'h2' | 'p') => {
+    const textarea = contentRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    
+    let newText;
+    const before = textarea.value.substring(0, start);
+    const after = textarea.value.substring(end);
+
+    switch (style) {
+      case 'bold':
+        newText = `<b>${selectedText}</b>`;
+        break;
+      case 'h1':
+        newText = `<h1>${selectedText}</h1>`;
+        break;
+      case 'h2':
+        newText = `<h2>${selectedText}</h2>`;
+        break;
+      case 'p':
+        newText = `<p>${selectedText}</p>`;
+        break;
+      default:
+        newText = selectedText;
+    }
+    
+    const updatedContent = before + newText + after;
+    form.setValue('content', updatedContent);
+    
+    setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + newText.length - selectedText.length, start + newText.length);
+    }, 0);
+  };
+  
+  const applyAlignment = (alignment: 'left' | 'center' | 'right') => {
+    const textarea = contentRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    const before = textarea.value.substring(0, start);
+    const after = textarea.value.substring(end);
+
+    // Wrap the selection in a div with the desired text alignment
+    const newText = `<div style="text-align: ${alignment};">${selectedText}</div>`;
+    const updatedContent = before + newText + after;
+    form.setValue('content', updatedContent);
+
+     setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + newText.length - selectedText.length, start + newText.length);
+    }, 0);
+  };
 
   const title = initialData ? 'Edit Modul' : 'Buat Modul Baru';
   const description = initialData ? 'Perbarui detail modul.' : 'Isi formulir untuk membuat modul baru.';
@@ -124,15 +186,45 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Konten Modul</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Tulis konten modul di sini..."
-                        className="min-h-[400px]"
-                        {...field}
-                      />
-                    </FormControl>
+                    <div className="rounded-md border border-input">
+                         <div className="p-2 border-b">
+                            <ToggleGroup type="multiple" variant="outline" size="sm" className="justify-start">
+                                <ToggleGroupItem value="bold" aria-label="Toggle bold" onClick={() => applyStyle('bold')}>
+                                    <Bold className="h-4 w-4" />
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="h1" aria-label="Toggle H1" onClick={() => applyStyle('h1')}>
+                                    <Heading1 className="h-4 w-4" />
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="h2" aria-label="Toggle H2" onClick={() => applyStyle('h2')}>
+                                    <Heading2 className="h-4 w-4" />
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="p" aria-label="Toggle Paragraph" onClick={() => applyStyle('p')}>
+                                    <Pilcrow className="h-4 w-4" />
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                             <ToggleGroup type="single" variant="outline" size="sm" className="justify-start ml-2">
+                                <ToggleGroupItem value="left" aria-label="Align left" onClick={() => applyAlignment('left')}>
+                                    <AlignLeft className="h-4 w-4" />
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="center" aria-label="Align center" onClick={() => applyAlignment('center')}>
+                                    <AlignCenter className="h-4 w-4" />
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="right" aria-label="Align right" onClick={() => applyAlignment('right')}>
+                                    <AlignRight className="h-4 w-4" />
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                         </div>
+                        <FormControl>
+                          <textarea
+                            ref={contentRef}
+                            placeholder="Tulis konten modul di sini..."
+                            className="min-h-[400px] w-full rounded-b-md bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                            {...field}
+                          />
+                        </FormControl>
+                    </div>
                     <FormDescription>
-                        Anda dapat menggunakan format Markdown untuk styling dasar.
+                        Pilih teks untuk menerapkan styling. Konten disimpan sebagai HTML.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
