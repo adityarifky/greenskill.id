@@ -20,6 +20,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -46,6 +47,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { ModuleFormDynamic } from './_components/module-form-dynamic';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 export default function ModulesPage() {
   const firestore = useFirestore();
@@ -53,6 +56,7 @@ export default function ModulesPage() {
   const [moduleToDelete, setModuleToDelete] = React.useState<Module | null>(null);
   const [moduleToPreview, setModuleToPreview] = React.useState<Module | null>(null);
   const [moduleToEdit, setModuleToEdit] = React.useState<Module | null>(null);
+  const [isFolderDialogOpen, setIsFolderDialogOpen] = React.useState(false);
 
   const modulesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -110,7 +114,7 @@ export default function ModulesPage() {
               <p className="text-muted-foreground">Kelola semua modul pelatihan Anda di sini.</p>
             </div>
             <div className="flex items-center gap-2">
-               <Button variant="outline">
+               <Button variant="outline" onClick={() => setIsFolderDialogOpen(true)}>
                 <FolderPlus className="mr-2 h-4 w-4" />
                 Tambah Folder
               </Button>
@@ -283,6 +287,28 @@ export default function ModulesPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={isFolderDialogOpen} onOpenChange={setIsFolderDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Buat Folder Baru</DialogTitle>
+            <DialogDescription>
+              Beri nama folder baru Anda. Anda bisa memindahkan modul ke dalamnya nanti.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="folder-name" className="text-right">
+                Nama
+              </Label>
+              <Input id="folder-name" placeholder="Contoh: Modul K3" className="col-span-3" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsFolderDialogOpen(false)}>Batal</Button>
+            <Button type="submit">Simpan Folder</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
-}
