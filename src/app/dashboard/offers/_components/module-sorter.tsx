@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Shuffle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Module } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -69,9 +69,9 @@ export function ModuleSorter({ allModules, initialSelectedIds, onSave, onCancel 
             <ScrollArea className="h-full pr-4">
               <div className="space-y-2">
                 {available.map(module => (
-                  <div key={module.id} className="flex items-center justify-between rounded-md border p-3">
+                  <div key={module.id} className="flex items-center justify-between rounded-md border p-2 text-sm">
                     <span className="truncate pr-2">{module.title}</span>
-                    <Button size="icon" variant="outline" onClick={() => handleSelect(module)}>
+                    <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => handleSelect(module)}>
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </div>
@@ -93,23 +93,23 @@ export function ModuleSorter({ allModules, initialSelectedIds, onSave, onCancel 
                 {selected.map((module, index) => (
                   <div
                     key={module.id}
-                    className={`flex items-center justify-between rounded-md border p-3 transition-colors ${focusedModuleId === module.id ? 'ring-2 ring-primary bg-primary/10' : ''}`}
+                    className={`flex items-center justify-between rounded-md border p-2 text-sm transition-colors cursor-pointer ${focusedModuleId === module.id ? 'ring-2 ring-primary bg-primary/10' : 'hover:bg-muted/50'}`}
                     onClick={() => setFocusedModuleId(module.id)}
                   >
-                    <div className="flex items-center gap-2">
-                        <Button size="icon" variant="ghost" onClick={() => handleDeselect(module)}>
+                    <div className="flex items-center gap-2 overflow-hidden">
+                        <Button size="icon" variant="ghost" className="h-7 w-7 flex-shrink-0" onClick={(e) => {e.stopPropagation(); handleDeselect(module);}}>
                           <ArrowLeft className="h-4 w-4 text-destructive" />
                         </Button>
-                        <div className="flex items-center">
-                            <span className="text-sm font-medium mr-2">{index + 1}.</span>
+                        <div className="flex items-center overflow-hidden">
+                            <span className="font-medium mr-2">{index + 1}.</span>
                             <span className="truncate">{module.title}</span>
                         </div>
                     </div>
-                    <div className="flex gap-1">
-                        <Button size="icon" variant="outline" onClick={() => move('up')} disabled={index === 0}>
+                    <div className="flex gap-1 flex-shrink-0">
+                        <Button size="icon" variant="outline" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); move('up');}} disabled={!focusedModuleId || focusedModuleId !== module.id || index === 0}>
                             <ArrowUp className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="outline" onClick={() => move('down')} disabled={index === selected.length - 1}>
+                        <Button size="icon" variant="outline" className="h-7 w-7" onClick={(e) => {e.stopPropagation(); move('down');}} disabled={!focusedModuleId || focusedModuleId !== module.id || index === selected.length - 1}>
                             <ArrowDown className="h-4 w-4" />
                         </Button>
                     </div>
