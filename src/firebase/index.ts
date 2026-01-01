@@ -3,7 +3,7 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
@@ -35,17 +35,7 @@ export function initializeFirebase() {
 
 export function getSdks(firebaseApp: FirebaseApp) {
   const firestore = getFirestore(firebaseApp);
-  if (process.env.NODE_ENV === 'development') {
-    try {
-        connectFirestoreEmulator(firestore, 'localhost', 8080);
-    } catch (e) {
-        // Emulator might already be connected
-        if ((e as any).code !== 'failed-precondition') {
-            console.error("Error connecting to Firestore emulator: ", e);
-        }
-    }
-  }
-
+  
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
