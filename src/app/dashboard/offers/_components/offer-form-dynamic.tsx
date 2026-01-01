@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Offer, Module } from '@/lib/types';
+import type { Offer, Module, UserFolder } from '@/lib/types';
 
 const OfferForm = dynamic(() => import('./offer-form').then(mod => mod.OfferForm), {
   ssr: false,
@@ -11,15 +11,16 @@ const OfferForm = dynamic(() => import('./offer-form').then(mod => mod.OfferForm
 
 interface OfferFormDynamicProps {
   initialData?: Offer | null;
-  modules: Module[];
+  allModules: Module[];
+  userFolders: UserFolder[];
   isLoading?: boolean;
 }
 
-export function OfferFormDynamic({ initialData, modules, isLoading }: OfferFormDynamicProps) {
+export function OfferFormDynamic({ initialData, allModules, userFolders, isLoading }: OfferFormDynamicProps) {
     if (isLoading) {
         return <OfferFormSkeleton />;
     }
-  return <OfferForm modules={modules} />;
+  return <OfferForm allModules={allModules} userFolders={userFolders} />;
 }
 
 

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { Upload, ListOrdered, CheckCircle } from "lucide-react"
+import { Upload, CheckCircle } from "lucide-react"
 import * as React from 'react';
  
 import { Button } from '@/components/ui/button';
@@ -18,22 +18,18 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from "@/components/ui/input"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import type { Module } from '@/lib/types';
-import { ModuleSorter } from './module-sorter';
+import type { Module, UserFolder } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const formSchema = z.object({
+  folderId: z.string().min(1, { message: 'Silakan pilih sebuah folder.' }),
   moduleIds: z.array(z.string()).min(1, { message: 'Silakan pilih minimal satu modul.' }),
   backgroundFiles: z
     .any()
@@ -51,38 +47,50 @@ const formSchema = z.object({
 type OfferFormValues = z.infer<typeof formSchema>;
 
 interface OfferFormProps {
-  modules: Module[];
+  allModules: Module[];
+  userFolders: UserFolder[];
 }
 
-export function OfferForm({ modules }: OfferFormProps) {
+export function OfferForm({ allModules, userFolders }: OfferFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isSorterOpen, setIsSorterOpen] = React.useState(false);
   
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      folderId: '',
       moduleIds: [],
     },
   });
 
   const title = 'Buat Surat';
-  const description = 'Pilih modul, urutkan konten, dan unggah background untuk membuat surat.';
+  const description = 'Pilih folder, pilih modul, dan unggah background untuk membuat surat.';
   const action = 'Buat Surat';
 
-  const selectedModuleDetails = React.useMemo(() => {
-    const selectedIds = form.watch('moduleIds');
-    const selectedIdSet = new Set(selectedIds);
-    // Preserve the order from the selection
-    return selectedIds.map(id => modules.find(m => m.id === id)).filter(Boolean) as Module[];
-  }, [form.watch('moduleIds'), modules]);
+  const selectedFolderId = form.watch('folderId');
+
+  const modulesInSelectedFolder = React.useMemo(() => {
+    if (!selectedFolderId) return [];
+    if (selectedFolderId === 'folder-surat-penawaran') {
+      return allModules.filter(m => !m.folderId || m.folderId === 'folder-surat-penawaran');
+    }
+    return allModules.filter(m => m.folderId === selectedFolderId);
+  }, [selectedFolderId, allModules]);
+
+  // Reset moduleIds when folder changes
+  React.useEffect(() => {
+    form.setValue('moduleIds', []);
+  }, [selectedFolderId, form]);
 
 
   const onSubmit = async (data: OfferFormValues) => {
     setIsSubmitting(true);
-
-    const orderedModules = data.moduleIds.map(id => modules.find(m => m.id === id)).filter(Boolean) as Module[];
     
+    // Sort selected modules based on their order in the full list
+    const orderedModules = allModules
+      .filter(m => data.moduleIds.includes(m.id))
+      .sort((a, b) => data.moduleIds.indexOf(a.id) - data.moduleIds.indexOf(b.id));
+
     if (orderedModules.length !== data.moduleIds.length) {
         toast({
             variant: "destructive",
@@ -149,37 +157,84 @@ export function OfferForm({ modules }: OfferFormProps) {
           <CardContent className="space-y-6">
             <FormField
               control={form.control}
-              name="moduleIds"
+              name="folderId"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Pilih Modul Konten</FormLabel>
-                   <FormControl>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        className="w-full justify-start text-left font-normal"
-                        onClick={() => setIsSorterOpen(true)}
-                        disabled={modules.length === 0}
-                      >
-                         <ListOrdered className="mr-2 h-4 w-4" />
-                         {selectedModuleDetails.length > 0 ? `${selectedModuleDetails.length} modul dipilih` : (modules.length > 0 ? "Pilih modul..." : "Tidak ada modul tersedia")}
-                      </Button>
-                    </FormControl>
-                    {selectedModuleDetails.length > 0 && (
-                      <div className="mt-2 space-y-2 rounded-md border p-3">
-                        <p className="text-sm font-medium">Modul Terpilih (berurutan):</p>
-                        <ol className="list-decimal list-inside text-sm text-muted-foreground">
-                            {selectedModuleDetails.map((module) => (
-                                <li key={module.id} className="truncate">{module.title}</li>
-                            ))}
-                        </ol>
-                      </div>
-                    )}
-                  <FormDescription>Konten dari modul ini akan digabungkan secara berurutan.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+                  <FormItem>
+                    <FormLabel>Pilih Folder Modul</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih sebuah folder..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                         <SelectItem value="folder-surat-penawaran">Surat Penawaran (Default)</SelectItem>
+                         {userFolders.map(folder => (
+                           <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>
+                         ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
             />
+
+            {selectedFolderId && (
+                 <FormField
+                  control={form.control}
+                  name="moduleIds"
+                  render={() => (
+                    <FormItem>
+                      <div className="mb-4">
+                          <FormLabel className="text-base">Modul dalam Folder</FormLabel>
+                          <FormDescription>
+                            Pilih modul yang ingin Anda gabungkan menjadi surat.
+                          </FormDescription>
+                      </div>
+                       <ScrollArea className="h-60 w-full rounded-md border p-4">
+                           {modulesInSelectedFolder.length > 0 ? modulesInSelectedFolder.map((item) => (
+                            <FormField
+                              key={item.id}
+                              control={form.control}
+                              name="moduleIds"
+                              render={({ field }) => {
+                                return (
+                                  <FormItem
+                                    key={item.id}
+                                    className="flex flex-row items-start space-x-3 space-y-0 mb-3"
+                                  >
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(item.id)}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([...(field.value || []), item.id])
+                                            : field.onChange(
+                                                field.value?.filter(
+                                                  (value) => value !== item.id
+                                                )
+                                              )
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="font-normal text-sm">
+                                      {item.title}
+                                    </FormLabel>
+                                  </FormItem>
+                                )
+                              }}
+                            />
+                          )) : (
+                            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                                Folder ini kosong.
+                            </div>
+                          )}
+                       </ScrollArea>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            )}
 
              <FormField
               control={form.control}
@@ -211,30 +266,6 @@ export function OfferForm({ modules }: OfferFormProps) {
           </CardContent>
         </Card>
       </form>
-       <Dialog open={isSorterOpen} onOpenChange={setIsSorterOpen}>
-          <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
-              <DialogHeader>
-              <DialogTitle>Pilih dan Urutkan Modul</DialogTitle>
-              <DialogDescription>
-                Klik pada modul untuk memilih atau membatalkan pilihan. Urutan akan sesuai dengan urutan di daftar.
-              </DialogDescription>
-            </DialogHeader>
-             <ModuleSorter
-                allModules={modules}
-                initialSelectedIds={form.getValues('moduleIds')}
-                onSave={(newOrderIds) => {
-                    form.setValue('moduleIds', newOrderIds, { shouldValidate: true });
-                    setIsSorterOpen(false);
-                    toast({
-                        title: "Pilihan disimpan!",
-                        description: `${newOrderIds.length} modul telah dipilih.`,
-                        action: <CheckCircle className="h-5 w-5 text-green-500" />
-                    })
-                }}
-                onCancel={() => setIsSorterOpen(false)}
-             />
-          </DialogContent>
-      </Dialog>
     </Form>
   );
 }

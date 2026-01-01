@@ -4,13 +4,13 @@ import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebas
 import { collection, query, where } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { OfferFormDynamic } from '../_components/offer-form-dynamic';
-import type { Module } from '@/lib/types';
+import type { Module, UserFolder } from '@/lib/types';
 import * as React from 'react';
 
 export default function NewOfferPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
-   const [isClient, setIsClient] = React.useState(false);
+  const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
     setIsClient(true);
@@ -21,9 +21,16 @@ export default function NewOfferPage() {
     return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
   }, [firestore, user]);
 
-  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
+  const foldersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid));
+  }, [firestore, user]);
 
-  const isLoading = isUserLoading || isLoadingModules;
+  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
+  const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
+
+
+  const isLoading = isUserLoading || isLoadingModules || isLoadingFolders;
 
   return (
     <div className="flex h-full flex-col">
@@ -31,9 +38,13 @@ export default function NewOfferPage() {
       <main className="flex-1 p-4 md:p-8">
         <div className="mx-auto max-w-2xl">
           {isClient ? (
-             <OfferFormDynamic modules={modules || []} isLoading={isLoading} />
+             <OfferFormDynamic 
+                allModules={modules || []} 
+                userFolders={userFolders || []} 
+                isLoading={isLoading} 
+              />
           ) : (
-             <OfferFormDynamic modules={[]} isLoading={true} />
+             <OfferFormDynamic allModules={[]} userFolders={[]} isLoading={true} />
           )}
         </div>
       </main>
