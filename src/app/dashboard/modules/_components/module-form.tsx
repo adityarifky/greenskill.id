@@ -46,38 +46,40 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
     useEffect(() => {
         if (editorRef.current) {
             editorRef.current.innerHTML = initialContent;
-
-            const handlePaste = (event: ClipboardEvent) => {
-                const items = event.clipboardData?.items;
-                if (!items) return;
-
-                for (let i = 0; i < items.length; i++) {
-                    if (items[i].type.indexOf('image') !== -1) {
-                        event.preventDefault();
-                        const blob = items[i].getAsFile();
-                        if (blob) {
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                const dataUrl = e.target?.result as string;
-                                document.execCommand('insertImage', false, dataUrl);
-                            };
-                            reader.readAsDataURL(blob);
-                        }
-                        return;
-                    }
-                }
-            };
-            
-            editorRef.current.addEventListener('paste', handlePaste);
-
-            return () => {
-                // The check for editorRef.current is important for cleanup
-                if (editorRef.current) {
-                    editorRef.current.removeEventListener('paste', handlePaste);
-                }
-            };
         }
     }, [initialContent]);
+
+    useEffect(() => {
+        const editor = editorRef.current;
+        if (!editor) return;
+
+        const handlePaste = (event: ClipboardEvent) => {
+            const items = event.clipboardData?.items;
+            if (!items) return;
+
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    event.preventDefault();
+                    const blob = items[i].getAsFile();
+                    if (blob) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const dataUrl = e.target?.result as string;
+                            document.execCommand('insertImage', false, dataUrl);
+                        };
+                        reader.readAsDataURL(blob);
+                    }
+                    return; 
+                }
+            }
+        };
+        
+        editor.addEventListener('paste', handlePaste);
+
+        return () => {
+            editor.removeEventListener('paste', handlePaste);
+        };
+    }, []);
 
     const execCommand = (command: string, value?: string) => {
         document.execCommand(command, false, value);
@@ -85,7 +87,7 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
     };
 
     const applyFontSize = (size: string) => {
-        execCommand('formatBlock', 'p'); // Ensure we are modifying a paragraph
+        execCommand('formatBlock', 'p'); 
         execCommand('fontSize', size);
     }
     
@@ -97,7 +99,6 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
         const node = range.startContainer;
         let cell = (node.nodeName === 'TD' || node.nodeName === 'TH') ? node : node.parentElement?.closest('td, th');
         
-        // If selection is on text node inside a cell
         if (node.nodeType === Node.TEXT_NODE && node.parentElement) {
             cell = node.parentElement.closest('td, th');
         }
@@ -152,7 +153,6 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
                 if (table.rows.length > 1) {
                     table.deleteRow(rowIndex);
                 } else {
-                    // if it's the last row, delete the table
                     table.remove();
                 }
                 break;
@@ -163,7 +163,6 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
                         r.deleteCell(cellIndex);
                     }
                 } else {
-                     // if it's the last column, delete the table
                     table.remove();
                 }
                 break;
@@ -387,7 +386,6 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
     
     const contentValidationResult = contentValidationSchema.safeParse(currentContent);
     if (!contentValidationResult.success) {
-      // Create a temporary div to strip HTML for a better character count check
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = currentContent;
       const textContent = tempDiv.textContent || tempDiv.innerText || "";
