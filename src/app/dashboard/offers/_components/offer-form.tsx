@@ -24,13 +24,13 @@ import type { Module, UserFolder } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const formSchema = z.object({
-  folderId: z.string().min(1, { message: 'Silakan pilih sebuah folder.' }),
-  moduleIds: z.array(z.string()).min(1, { message: 'Silakan pilih minimal satu modul.' }),
+  content: z.string().min(1, { message: 'Konten surat tidak boleh kosong.' }),
   backgroundFiles: z
     .any()
     .refine((files) => files instanceof FileList && files.length > 0, "Silakan unggah sebuah gambar background.")
@@ -58,52 +58,17 @@ export function OfferForm({ allModules, userFolders }: OfferFormProps) {
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      folderId: '',
-      moduleIds: [],
+      content: '',
     },
   });
 
   const title = 'Buat Surat';
-  const description = 'Pilih folder, pilih modul, dan unggah background untuk membuat surat.';
+  const description = 'Tulis konten surat dan unggah background untuk membuat surat.';
   const action = 'Buat Surat';
-
-  const selectedFolderId = form.watch('folderId');
-
-  const modulesInSelectedFolder = React.useMemo(() => {
-    if (!selectedFolderId) return [];
-    if (selectedFolderId === 'folder-surat-penawaran') {
-      return allModules.filter(m => !m.folderId || m.folderId === 'folder-surat-penawaran');
-    }
-    return allModules.filter(m => m.folderId === selectedFolderId);
-  }, [selectedFolderId, allModules]);
-
-  // Reset moduleIds when folder changes
-  React.useEffect(() => {
-    form.setValue('moduleIds', []);
-  }, [selectedFolderId, form]);
-
 
   const onSubmit = async (data: OfferFormValues) => {
     setIsSubmitting(true);
     
-    // Sort selected modules based on their order in the full list
-    const orderedModules = allModules
-      .filter(m => data.moduleIds.includes(m.id))
-      .sort((a, b) => data.moduleIds.indexOf(a.id) - data.moduleIds.indexOf(b.id));
-
-    if (orderedModules.length !== data.moduleIds.length) {
-        toast({
-            variant: "destructive",
-            title: "Gagal!",
-            description: "Beberapa modul yang dipilih tidak valid.",
-        });
-        setIsSubmitting(false);
-        return;
-    }
-    
-    // Concatenate content from all selected modules
-    const combinedContent = orderedModules.map(m => m.content).join('<div style="page-break-before: always;"></div>');
-
     try {
         let backgroundUrl: string | undefined = undefined;
         if (data.backgroundFiles && data.backgroundFiles.length > 0) {
@@ -119,8 +84,8 @@ export function OfferForm({ allModules, userFolders }: OfferFormProps) {
         const temporaryOfferData = {
             id: `temp-${Date.now()}`,
             module: {
-                title: `Surat Gabungan (${orderedModules.length} modul)`,
-                content: combinedContent,
+                title: `Surat Kustom`,
+                content: data.content,
             },
             backgroundUrl: backgroundUrl, 
         };
@@ -157,85 +122,25 @@ export function OfferForm({ allModules, userFolders }: OfferFormProps) {
           <CardContent className="space-y-6">
             <FormField
               control={form.control}
-              name="folderId"
+              name="content"
               render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pilih Folder Modul</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih sebuah folder..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                         <SelectItem value="folder-surat-penawaran">Surat Penawaran (Default)</SelectItem>
-                         {userFolders.map(folder => (
-                           <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>
-                         ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                <FormItem>
+                  <FormLabel>Konten Surat</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Tuliskan isi surat Anda di sini..."
+                      className="min-h-[200px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Anda dapat menggunakan HTML dasar untuk format teks.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-
-            {selectedFolderId && (
-                 <FormField
-                  control={form.control}
-                  name="moduleIds"
-                  render={() => (
-                    <FormItem>
-                      <div className="mb-4">
-                          <FormLabel className="text-base">Modul dalam Folder</FormLabel>
-                          <FormDescription>
-                            Pilih modul yang ingin Anda gabungkan menjadi surat.
-                          </FormDescription>
-                      </div>
-                       <ScrollArea className="h-60 w-full rounded-md border p-4">
-                           {modulesInSelectedFolder.length > 0 ? modulesInSelectedFolder.map((item) => (
-                            <FormField
-                              key={item.id}
-                              control={form.control}
-                              name="moduleIds"
-                              render={({ field }) => {
-                                return (
-                                  <FormItem
-                                    key={item.id}
-                                    className="flex flex-row items-start space-x-3 space-y-0 mb-3"
-                                  >
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(item.id)}
-                                        onCheckedChange={(checked) => {
-                                          return checked
-                                            ? field.onChange([...(field.value || []), item.id])
-                                            : field.onChange(
-                                                field.value?.filter(
-                                                  (value) => value !== item.id
-                                                )
-                                              )
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="font-normal text-sm">
-                                      {item.title}
-                                    </FormLabel>
-                                  </FormItem>
-                                )
-                              }}
-                            />
-                          )) : (
-                            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                                Folder ini kosong.
-                            </div>
-                          )}
-                       </ScrollArea>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-            )}
-
+            
              <FormField
               control={form.control}
               name="backgroundFiles"

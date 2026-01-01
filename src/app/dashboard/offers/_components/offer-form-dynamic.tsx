@@ -20,6 +20,7 @@ export function OfferFormDynamic({ initialData, allModules, userFolders, isLoadi
     if (isLoading) {
         return <OfferFormSkeleton />;
     }
+  // The initialData prop is not used in the simplified form, but kept for potential future use.
   return <OfferForm allModules={allModules} userFolders={userFolders} />;
 }
 
@@ -27,7 +28,7 @@ export function OfferFormDynamic({ initialData, allModules, userFolders, isLoadi
 function OfferFormSkeleton() {
     return (
         <div className="mx-auto max-w-2xl space-y-6">
-            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-48 w-full" />
             <Skeleton className="h-24 w-full" />
             <Skeleton className="h-12 w-full" />
         </div>
