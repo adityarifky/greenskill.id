@@ -77,7 +77,10 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
         editor.addEventListener('paste', handlePaste);
 
         return () => {
-            editor.removeEventListener('paste', handlePaste);
+            // Check if the editor element still exists before removing the listener
+            if (editor) {
+                editor.removeEventListener('paste', handlePaste);
+            }
         };
     }, []);
 
