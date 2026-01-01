@@ -29,22 +29,24 @@ import { cn } from '@/lib/utils';
 // --- Text Editor Component ---
 // This component is memoized to prevent re-renders on every keystroke,
 // which was causing the cursor to jump.
-const TextEditor = memo(forwardRef(function TextEditor({ initialContent, onContentChange }: { initialContent: string, onContentChange: (content: string) => void }, ref) {
+const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { initialContent: string }, ref) {
     const editorRef = useRef<HTMLDivElement>(null);
 
-    // Expose a method to get the current content, which can be called by the parent form
+    // Expose a method to get the current content, which can be called by the parent form on submit
     useImperativeHandle(ref, () => ({
         getContent: () => {
             return editorRef.current?.innerHTML || '';
         }
     }));
 
-    // Set initial content only once
+    // Set initial content only once when the component mounts
     useEffect(() => {
         if (editorRef.current && initialContent) {
             editorRef.current.innerHTML = initialContent;
         }
-    }, [initialContent]);
+        // We only want this to run once, so we pass an empty dependency array.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const execCommand = (command: string, value?: string) => {
         document.execCommand(command, false, value);
@@ -64,12 +66,12 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent, onConte
                 ref={editorRef}
                 id="content-editor"
                 contentEditable={true}
-                onInput={(e) => onContentChange(e.currentTarget.innerHTML)}
                 suppressContentEditableWarning={true}
                 className={cn(
                     "min-h-[400px] w-full rounded-b-md bg-transparent px-3 py-2 text-sm ring-offset-background",
                     "focus-visible:outline-none"
                 )}
+                 dangerouslySetInnerHTML={{ __html: initialContent }}
             />
         </div>
     );
@@ -78,8 +80,12 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent, onConte
 // --- Main Module Form Component ---
 const formSchema = z.object({
   title: z.string().min(3, { message: 'Judul modul harus memiliki setidaknya 3 karakter.' }),
-  content: z.string().min(10, { message: 'Konten modul harus memiliki setidaknya 10 karakter.' }),
+  // Content validation will be handled manually before submit
+  content: z.string(),
 });
+
+const contentValidationSchema = z.string().min(10, { message: 'Konten modul harus memiliki setidaknya 10 karakter.' });
+
 
 type ModuleFormValues = z.infer<typeof formSchema>;
 
@@ -127,10 +133,13 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
     const currentContent = editorComponentRef.current?.getContent() || '';
     
     // Manually trigger validation for the content field
-    const isContentValid = await form.trigger('content');
-    if (!isContentValid) {
-        form.setValue('content', currentContent, { shouldValidate: true });
-        return; // Stop submission if content is invalid
+    const contentValidationResult = contentValidationSchema.safeParse(currentContent);
+    if (!contentValidationResult.success) {
+      form.setError('content', {
+        type: 'manual',
+        message: contentValidationResult.error.issues[0].message
+      });
+      return;
     }
     
     try {
@@ -205,11 +214,6 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
                       <TextEditor 
                         ref={editorComponentRef}
                         initialContent={field.value} 
-                        onContentChange={(content) => {
-                            // We update the form value for validation purposes,
-                            // but the component itself doesn't re-render thanks to memo.
-                            form.setValue('content', content, { shouldValidate: true, shouldDirty: true });
-                        }}
                       />
                     </FormControl>
                     <FormDescription>
