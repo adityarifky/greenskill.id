@@ -30,7 +30,33 @@ export default function ModulePreviewPage({ params }: { params: Promise<{ id: st
 
   const { data: module, isLoading } = useDoc<Module>(moduleRef);
   
-  if (!isLoading && !module) {
+  if (isLoading) {
+    return (
+      <div className="flex h-full flex-col bg-muted/20">
+        <Header title="Pratinjau Modul" />
+        <main className="flex-1 p-4 md:p-8">
+          <div className="mx-auto max-w-4xl">
+            <div className="mb-6 flex items-center justify-between">
+                <Skeleton className="h-10 w-44" />
+                <Skeleton className="h-10 w-32" />
+            </div>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-3/4 mb-4" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-6 w-full mb-2" />
+                    <Skeleton className="h-6 w-5/6 mb-2" />
+                    <Skeleton className="h-6 w-full" />
+                </CardContent>
+            </Card>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (!module) {
     notFound();
   }
 
@@ -55,41 +81,27 @@ export default function ModulePreviewPage({ params }: { params: Promise<{ id: st
                     </Button>
                 )}
             </div>
-            {isLoading ? (
-                <Card>
-                    <CardHeader>
-                        <Skeleton className="h-8 w-3/4 mb-4" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-6 w-full mb-2" />
-                        <Skeleton className="h-6 w-5/6 mb-2" />
-                        <Skeleton className="h-6 w-full" />
-                    </CardContent>
-                </Card>
-            ) : (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-2xl font-bold">{module?.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                         <div
-                            className={cn(
-                                "min-h-[400px] w-full rounded-md bg-transparent px-3 py-2 text-sm",
-                                // These classes ensure the WYSIWYG content is rendered correctly
-                                "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
-                                "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
-                                "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
-                                "[&_font[size='4']]:text-xl [&_font[size='4']]:font-semibold",
-                                "[&_font[size='3']]:text-base",
-                                "[&_font[size='2']]:text-sm",
-                                "[&_font[size='1']]:text-xs",
-                                "prose max-w-none"
-                            )}
-                            dangerouslySetInnerHTML={{ __html: module?.content || '' }}
-                        />
-                    </CardContent>
-                </Card>
-            )}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-2xl font-bold">{module?.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                      <div
+                        className={cn(
+                            "min-h-[400px] w-full rounded-md bg-transparent px-3 py-2 text-sm",
+                            // These classes ensure the WYSIWYG content is rendered correctly
+                            "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
+                            "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
+                            "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
+                            "[&_font[size='4']]:text-xl [&_font[size='4']]:font-semibold",
+                            "[&_font[size='3']]:text-base",
+                            "[&_font[size='2']]:text-sm",
+                            "[&_font[size='1']]:text-xs",
+                        )}
+                        dangerouslySetInnerHTML={{ __html: module?.content || '' }}
+                    />
+                </CardContent>
+            </Card>
         </div>
       </main>
     </div>
