@@ -51,6 +51,11 @@ import { ModuleFormDynamic } from './_components/module-form-dynamic';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
+type UserFolder = {
+  id: string;
+  name: string;
+};
+
 export default function ModulesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -60,6 +65,7 @@ export default function ModulesPage() {
   const [isFolderContentOpen, setIsFolderContentOpen] = React.useState(false);
   const [isAddFolderOpen, setIsAddFolderOpen] = React.useState(false);
   const [newFolderName, setNewFolderName] = React.useState('');
+  const [userFolders, setUserFolders] = React.useState<UserFolder[]>([]);
 
 
   const modulesQuery = useMemoFirebase(() => {
@@ -117,8 +123,13 @@ export default function ModulesPage() {
         });
         return;
     }
-    // Logic to save the folder will be added here
-    console.log('Saving folder:', newFolderName);
+    
+    const newFolder: UserFolder = {
+      id: Date.now().toString(),
+      name: newFolderName,
+    };
+    setUserFolders(prevFolders => [...prevFolders, newFolder]);
+    
     toast({
         title: 'Sukses!',
         description: `Folder "${newFolderName}" berhasil dibuat.`,
@@ -150,11 +161,11 @@ export default function ModulesPage() {
             </div>
           </div>
 
-          {!isLoading && (!modules || modules.length === 0) ? (
+          {!isLoading && (!modules || modules.length === 0) && userFolders.length === 0 ? (
               <div className="py-20 text-center text-muted-foreground flex flex-col items-center justify-center border-2 border-dashed rounded-lg h-full">
                 <BookOpen className="h-16 w-16 text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold">Belum Ada Modul</h3>
-                <p className="mb-4">Mulai buat modul pertama Anda.</p>
+                <h3 className="text-lg font-semibold">Belum Ada Modul atau Folder</h3>
+                <p className="mb-4">Mulai buat modul atau folder pertama Anda.</p>
                  <Button asChild>
                     <Link href="/dashboard/modules/new">
                         <PlusCircle className="mr-2 h-4 w-4" />
@@ -186,23 +197,45 @@ export default function ModulesPage() {
                       </Card>
                     </>
                   ) : (
-                    <Card 
-                      key="folder-surat-penawaran" 
-                      className="flex flex-col h-full transition-all duration-200 hover:shadow-xl hover:-translate-y-1 cursor-pointer bg-amber-50/50"
-                      onClick={() => setIsFolderContentOpen(true)}
-                    >
-                        <CardHeader className="flex-row items-start justify-between">
-                           <CardTitle className="text-base leading-snug break-words">Surat Penawaran</CardTitle>
-                           <Folder className="h-5 w-5 text-amber-500" />
-                        </CardHeader>
-                        <CardContent className="flex-grow flex items-center justify-center">
-                           <Folder className="h-16 w-16 text-amber-200" />
-                        </CardContent>
-                        <CardFooter className="flex justify-between items-center w-full">
-                           <p className="text-xs text-muted-foreground">{modules?.length || 0} Modul</p>
-                           <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                        </CardFooter>
-                    </Card>
+                    <>
+                      <Card 
+                        key="folder-surat-penawaran" 
+                        className="flex flex-col h-full transition-all duration-200 hover:shadow-xl hover:-translate-y-1 cursor-pointer bg-amber-50/50"
+                        onClick={() => setIsFolderContentOpen(true)}
+                      >
+                          <CardHeader className="flex-row items-start justify-between">
+                             <CardTitle className="text-base leading-snug break-words">Surat Penawaran</CardTitle>
+                             <Folder className="h-5 w-5 text-amber-500" />
+                          </CardHeader>
+                          <CardContent className="flex-grow flex items-center justify-center">
+                             <Folder className="h-16 w-16 text-amber-200" />
+                          </CardContent>
+                          <CardFooter className="flex justify-between items-center w-full">
+                             <p className="text-xs text-muted-foreground">{modules?.length || 0} Modul</p>
+                             <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                          </CardFooter>
+                      </Card>
+
+                      {userFolders.map((folder) => (
+                         <Card 
+                            key={folder.id} 
+                            className="flex flex-col h-full transition-all duration-200 hover:shadow-xl hover:-translate-y-1 cursor-pointer bg-amber-50/50"
+                            onClick={() => { /* Logic to open this specific folder's content */ }}
+                          >
+                              <CardHeader className="flex-row items-start justify-between">
+                                 <CardTitle className="text-base leading-snug break-words">{folder.name}</CardTitle>
+                                 <Folder className="h-5 w-5 text-amber-500" />
+                              </CardHeader>
+                              <CardContent className="flex-grow flex items-center justify-center">
+                                 <Folder className="h-16 w-16 text-amber-200" />
+                              </CardContent>
+                              <CardFooter className="flex justify-between items-center w-full">
+                                 <p className="text-xs text-muted-foreground">0 Modul</p>
+                                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                              </CardFooter>
+                          </Card>
+                      ))}
+                    </>
                   )}
              </div>
           )}
