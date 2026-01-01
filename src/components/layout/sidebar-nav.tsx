@@ -9,6 +9,7 @@ import {
   MoreHorizontal,
   LayoutTemplate,
   BookOpen,
+  Eye,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/dashboard/schemes', icon: FileText, label: 'Skema Registrasi' },
   { href: '/dashboard/offers', icon: FileText, label: 'Daftar Penawaran' },
   { href: '/dashboard/modules', icon: BookOpen, label: 'Daftar Modul' },
+  { href: '/dashboard/preview', icon: Eye, label: 'Preview' },
 ];
 
 export function SidebarNav() {
