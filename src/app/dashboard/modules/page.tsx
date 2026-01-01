@@ -23,6 +23,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -169,17 +170,6 @@ export default function ModulesPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem 
-                                   asChild
-                                   onClick={(e) => {
-                                    e.stopPropagation();
-                                  }}
-                                >
-                                   <Link href={`/dashboard/modules/${module.id}`}>
-                                    <FileEdit className="mr-2 h-4 w-4" />
-                                    Edit
-                                  </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
                                   className="text-destructive focus:bg-destructive/10 focus:text-destructive" 
                                   onClick={(e) => {
                                     e.preventDefault();
@@ -243,11 +233,17 @@ export default function ModulesPage() {
                 dangerouslySetInnerHTML={{ __html: moduleToPreview?.content || '' }}
             />
           </ScrollArea>
+           <DialogFooter className="pt-4">
+              <Button asChild variant="outline">
+                <Link href={`/dashboard/modules/${moduleToPreview?.id}`}>
+                  <FileEdit className="mr-2 h-4 w-4" />
+                  Edit
+                </Link>
+              </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
     </div>
   );
 }
-
-    
