@@ -1,6 +1,6 @@
 'use client';
 
-import { notFound, useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { doc } from 'firebase/firestore';
@@ -18,10 +18,9 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
-export default function ModulePreviewPage() {
-  const params = useParams<{ id: string }>();
+export default function ModulePreviewPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
-  const id = params?.id;
+  const { id } = params;
 
   const moduleRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;

@@ -1,6 +1,6 @@
 'use client';
 
-import { notFound, useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { doc } from 'firebase/firestore';
@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -20,10 +19,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 
-export default function ModuleDetailPage() {
-  const params = useParams<{ id: string }>();
+export default function ModuleDetailPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
-  const id = params?.id;
+  const { id } = params;
 
   const moduleRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -77,6 +75,7 @@ export default function ModuleDetailPage() {
                          <div
                             className={cn(
                                 "min-h-[400px] w-full rounded-b-md bg-transparent text-sm",
+                                // These classes ensure the WYSIWYG content is rendered correctly
                                 "prose prose-sm max-w-none",
                                 "prose-h1:font-bold prose-h2:font-semibold prose-h3:font-medium prose-h4:font-normal",
                                 "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
