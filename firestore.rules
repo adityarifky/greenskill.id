@@ -2,12 +2,32 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Users can only read and write to their own user document.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Registration schemas are public to read for any authenticated user,
+    // but can only be written by their owner.
+    match /registration_schemas/{schemaId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Training offers can only be managed by the user who created them.
+    match /training_offers/{offerId} {
+      allow read, write: if request.auth != null && (resource.data.userId == request.auth.uid || request.resource.data.userId == request.auth.uid);
+    }
     
-    // WARNING: These rules are permissive and allow any authenticated user to read/write any data.
-    // This is intended for development to unblock UI creation and should be secured
-    // before moving to production.
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    // Modules can only be managed by the user who created them.
+    match /modules/{moduleId} {
+       allow read, write: if request.auth != null && (resource.data.userId == request.auth.uid || request.resource.data.userId == request.auth.uid);
+    }
+
+    // User folders can only be managed by the user who created them.
+    match /user_folders/{folderId} {
+        allow read, write: if request.auth != null && (resource.data.userId == request.auth.uid || request.resource.data.userId == request.auth.uid);
     }
   }
 }
