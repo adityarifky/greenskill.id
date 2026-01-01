@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Header } from '@/components/layout/header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Printer } from 'lucide-react';
 import type { Module } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -88,42 +88,72 @@ export default function SessionOfferPreviewPage() {
                 Kembali ke Formulir
             </Button>
              <Button onClick={() => window.print()}>
+                <Printer className="mr-2 h-4 w-4" />
                 Cetak Surat Penawaran
             </Button>
          </div>
         
           <div className="print-container mx-auto max-w-4xl rounded-lg bg-white shadow-lg">
             <div
-              className="print-content relative aspect-[1/1.414] w-full"
+              id="print-content-wrapper"
+              className="print-content relative w-full"
             >
-              <Image
-                src={backgroundUrl}
-                alt="Background Surat Penawaran"
-                fill
-                sizes="100vw"
-                priority
-                className="object-cover pointer-events-none"
-              />
-              <div className="absolute inset-0">
-                 <div
-                    className={cn(
-                        "p-4 w-full h-full bg-transparent text-sm",
-                        "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
-                        "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
-                        "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
-                        "[&_font[size='4']]:text-xl [&_font[size='4']]:font-semibold",
-                        "[&_font[size='3']]:text-base",
-                        "[&_font[size='2']]:text-sm",
-                        "[&_font[size='1']]:text-xs",
-                        "[&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2",
-                         "[&_img]:max-w-full [&_img]:h-auto"
-                    )}
-                    dangerouslySetInnerHTML={{ __html: module.content || '' }}
+              {/* This wrapper will contain all pages */}
+              <div
+                  className={cn(
+                      "printable-page relative aspect-[1/1.414]",
+                      "bg-white text-sm",
+                      "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
+                      "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
+                      "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
+                      "[&_font[size='4']]:text-xl [&_font[size='4']]:font-semibold",
+                      "[&_font[size='3']]:text-base",
+                      "[&_font[size='2']]:text-sm",
+                      "[&_font[size='1']]:text-xs",
+                      "[&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2",
+                      "[&_img]:max-w-full [&_img]:h-auto"
+                  )}
+              >
+                  <Image
+                    src={backgroundUrl}
+                    alt="Background Surat Penawaran"
+                    fill
+                    sizes="100vw"
+                    priority
+                    className="object-cover pointer-events-none"
                   />
+                  <div className="absolute inset-0 p-4" dangerouslySetInnerHTML={{ __html: module.content || '' }}/>
               </div>
             </div>
           </div>
       </main>
+       <style jsx global>{`
+        @media print {
+            body {
+                background: #fff;
+            }
+            .print-container {
+                box-shadow: none;
+                margin: 0;
+                padding: 0;
+            }
+            .printable-page {
+                page-break-after: always;
+                width: 100%;
+                height: 100%;
+                position: relative;
+                overflow: hidden;
+            }
+            #print-content-wrapper {
+              width: 210mm;
+              margin: 0;
+            }
+        }
+        @page {
+            size: A4;
+            margin: 0;
+        }
+      `}</style>
     </div>
   );
 }

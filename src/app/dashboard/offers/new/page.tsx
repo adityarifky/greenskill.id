@@ -9,7 +9,7 @@ import * as React from 'react';
 
 export default function NewOfferPage() {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
    const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
@@ -21,7 +21,9 @@ export default function NewOfferPage() {
     return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
   }, [firestore, user]);
 
-  const { data: modules, isLoading } = useCollection<Module>(modulesQuery);
+  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
+
+  const isLoading = isUserLoading || isLoadingModules;
 
   return (
     <div className="flex h-full flex-col">

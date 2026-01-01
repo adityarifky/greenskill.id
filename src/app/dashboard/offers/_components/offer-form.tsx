@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { Upload, Eye, BookOpen } from "lucide-react"
+import { Upload, ListOrdered, CheckCircle } from "lucide-react"
 import * as React from 'react';
  
 import { Button } from '@/components/ui/button';
@@ -19,21 +19,22 @@ import {
 } from '@/components/ui/form';
 import { Input } from "@/components/ui/input"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import type { Module } from '@/lib/types';
+import { ModuleSorter } from './module-sorter';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const formSchema = z.object({
-  moduleId: z.string().min(1, { message: 'Silakan pilih modul.' }),
+  moduleIds: z.array(z.string()).min(1, { message: 'Silakan pilih minimal satu modul.' }),
   backgroundFiles: z
     .any()
     .refine((files) => files instanceof FileList && files.length > 0, "Silakan unggah sebuah gambar background.")
@@ -56,32 +57,43 @@ interface OfferFormProps {
 export function OfferForm({ modules }: OfferFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isSorterOpen, setIsSorterOpen] = React.useState(false);
   
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      moduleId: '',
+      moduleIds: [],
     },
   });
 
   const title = 'Buat Surat Penawaran';
-  const description = 'Pilih modul dan unggah background untuk membuat surat penawaran.';
+  const description = 'Pilih modul, urutkan konten, dan unggah background untuk membuat surat penawaran.';
   const action = 'Buat Penawaran';
+
+  const selectedModuleDetails = React.useMemo(() => {
+    const selectedIds = form.watch('moduleIds');
+    return selectedIds.map(id => modules.find(m => m.id === id)).filter(Boolean) as Module[];
+  }, [form.watch('moduleIds'), modules]);
+
 
   const onSubmit = async (data: OfferFormValues) => {
     setIsSubmitting(true);
 
-    const selectedModule = modules.find(m => m.id === data.moduleId);
-    if (!selectedModule) {
+    const orderedModules = data.moduleIds.map(id => modules.find(m => m.id === id)).filter(Boolean) as Module[];
+    
+    if (orderedModules.length !== data.moduleIds.length) {
         toast({
             variant: "destructive",
             title: "Gagal!",
-            description: "Modul yang dipilih tidak valid.",
+            description: "Beberapa modul yang dipilih tidak valid.",
         });
         setIsSubmitting(false);
         return;
     }
     
+    // Concatenate content from all selected modules
+    const combinedContent = orderedModules.map(m => m.content).join('<div style="page-break-before: always;"></div>');
+
     try {
         let backgroundUrl: string | undefined = undefined;
         if (data.backgroundFiles && data.backgroundFiles.length > 0) {
@@ -96,7 +108,10 @@ export function OfferForm({ modules }: OfferFormProps) {
     
         const temporaryOfferData = {
             id: `temp-${Date.now()}`,
-            module: selectedModule,
+            module: {
+                title: `Penawaran Gabungan (${orderedModules.length} modul)`,
+                content: combinedContent,
+            },
             backgroundUrl: backgroundUrl, 
         };
         
@@ -132,28 +147,33 @@ export function OfferForm({ modules }: OfferFormProps) {
           <CardContent className="space-y-6">
             <FormField
               control={form.control}
-              name="moduleId"
+              name="moduleIds"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Pilih Modul Konten</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value} disabled={modules.length === 0}>
-                    <FormControl>
-                      <SelectTrigger>
-                         <BookOpen className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <div className="pl-6">
-                          <SelectValue placeholder={modules.length > 0 ? "Pilih modul yang kontennya akan digunakan" : "Tidak ada modul tersedia"} />
-                        </div>
-                      </SelectTrigger>
+                  <FormLabel>Pilih & Urutkan Modul Konten</FormLabel>
+                   <FormControl>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="w-full justify-start text-left font-normal"
+                        onClick={() => setIsSorterOpen(true)}
+                        disabled={modules.length === 0}
+                      >
+                         <ListOrdered className="mr-2 h-4 w-4" />
+                         {selectedModuleDetails.length > 0 ? `${selectedModuleDetails.length} modul dipilih` : (modules.length > 0 ? "Pilih & urutkan modul..." : "Tidak ada modul tersedia")}
+                      </Button>
                     </FormControl>
-                    <SelectContent>
-                      {modules.map((module) => (
-                        <SelectItem key={module.id} value={module.id}>
-                          {module.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>Konten dari modul ini akan ditampilkan di atas background.</FormDescription>
+                    {selectedModuleDetails.length > 0 && (
+                      <div className="mt-2 space-y-2 rounded-md border p-3">
+                        <p className="text-sm font-medium">Urutan Konten:</p>
+                        <ol className="list-decimal list-inside text-sm text-muted-foreground">
+                            {selectedModuleDetails.map((module) => (
+                                <li key={module.id} className="truncate">{module.title}</li>
+                            ))}
+                        </ol>
+                      </div>
+                    )}
+                  <FormDescription>Konten dari modul ini akan digabungkan dan ditampilkan berurutan.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -189,6 +209,30 @@ export function OfferForm({ modules }: OfferFormProps) {
           </CardContent>
         </Card>
       </form>
+       <Dialog open={isSorterOpen} onOpenChange={setIsSorterOpen}>
+          <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
+              <DialogHeader>
+              <DialogTitle>Pilih dan Urutkan Modul</DialogTitle>
+              <DialogDescription>
+                Pindahkan modul dari 'Tersedia' ke 'Terpilih', lalu atur urutannya menggunakan tombol panah.
+              </DialogDescription>
+            </DialogHeader>
+             <ModuleSorter
+                allModules={modules}
+                initialSelectedIds={form.getValues('moduleIds')}
+                onSave={(newOrderIds) => {
+                    form.setValue('moduleIds', newOrderIds, { shouldValidate: true });
+                    setIsSorterOpen(false);
+                    toast({
+                        title: "Urutan disimpan!",
+                        description: `${newOrderIds.length} modul telah diatur.`,
+                        action: <CheckCircle className="h-5 w-5 text-green-500" />
+                    })
+                }}
+                onCancel={() => setIsSorterOpen(false)}
+             />
+          </DialogContent>
+      </Dialog>
     </Form>
   );
 }
