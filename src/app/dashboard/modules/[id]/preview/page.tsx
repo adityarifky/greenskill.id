@@ -30,6 +30,8 @@ export default function ModulePreviewPage({ params }: { params: Promise<{ id: st
 
   const { data: module, isLoading } = useDoc<Module>(moduleRef);
   
+  // This is the correct logic flow.
+  // 1. Handle loading state first.
   if (isLoading) {
     return (
       <div className="flex h-full flex-col bg-muted/20">
@@ -56,10 +58,12 @@ export default function ModulePreviewPage({ params }: { params: Promise<{ id: st
     )
   }
 
+  // 2. After loading, if there's still no module, then it's a 404.
   if (!module) {
     notFound();
   }
-
+  
+  // 3. If loading is done and module exists, render the page.
   return (
     <div className="flex h-full flex-col bg-muted/20">
       <Header title="Pratinjau Modul" />
@@ -72,24 +76,24 @@ export default function ModulePreviewPage({ params }: { params: Promise<{ id: st
                         Kembali ke Daftar Modul
                     </Link>
                 </Button>
-                {module && (
-                    <Button asChild>
-                        <Link href={`/dashboard/modules/${module.id}/edit`}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit Modul
-                        </Link>
-                    </Button>
-                )}
+                <Button asChild>
+                    <Link href={`/dashboard/modules/${id}/edit`}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit Modul
+                    </Link>
+                </Button>
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-2xl font-bold">{module?.title}</CardTitle>
+                    <CardTitle className="text-2xl font-bold">{module.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                       <div
                         className={cn(
                             "min-h-[400px] w-full rounded-md bg-transparent px-3 py-2 text-sm",
                             // These classes ensure the WYSIWYG content is rendered correctly
+                            "prose prose-sm max-w-none",
+                            "prose-h1:font-bold prose-h2:font-semibold prose-h3:font-medium prose-h4:font-normal",
                             "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
                             "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
                             "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
@@ -98,7 +102,7 @@ export default function ModulePreviewPage({ params }: { params: Promise<{ id: st
                             "[&_font[size='2']]:text-sm",
                             "[&_font[size='1']]:text-xs",
                         )}
-                        dangerouslySetInnerHTML={{ __html: module?.content || '' }}
+                        dangerouslySetInnerHTML={{ __html: module.content || '' }}
                     />
                 </CardContent>
             </Card>
