@@ -72,6 +72,8 @@ export function OfferForm({ modules }: OfferFormProps) {
 
   const selectedModuleDetails = React.useMemo(() => {
     const selectedIds = form.watch('moduleIds');
+    const selectedIdSet = new Set(selectedIds);
+    // Preserve the order from the selection
     return selectedIds.map(id => modules.find(m => m.id === id)).filter(Boolean) as Module[];
   }, [form.watch('moduleIds'), modules]);
 
@@ -150,7 +152,7 @@ export function OfferForm({ modules }: OfferFormProps) {
               name="moduleIds"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Pilih & Urutkan Modul Konten</FormLabel>
+                  <FormLabel>Pilih Modul Konten</FormLabel>
                    <FormControl>
                       <Button 
                         type="button" 
@@ -160,12 +162,12 @@ export function OfferForm({ modules }: OfferFormProps) {
                         disabled={modules.length === 0}
                       >
                          <ListOrdered className="mr-2 h-4 w-4" />
-                         {selectedModuleDetails.length > 0 ? `${selectedModuleDetails.length} modul dipilih` : (modules.length > 0 ? "Pilih & urutkan modul..." : "Tidak ada modul tersedia")}
+                         {selectedModuleDetails.length > 0 ? `${selectedModuleDetails.length} modul dipilih` : (modules.length > 0 ? "Pilih modul..." : "Tidak ada modul tersedia")}
                       </Button>
                     </FormControl>
                     {selectedModuleDetails.length > 0 && (
                       <div className="mt-2 space-y-2 rounded-md border p-3">
-                        <p className="text-sm font-medium">Urutan Konten:</p>
+                        <p className="text-sm font-medium">Modul Terpilih (berurutan):</p>
                         <ol className="list-decimal list-inside text-sm text-muted-foreground">
                             {selectedModuleDetails.map((module) => (
                                 <li key={module.id} className="truncate">{module.title}</li>
@@ -173,7 +175,7 @@ export function OfferForm({ modules }: OfferFormProps) {
                         </ol>
                       </div>
                     )}
-                  <FormDescription>Konten dari modul ini akan digabungkan dan ditampilkan berurutan.</FormDescription>
+                  <FormDescription>Konten dari modul ini akan digabungkan secara berurutan.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -214,7 +216,7 @@ export function OfferForm({ modules }: OfferFormProps) {
               <DialogHeader>
               <DialogTitle>Pilih dan Urutkan Modul</DialogTitle>
               <DialogDescription>
-                Pindahkan modul dari 'Tersedia' ke 'Terpilih', lalu atur urutannya menggunakan tombol panah.
+                Klik pada modul untuk memilih atau membatalkan pilihan. Urutan akan sesuai dengan urutan di daftar.
               </DialogDescription>
             </DialogHeader>
              <ModuleSorter
@@ -224,8 +226,8 @@ export function OfferForm({ modules }: OfferFormProps) {
                     form.setValue('moduleIds', newOrderIds, { shouldValidate: true });
                     setIsSorterOpen(false);
                     toast({
-                        title: "Urutan disimpan!",
-                        description: `${newOrderIds.length} modul telah diatur.`,
+                        title: "Pilihan disimpan!",
+                        description: `${newOrderIds.length} modul telah dipilih.`,
                         action: <CheckCircle className="h-5 w-5 text-green-500" />
                     })
                 }}
