@@ -55,6 +55,18 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
   const [currentFontSize, setCurrentFontSize] = useState('3'); // Default to paragraph size
   const [textAlign, setTextAlign] = useState('left');
 
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        title: initialData.title,
+        content: initialData.content,
+      });
+      if (editorRef.current) {
+        editorRef.current.innerHTML = initialData.content;
+      }
+    }
+  }, [initialData, form]);
+
   const updateToolbar = useCallback(() => {
     if (!document.getSelection) return;
     const selection = document.getSelection();
@@ -144,13 +156,6 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
     form.setValue('content', newContent, { shouldValidate: true, shouldDirty: true });
   };
   
-  useEffect(() => {
-     if (initialData?.content && editorRef.current) {
-      editorRef.current.innerHTML = initialData.content;
-      form.setValue('content', initialData.content, { shouldValidate: true });
-     }
-  }, [initialData, form]);
-
   const title = initialData ? 'Edit Modul' : 'Buat Modul Baru';
   const description = initialData ? 'Perbarui detail modul.' : 'Isi formulir untuk membuat modul baru.';
   const toastMessage = initialData ? 'Modul berhasil diperbarui.' : 'Modul baru berhasil dibuat.';
