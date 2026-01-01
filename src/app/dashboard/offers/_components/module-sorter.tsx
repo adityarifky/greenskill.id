@@ -26,13 +26,12 @@ export function ModuleSorter({ allModules, initialSelectedIds, onSave, onCancel 
     const selectedIdsSet = new Set(initialSelectedIds);
     const initialAvailable = allModules.filter(m => !selectedIdsSet.has(m.id));
     
-    // Ensure the order of selected modules matches initialSelectedIds
     const orderedSelected = initialSelectedIds
         .map(id => initialSelected.find(m => m.id === id))
         .filter(Boolean) as Module[];
 
     setSelected(orderedSelected);
-    setAvailable(initialAvailable);
+    setAvailable(initialAvailable.sort((a, b) => a.title.localeCompare(b.title)));
 }, [allModules, initialSelectedIds]);
 
   const handleSelect = (module: Module) => {
@@ -43,7 +42,7 @@ export function ModuleSorter({ allModules, initialSelectedIds, onSave, onCancel 
 
   const handleDeselect = (module: Module) => {
     setSelected(selected.filter(m => m.id !== module.id));
-    setAvailable([...available, module].sort((a, b) => a.title.localeCompare(b.title))); // Keep available list sorted
+    setAvailable([...available, module].sort((a, b) => a.title.localeCompare(b.title)));
     setFocusedModuleId(null);
   };
 
