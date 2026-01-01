@@ -9,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import type { Module } from '@/lib/types';
 import { useFirestore, useUser } from '@/firebase';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Bold, AlignLeft, AlignCenter, AlignRight, Heading1, Heading2, Pilcrow } from 'lucide-react';
+import { Bold, AlignLeft, AlignCenter, AlignRight, FontSize } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   title: z.string().min(3, { message: 'Judul modul harus memiliki setidaknya 3 karakter.' }),
@@ -51,7 +52,7 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
 
   const editorRef = useRef<HTMLDivElement>(null);
   const [activeStyles, setActiveStyles] = useState<string[]>([]);
-  const [currentBlock, setCurrentBlock] = useState('p');
+  const [currentFontSize, setCurrentFontSize] = useState('3'); // Default to paragraph size
   const [textAlign, setTextAlign] = useState('left');
 
   const updateToolbar = useCallback(() => {
@@ -67,8 +68,8 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
     }
     
     const styles: string[] = [];
-    let blockType = 'p';
     let alignment = 'left';
+    let fontSize = '3'; // Default paragraph size
 
     let current: Node | null = parentNode;
     while (current && current !== editorRef.current) {
@@ -76,8 +77,9 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
       const nodeName = el.nodeName.toLowerCase();
       
       if (['b', 'strong'].includes(nodeName)) styles.push('bold');
-      if (['h1', 'h2', 'p'].includes(nodeName)) {
-        blockType = nodeName;
+      
+      if (nodeName === 'font' && el.hasAttribute('size')) {
+        fontSize = el.getAttribute('size') || '3';
       }
 
       if (el.style) {
@@ -90,7 +92,7 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
     }
     
     setActiveStyles(styles);
-    setCurrentBlock(blockType);
+    setCurrentFontSize(fontSize);
     setTextAlign(alignment);
   }, []);
 
@@ -119,18 +121,22 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
     updateToolbar();
   };
 
-  const handleFormat = (e: React.MouseEvent<HTMLButtonElement>, style: 'bold' | 'h1' | 'h2' | 'p') => {
+  const handleFormat = (e: React.MouseEvent<HTMLButtonElement>, style: 'bold') => {
     e.preventDefault();
-    if (['h1', 'h2', 'p'].includes(style)) {
-      execCommand('formatBlock', `<${style}>`);
-    } else {
-      execCommand(style);
+    execCommand(style);
+  };
+  
+  const handleFontSizeChange = (size: string) => {
+    if (size) {
+        execCommand('fontSize', size);
     }
   };
 
-  const handleAlignment = (e: React.MouseEvent<HTMLButtonElement>, alignment: 'left' | 'center' | 'right') => {
-    e.preventDefault();
-    execCommand(`justify${alignment.charAt(0).toUpperCase() + alignment.slice(1)}`);
+  const handleAlignment = (alignment: 'left' | 'center' | 'right' | '') => {
+    if (alignment) {
+        execCommand(`justify${alignment.charAt(0).toUpperCase() + alignment.slice(1)}`);
+        setTextAlign(alignment);
+    }
   };
 
   const handleContentChange = (e: React.FormEvent<HTMLDivElement>) => {
@@ -225,32 +231,36 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
                   <FormItem>
                     <FormLabel>Konten Modul</FormLabel>
                     <div className="rounded-md border border-input">
-                         <div className="p-2 border-b">
+                         <div className="p-2 border-b flex items-center gap-2">
                             <ToggleGroup type="multiple" variant="outline" size="sm" className="justify-start" value={activeStyles}>
                                 <ToggleGroupItem value="bold" aria-label="Toggle bold" asChild>
                                     <button onClick={(e) => handleFormat(e, 'bold')}><Bold className="h-4 w-4" /></button>
                                 </ToggleGroupItem>
                             </ToggleGroup>
-                             <ToggleGroup type="single" variant="outline" size="sm" className="justify-start ml-2" value={currentBlock}>
-                                <ToggleGroupItem value="h1" aria-label="Toggle H1" asChild>
-                                     <button onClick={(e) => handleFormat(e, 'h1')}><Heading1 className="h-4 w-4" /></button>
+                            <Select value={currentFontSize} onValueChange={handleFontSizeChange}>
+                                <SelectTrigger className="w-24 h-9">
+                                    <FontSize className="h-4 w-4 mr-2" />
+                                    <SelectValue placeholder="Size" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="7">Sangat Besar (H1)</SelectItem>
+                                    <SelectItem value="6">Lebih Besar (H2)</SelectItem>
+                                    <SelectItem value="5">Besar (H3)</SelectItem>
+                                    <SelectItem value="4">Agak Besar (H4)</SelectItem>
+                                    <SelectItem value="3">Normal</SelectItem>
+                                    <SelectItem value="2">Kecil</SelectItem>
+                                    <SelectItem value="1">Sangat Kecil</SelectItem>
+                                </SelectContent>
+                            </Select>
+                             <ToggleGroup type="single" variant="outline" size="sm" className="justify-start" value={textAlign} onValueChange={(value: "left" | "center" | "right" | "") => handleAlignment(value)}>
+                                <ToggleGroupItem value="left" aria-label="Align left">
+                                    <AlignLeft className="h-4 w-4" />
                                 </ToggleGroupItem>
-                                <ToggleGroupItem value="h2" aria-label="Toggle H2" asChild>
-                                     <button onClick={(e) => handleFormat(e, 'h2')}><Heading2 className="h-4 w-4" /></button>
+                                <ToggleGroupItem value="center" aria-label="Align center">
+                                    <AlignCenter className="h-4 w-4" />
                                 </ToggleGroupItem>
-                                <ToggleGroupItem value="p" aria-label="Toggle Paragraph" asChild>
-                                    <button onClick={(e) => handleFormat(e, 'p')}><Pilcrow className="h-4 w-4" /></button>
-                                </ToggleGroupItem>
-                            </ToggleGroup>
-                             <ToggleGroup type="single" variant="outline" size="sm" className="justify-start ml-2" value={textAlign} onValueChange={(value) => value && handleAlignment(e as any, value as any)}>
-                                <ToggleGroupItem value="left" aria-label="Align left" asChild>
-                                    <button onClick={(e) => handleAlignment(e, 'left')}><AlignLeft className="h-4 w-4" /></button>
-                                </ToggleGroupItem>
-                                <ToggleGroupItem value="center" aria-label="Align center" asChild>
-                                    <button onClick={(e) => handleAlignment(e, 'center')}><AlignCenter className="h-4 w-4" /></button>
-                                </ToggleGroupItem>
-                                <ToggleGroupItem value="right" aria-label="Align right" asChild>
-                                    <button onClick={(e) => handleAlignment(e, 'right')}><AlignRight className="h-4 w-4" /></button>
+                                <ToggleGroupItem value="right" aria-label="Align right">
+                                    <AlignRight className="h-4 w-4" />
                                 </ToggleGroupItem>
                             </ToggleGroup>
                          </div>
@@ -265,7 +275,14 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
                             className={cn(
                                 "min-h-[400px] w-full rounded-b-md bg-transparent px-3 py-2 text-sm ring-offset-background",
                                 "prose prose-sm max-w-none focus-visible:outline-none",
-                                "prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2"
+                                "prose-h1:font-bold prose-h2:font-semibold prose-h3:font-medium prose-h4:font-normal", // Example styles
+                                "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
+                                "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
+                                "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
+                                "[&_font[size='4']]:text-xl [&_font[size='4']]:font-semibold",
+                                "[&_font[size='3']]:text-base",
+                                "[&_font[size='2']]:text-sm",
+                                "[&_font[size='1']]:text-xs",
                             )}
                           >
                           </div>
