@@ -24,13 +24,13 @@ import type { Module, UserFolder } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const formSchema = z.object({
-  content: z.string().min(1, { message: 'Konten surat tidak boleh kosong.' }),
+  folderId: z.string().optional(),
+  selectedModuleIds: z.array(z.string()).min(1, { message: 'Pilih setidaknya satu modul.' }),
   backgroundFiles: z
     .any()
     .refine((files) => files instanceof FileList && files.length > 0, "Silakan unggah sebuah gambar background.")
@@ -54,22 +54,37 @@ interface OfferFormProps {
 export function OfferForm({ allModules, userFolders }: OfferFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  
+  const [selectedFolder, setSelectedFolder] = React.useState<string | undefined>(undefined);
+
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      content: '',
+      selectedModuleIds: [],
     },
   });
 
   const title = 'Buat Surat';
-  const description = 'Tulis konten surat dan unggah background untuk membuat surat.';
+  const description = 'Pilih modul dan unggah background untuk membuat surat.';
   const action = 'Buat Surat';
+
+  const modulesInSelectedFolder = React.useMemo(() => {
+      if (!selectedFolder) return [];
+      if (selectedFolder === 'folder-surat-penawaran') {
+          return allModules.filter(m => !m.folderId || m.folderId === 'folder-surat-penawaran');
+      }
+      return allModules.filter(m => m.folderId === selectedFolder);
+  }, [selectedFolder, allModules]);
 
   const onSubmit = async (data: OfferFormValues) => {
     setIsSubmitting(true);
     
     try {
+        const selectedModules = allModules.filter(m => data.selectedModuleIds.includes(m.id));
+        const combinedContent = selectedModules
+            .sort((a, b) => a.position - b.position)
+            .map(m => m.content)
+            .join('<div style="page-break-after: always;"></div>');
+
         let backgroundUrl: string | undefined = undefined;
         if (data.backgroundFiles && data.backgroundFiles.length > 0) {
             const file = data.backgroundFiles[0];
@@ -85,7 +100,7 @@ export function OfferForm({ allModules, userFolders }: OfferFormProps) {
             id: `temp-${Date.now()}`,
             module: {
                 title: `Surat Kustom`,
-                content: data.content,
+                content: combinedContent,
             },
             backgroundUrl: backgroundUrl, 
         };
@@ -120,26 +135,94 @@ export function OfferForm({ allModules, userFolders }: OfferFormProps) {
             <CardDescription>{description}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <FormField
-              control={form.control}
-              name="content"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Konten Surat</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Tuliskan isi surat Anda di sini..."
-                      className="min-h-[200px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Anda dapat menggunakan HTML dasar untuk format teks.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
+             <FormField
+                control={form.control}
+                name="folderId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pilih Folder Modul</FormLabel>
+                    <Select onValueChange={(value) => {
+                      field.onChange(value);
+                      setSelectedFolder(value);
+                      form.setValue('selectedModuleIds', []); // Reset selection on folder change
+                    }} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih folder berisi modul" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                         <SelectItem value="folder-surat-penawaran">Surat Penawaran (Default)</SelectItem>
+                         {userFolders.map(folder => (
+                           <SelectItem key={folder.id} value={folder.id}>{folder.name}</SelectItem>
+                         ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {selectedFolder && (
+                 <FormField
+                    control={form.control}
+                    name="selectedModuleIds"
+                    render={() => (
+                      <FormItem>
+                        <div className="mb-4">
+                          <FormLabel className="text-base">Pilih Modul Konten</FormLabel>
+                          <FormDescription>
+                            Pilih satu atau lebih modul untuk digabungkan menjadi satu surat.
+                          </FormDescription>
+                        </div>
+                        <Card className="h-[300px] flex flex-col">
+                           <CardContent className="p-2 flex-grow overflow-hidden">
+                             <ScrollArea className="h-full">
+                              {modulesInSelectedFolder.length > 0 ? modulesInSelectedFolder.map((item) => (
+                                <FormField
+                                  key={item.id}
+                                  control={form.control}
+                                  name="selectedModuleIds"
+                                  render={({ field }) => {
+                                    return (
+                                      <FormItem
+                                        key={item.id}
+                                        className="flex flex-row items-center space-x-3 space-y-0 p-3 hover:bg-muted/50 rounded-md transition-colors"
+                                      >
+                                        <FormControl>
+                                          <Checkbox
+                                            checked={field.value?.includes(item.id)}
+                                            onCheckedChange={(checked) => {
+                                              return checked
+                                                ? field.onChange([...field.value, item.id])
+                                                : field.onChange(
+                                                    field.value?.filter(
+                                                      (value) => value !== item.id
+                                                    )
+                                                  )
+                                            }}
+                                          />
+                                        </FormControl>
+                                        <FormLabel className="font-normal flex-1 cursor-pointer">
+                                          {item.title}
+                                        </FormLabel>
+                                      </FormItem>
+                                    )
+                                  }}
+                                />
+                              )) : (
+                                <div className="text-center p-10 text-muted-foreground">
+                                    Folder ini tidak memiliki modul.
+                                </div>
+                              )}
+                            </ScrollArea>
+                           </CardContent>
+                        </Card>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
               )}
-            />
             
              <FormField
               control={form.control}

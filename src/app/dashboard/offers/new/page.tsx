@@ -16,23 +16,20 @@ export default function NewOfferPage() {
     setIsClient(true);
   }, []);
 
-  // Temporarily disable queries to avoid permission errors
-  // const modulesQuery = useMemoFirebase(() => {
-  //   if (!firestore || !user) return null;
-  //   return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
-  // }, [firestore, user]);
+  const modulesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
+  }, [firestore, user]);
 
-  // const foldersQuery = useMemoFirebase(() => {
-  //   if (!firestore || !user) return null;
-  //   return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid));
-  // }, [firestore, user]);
+  const foldersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid));
+  }, [firestore, user]);
 
-  // const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
-  // const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
+  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
+  const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
   
-  // const isLoading = isUserLoading || isLoadingModules || isLoadingFolders;
-  const isLoading = isUserLoading;
-
+  const isLoading = isUserLoading || isLoadingModules || isLoadingFolders;
 
   return (
     <div className="flex h-full flex-col">
@@ -41,8 +38,8 @@ export default function NewOfferPage() {
         <div className="mx-auto max-w-2xl">
           {isClient ? (
              <OfferFormDynamic 
-                allModules={[]} 
-                userFolders={[]} 
+                allModules={modules || []} 
+                userFolders={userFolders || []} 
                 isLoading={isLoading} 
               />
           ) : (

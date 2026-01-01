@@ -24,6 +24,7 @@ export type Offer = {
   userId: string;
   backgroundUrl?: string; // For single background
   module?: Partial<Module>;
+  selectedModuleIds?: string[];
 };
 
 export type TemplateParameter = {
