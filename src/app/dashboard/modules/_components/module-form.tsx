@@ -8,7 +8,7 @@ import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/fires
 import { toast } from '@/hooks/use-toast';
 import type { Module } from '@/lib/types';
 import { useFirestore, useUser } from '@/firebase';
-import React from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Bold, AlignLeft, AlignCenter, AlignRight, Heading1, Heading2, Pilcrow } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   title: z.string().min(3, { message: 'Judul modul harus memiliki setidaknya 3 karakter.' }),
@@ -44,70 +45,105 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
       title: '',
-      content: '',
+      content: '<p><br></p>', // Start with a paragraph for better UX
     },
   });
 
-  const contentRef = React.useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [activeStyles, setActiveStyles] = useState<string[]>([]);
+  const [currentBlock, setCurrentBlock] = useState('p');
+  const [textAlign, setTextAlign] = useState('left');
 
-  const applyStyle = (e: React.MouseEvent<HTMLButtonElement>, style: 'bold' | 'h1' | 'h2' | 'p') => {
-    e.preventDefault();
-    const textarea = contentRef.current;
-    if (!textarea) return;
+  const updateToolbar = useCallback(() => {
+    if (!document.getSelection) return;
+    const selection = document.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = textarea.value.substring(start, end);
-    
-    let newText;
-    const before = textarea.value.substring(0, start);
-    const after = textarea.value.substring(end);
+    const range = selection.getRangeAt(0);
+    let parentNode = range.commonAncestorContainer;
 
-    switch (style) {
-      case 'bold':
-        newText = `<b>${selectedText}</b>`;
-        break;
-      case 'h1':
-        newText = `<h1>${selectedText}</h1>`;
-        break;
-      case 'h2':
-        newText = `<h2>${selectedText}</h2>`;
-        break;
-      case 'p':
-        newText = `<p>${selectedText}</p>`;
-        break;
-      default:
-        newText = selectedText;
+    if (parentNode.nodeType === Node.TEXT_NODE) {
+      parentNode = parentNode.parentNode!;
     }
     
-    const updatedContent = before + newText + after;
-    form.setValue('content', updatedContent, { shouldValidate: true });
+    const styles: string[] = [];
+    let blockType = 'p';
+    let alignment = 'left';
+
+    let current: Node | null = parentNode;
+    while (current && current !== editorRef.current) {
+      const el = current as HTMLElement;
+      const nodeName = el.nodeName.toLowerCase();
+      
+      if (['b', 'strong'].includes(nodeName)) styles.push('bold');
+      if (['h1', 'h2', 'p'].includes(nodeName)) {
+        blockType = nodeName;
+      }
+
+      if (el.style) {
+        const align = el.style.textAlign;
+        if (['left', 'center', 'right'].includes(align)) {
+            alignment = align;
+        }
+      }
+      current = el.parentNode;
+    }
     
-    setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start, start + newText.length);
-    }, 0);
+    setActiveStyles(styles);
+    setCurrentBlock(blockType);
+    setTextAlign(alignment);
+  }, []);
+
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (editor) {
+      const handleSelectionChange = () => {
+          updateToolbar();
+      };
+      document.addEventListener('selectionchange', handleSelectionChange);
+      editor.addEventListener('keyup', updateToolbar);
+      editor.addEventListener('click', updateToolbar);
+
+      return () => {
+        document.removeEventListener('selectionchange', handleSelectionChange);
+        editor.removeEventListener('keyup', updateToolbar);
+        editor.removeEventListener('click', updateToolbar);
+      };
+    }
+  }, [updateToolbar]);
+  
+  const execCommand = (command: string, value?: string) => {
+    document.execCommand(command, false, value);
+    editorRef.current?.focus();
+    updateToolbar();
+  };
+
+  const handleFormat = (e: React.MouseEvent<HTMLButtonElement>, style: 'bold' | 'h1' | 'h2' | 'p') => {
+    e.preventDefault();
+    if (['h1', 'h2', 'p'].includes(style)) {
+      execCommand('formatBlock', `<${style}>`);
+    } else {
+      execCommand(style);
+    }
+  };
+
+  const handleAlignment = (e: React.MouseEvent<HTMLButtonElement>, alignment: 'left' | 'center' | 'right') => {
+    e.preventDefault();
+    execCommand(`justify${alignment.charAt(0).toUpperCase() + alignment.slice(1)}`);
+  };
+
+  const handleContentChange = (e: React.FormEvent<HTMLDivElement>) => {
+    const newContent = e.currentTarget.innerHTML;
+    form.setValue('content', newContent, { shouldValidate: true, shouldDirty: true });
   };
   
-  const applyAlignment = (e: React.MouseEvent<HTMLButtonElement>, alignment: 'left' | 'center' | 'right') => {
-    e.preventDefault();
-    const textarea = contentRef.current;
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = textarea.value.substring(start, end);
-    const before = textarea.value.substring(0, start);
-    const after = textarea.value.substring(end);
-
-    const newText = `<div style="text-align: ${alignment};">${selectedText}</div>`;
-    const updatedContent = before + newText + after;
-    form.setValue('content', updatedContent, { shouldValidate: true });
-
-     setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start, start + newText.length);
-    }, 0);
-  };
+  useEffect(() => {
+     if (initialData?.content && editorRef.current) {
+      editorRef.current.innerHTML = initialData.content;
+      form.setValue('content', initialData.content, { shouldValidate: true });
+     }
+  }, [initialData, form]);
 
   const title = initialData ? 'Edit Modul' : 'Buat Modul Baru';
   const description = initialData ? 'Perbarui detail modul.' : 'Isi formulir untuk membuat modul baru.';
@@ -190,43 +226,53 @@ export function ModuleForm({ initialData }: ModuleFormProps) {
                     <FormLabel>Konten Modul</FormLabel>
                     <div className="rounded-md border border-input">
                          <div className="p-2 border-b">
-                            <ToggleGroup type="multiple" variant="outline" size="sm" className="justify-start">
+                            <ToggleGroup type="multiple" variant="outline" size="sm" className="justify-start" value={activeStyles}>
                                 <ToggleGroupItem value="bold" aria-label="Toggle bold" asChild>
-                                    <button onClick={(e) => applyStyle(e, 'bold')}><Bold className="h-4 w-4" /></button>
-                                </ToggleGroupItem>
-                                <ToggleGroupItem value="h1" aria-label="Toggle H1" asChild>
-                                     <button onClick={(e) => applyStyle(e, 'h1')}><Heading1 className="h-4 w-4" /></button>
-                                </ToggleGroupItem>
-                                <ToggleGroupItem value="h2" aria-label="Toggle H2" asChild>
-                                     <button onClick={(e) => applyStyle(e, 'h2')}><Heading2 className="h-4 w-4" /></button>
-                                </ToggleGroupItem>
-                                <ToggleGroupItem value="p" aria-label="Toggle Paragraph" asChild>
-                                    <button onClick={(e) => applyStyle(e, 'p')}><Pilcrow className="h-4 w-4" /></button>
+                                    <button onClick={(e) => handleFormat(e, 'bold')}><Bold className="h-4 w-4" /></button>
                                 </ToggleGroupItem>
                             </ToggleGroup>
-                             <ToggleGroup type="single" variant="outline" size="sm" className="justify-start ml-2">
+                             <ToggleGroup type="single" variant="outline" size="sm" className="justify-start ml-2" value={currentBlock}>
+                                <ToggleGroupItem value="h1" aria-label="Toggle H1" asChild>
+                                     <button onClick={(e) => handleFormat(e, 'h1')}><Heading1 className="h-4 w-4" /></button>
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="h2" aria-label="Toggle H2" asChild>
+                                     <button onClick={(e) => handleFormat(e, 'h2')}><Heading2 className="h-4 w-4" /></button>
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="p" aria-label="Toggle Paragraph" asChild>
+                                    <button onClick={(e) => handleFormat(e, 'p')}><Pilcrow className="h-4 w-4" /></button>
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                             <ToggleGroup type="single" variant="outline" size="sm" className="justify-start ml-2" value={textAlign} onValueChange={(value) => value && handleAlignment(e as any, value as any)}>
                                 <ToggleGroupItem value="left" aria-label="Align left" asChild>
-                                    <button onClick={(e) => applyAlignment(e, 'left')}><AlignLeft className="h-4 w-4" /></button>
+                                    <button onClick={(e) => handleAlignment(e, 'left')}><AlignLeft className="h-4 w-4" /></button>
                                 </ToggleGroupItem>
                                 <ToggleGroupItem value="center" aria-label="Align center" asChild>
-                                    <button onClick={(e) => applyAlignment(e, 'center')}><AlignCenter className="h-4 w-4" /></button>
+                                    <button onClick={(e) => handleAlignment(e, 'center')}><AlignCenter className="h-4 w-4" /></button>
                                 </ToggleGroupItem>
                                 <ToggleGroupItem value="right" aria-label="Align right" asChild>
-                                    <button onClick={(e) => applyAlignment(e, 'right')}><AlignRight className="h-4 w-4" /></button>
+                                    <button onClick={(e) => handleAlignment(e, 'right')}><AlignRight className="h-4 w-4" /></button>
                                 </ToggleGroupItem>
                             </ToggleGroup>
                          </div>
                         <FormControl>
-                          <textarea
-                            ref={contentRef}
-                            placeholder="Tulis konten modul di sini..."
-                            className="min-h-[400px] w-full rounded-b-md bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                            {...field}
-                          />
+                          <div
+                            ref={editorRef}
+                            id="content-editor"
+                            contentEditable={true}
+                            onInput={handleContentChange}
+                            onBlur={handleContentChange}
+                            suppressContentEditableWarning={true}
+                            className={cn(
+                                "min-h-[400px] w-full rounded-b-md bg-transparent px-3 py-2 text-sm ring-offset-background",
+                                "prose prose-sm max-w-none focus-visible:outline-none",
+                                "prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2"
+                            )}
+                          >
+                          </div>
                         </FormControl>
                     </div>
                     <FormDescription>
-                        Pilih teks untuk menerapkan styling. Konten disimpan sebagai HTML.
+                        Gunakan tombol di atas untuk memformat teks Anda secara langsung.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
