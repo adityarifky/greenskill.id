@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit, FolderPlus } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit, FolderPlus, Folder } from 'lucide-react';
 import * as React from 'react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -50,6 +50,11 @@ import { ModuleFormDynamic } from './_components/module-form-dynamic';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
+type FolderType = {
+  id: string;
+  name: string;
+};
+
 export default function ModulesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -57,6 +62,8 @@ export default function ModulesPage() {
   const [moduleToPreview, setModuleToPreview] = React.useState<Module | null>(null);
   const [moduleToEdit, setModuleToEdit] = React.useState<Module | null>(null);
   const [isFolderDialogOpen, setIsFolderDialogOpen] = React.useState(false);
+  const [folders, setFolders] = React.useState<FolderType[]>([]);
+  const [folderName, setFolderName] = React.useState('');
 
   const modulesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -103,6 +110,28 @@ export default function ModulesPage() {
     }
     return '-';
   };
+
+  const handleSaveFolder = () => {
+    if (folderName.trim() === '') {
+      toast({
+        variant: 'destructive',
+        title: 'Gagal!',
+        description: 'Nama folder tidak boleh kosong.',
+      });
+      return;
+    }
+    const newFolder: FolderType = {
+      id: `folder_${Date.now()}`,
+      name: folderName.trim(),
+    };
+    setFolders(prevFolders => [...prevFolders, newFolder]);
+    toast({
+      title: 'Sukses!',
+      description: `Folder "${newFolder.name}" berhasil dibuat.`,
+    });
+    setFolderName('');
+    setIsFolderDialogOpen(false);
+  };
   
   return (
     <div className="flex h-full flex-col">
@@ -127,11 +156,11 @@ export default function ModulesPage() {
             </div>
           </div>
 
-          {!isLoading && (!modules || modules.length === 0) ? (
+          {!isLoading && (!modules || modules.length === 0) && folders.length === 0 ? (
               <div className="py-20 text-center text-muted-foreground flex flex-col items-center justify-center border-2 border-dashed rounded-lg h-full">
                 <BookOpen className="h-16 w-16 text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold">Belum Ada Modul</h3>
-                <p className="mb-4">Mulai buat modul pelatihan pertama Anda.</p>
+                <h3 className="text-lg font-semibold">Belum Ada Modul atau Folder</h3>
+                <p className="mb-4">Mulai buat modul atau folder pertama Anda.</p>
                  <Button asChild>
                     <Link href="/dashboard/modules/new">
                         <PlusCircle className="mr-2 h-4 w-4" />
@@ -143,7 +172,7 @@ export default function ModulesPage() {
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {isLoading && (
                     <>
-                      {[...Array(4)].map((_, i) => (
+                      {[...Array(8)].map((_, i) => (
                         <Card key={i}>
                             <CardHeader>
                                 <Skeleton className="h-6 w-3/4" />
@@ -156,6 +185,23 @@ export default function ModulesPage() {
                       ))}
                     </>
                   )}
+                  {folders.map((folder) => (
+                    <Card 
+                      key={folder.id} 
+                      className="flex flex-col h-full transition-all duration-200 hover:shadow-xl hover:-translate-y-1 cursor-pointer bg-amber-50/50"
+                    >
+                        <CardHeader className="flex-row items-start justify-between">
+                           <CardTitle className="text-base leading-snug break-words">{folder.name}</CardTitle>
+                           <Folder className="h-5 w-5 text-amber-500" />
+                        </CardHeader>
+                        <CardContent className="flex-grow flex items-center justify-center">
+                           <Folder className="h-16 w-16 text-amber-200" />
+                        </CardContent>
+                        <CardFooter>
+                           <p className="text-xs text-muted-foreground">Folder</p>
+                        </CardFooter>
+                    </Card>
+                  ))}
                   {!isLoading && modules?.map((module) => (
                       <Card 
                         key={module.id} 
@@ -300,15 +346,22 @@ export default function ModulesPage() {
               <Label htmlFor="folder-name" className="text-right">
                 Nama
               </Label>
-              <Input id="folder-name" placeholder="Contoh: Modul K3" className="col-span-3" />
+              <Input 
+                id="folder-name" 
+                placeholder="Contoh: Modul K3" 
+                className="col-span-3"
+                value={folderName}
+                onChange={(e) => setFolderName(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setIsFolderDialogOpen(false)}>Batal</Button>
-            <Button type="submit">Simpan Folder</Button>
+            <Button type="submit" onClick={handleSaveFolder}>Simpan Folder</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
     </div>
   );
+}
