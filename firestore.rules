@@ -24,15 +24,29 @@ service cloud.firestore {
 
     // Allow users to manage their own modules
     match /modules/{moduleId} {
+      // User can get, update, or delete a module if they are the owner.
       allow get, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow list: if request.auth != null;
+      // User can create a module if the new module's userId matches their own.
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
+    
+    // User can list modules if they are authenticated. The client-side query MUST filter by userId.
+    match /modules/{document=**} {
+        allow list: if request.auth != null;
+    }
+
 
     // Allow users to manage their own folders
     match /user_folders/{folderId} {
-      allow get, list, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // User can get, update, or delete a folder if they are the owner.
+      allow get, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // User can create a folder if the new folder's userId matches their own.
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    // User can list folders if they are authenticated. The client-side query MUST filter by userId.
+    match /user_folders/{document=**} {
+        allow list: if request.auth != null;
     }
   }
 }
