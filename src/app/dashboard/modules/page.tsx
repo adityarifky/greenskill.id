@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { PlusCircle, MoreHorizontal, BookOpen } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, BookOpen, Edit } from 'lucide-react';
 import * as React from 'react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -45,9 +45,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useRouter } from 'next/navigation';
 
 export default function ModulesPage() {
   const firestore = useFirestore();
+  const router = useRouter();
   const { user, isUserLoading } = useUser();
   const [moduleToDelete, setModuleToDelete] = React.useState<Module | null>(null);
 
@@ -151,7 +153,14 @@ export default function ModulesPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Aksi</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/modules/${module.id}/edit`}>Edit</Link>
+                              <Link href={`/dashboard/modules/${module.id}/edit`} className="cursor-pointer">
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  <span>Edit</span>
+                              </Link>
+                            </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => router.push(`/dashboard/modules/${module.id}`)} className="cursor-pointer">
+                                <BookOpen className="mr-2 h-4 w-4" />
+                                <span>Lihat</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => setModuleToDelete(module)}>Hapus</DropdownMenuItem>
                           </DropdownMenuContent>
