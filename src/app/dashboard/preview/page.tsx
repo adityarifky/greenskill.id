@@ -19,6 +19,7 @@ export default function PreviewPage() {
 
   const schemesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    // Schemes are public, no user filter needed
     return collection(firestore, 'registration_schemas');
   }, [firestore]);
 
@@ -38,22 +39,40 @@ export default function PreviewPage() {
   
   const isLoading = isUserLoading || isLoadingSchemes || isLoadingOffers || isLoadingModules;
 
-  const getFormattedDate = (date: any) => {
+  const getFormattedDate = (date: any): string => {
     if (!date) return '-';
+  
+    // Handle Firestore Timestamp object
     if (date.seconds) {
-      return format(new Date(date.seconds * 1000), "d MMMM yyyy, HH:mm", { locale: id });
+      try {
+        return format(new Date(date.seconds * 1000), "d MMMM yyyy, HH:mm", { locale: id });
+      } catch (e) {
+        return 'Invalid Date';
+      }
     }
+  
+    // Handle JavaScript Date object
     if (date instanceof Date) {
-      return format(date, "d MMMM yyyy, HH:mm", { locale: id });
+       try {
+        return format(date, "d MMMM yyyy, HH:mm", { locale: id });
+      } catch (e) {
+        return 'Invalid Date';
+      }
     }
-    try {
+  
+    // Handle ISO string or other string formats
+    if (typeof date === 'string') {
+      try {
         const parsedDate = new Date(date);
-        if(!isNaN(parsedDate.getTime())){
-             return format(parsedDate, "d MMMM yyyy, HH:mm", { locale: id });
+        if (!isNaN(parsedDate.getTime())) {
+          return format(parsedDate, "d MMMM yyyy, HH:mm", { locale: id });
         }
-    } catch (e) {
-        // do nothing
+      } catch (e) {
+         // Fall through to return the original string if parsing fails
+      }
     }
+    
+    // Fallback for any other unexpected format
     return String(date);
   };
 
@@ -95,8 +114,8 @@ export default function PreviewPage() {
                     {!isLoading && schemes?.map((scheme) => (
                       <TableRow key={scheme.id}>
                         <TableCell>{scheme.name}</TableCell>
-                        <TableCell>Rp {Number(scheme.price).toLocaleString('id-ID')}</TableCell>
-                        <TableCell>{scheme.units.length}</TableCell>
+                        <TableCell>Rp {Number(scheme.price || 0).toLocaleString('id-ID')}</TableCell>
+                        <TableCell>{scheme.units?.length || 0}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
