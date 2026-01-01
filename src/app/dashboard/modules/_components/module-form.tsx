@@ -171,9 +171,10 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
     return { cell, row, table };
   };
 
-  const handleTableAction = (e: React.MouseEvent<HTMLButtonElement>, action: 'insertTable' | 'addRow' | 'addColumn' | 'deleteRow' | 'deleteColumn' | 'deleteTable') => {
+  const handleTableAction = (e: React.MouseEvent<HTMLButtonElement> | KeyboardEvent, action: 'insertTable' | 'addRow' | 'addColumn' | 'deleteRow' | 'deleteColumn' | 'deleteTable') => {
     e.preventDefault();
     const context = getSelectionContext();
+    let newRowRef: HTMLTableRowElement | null = null;
 
     switch (action) {
         case 'insertTable':
@@ -187,6 +188,7 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
                     (child as HTMLElement).innerHTML = '&nbsp;';
                 });
                 context.row.parentNode?.insertBefore(newRow, context.row.nextSibling);
+                newRowRef = newRow;
             }
             break;
         case 'addColumn':
@@ -227,6 +229,25 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
     }
     editorRef.current?.focus();
     updateToolbar();
+    return newRowRef;
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter') {
+      const context = getSelectionContext();
+      if (context?.cell && context.row && context.cell.cellIndex === context.row.cells.length - 1) {
+        e.preventDefault();
+        const newRow = handleTableAction(e, 'addRow');
+        if (newRow && newRow.cells[0]) {
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.setStart(newRow.cells[0], 0);
+          range.collapse(true);
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+        }
+      }
+    }
   };
 
   const handleContentChange = (e: React.FormEvent<HTMLDivElement>) => {
@@ -383,6 +404,7 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
                             contentEditable={true}
                             onInput={handleContentChange}
                             onBlur={handleContentChange}
+                            onKeyDown={handleKeyDown}
                             suppressContentEditableWarning={true}
                             className={cn(
                                 "min-h-[400px] w-full rounded-b-md bg-transparent px-3 py-2 text-sm ring-offset-background",
@@ -397,6 +419,7 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
                                 "focus-visible:outline-none",
                                 "[&_table]:w-full [&_table]:border-collapse [&_table]:border [&_table_td]:border [&_table_td]:p-2 [&_table_th]:border [&_table_th]:p-2"
                             )}
+                            dangerouslySetInnerHTML={{ __html: form.getValues('content') }}
                           >
                           </div>
                         </FormControl>
