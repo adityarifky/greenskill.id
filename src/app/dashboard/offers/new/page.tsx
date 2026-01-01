@@ -27,7 +27,7 @@ export default function NewOfferPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <Header title="Buat Penawaran Baru" />
+      <Header title="Buat Surat Baru" />
       <main className="flex-1 p-4 md:p-8">
         <div className="mx-auto max-w-2xl">
           {isClient ? (

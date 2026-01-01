@@ -66,9 +66,9 @@ export function OfferForm({ modules }: OfferFormProps) {
     },
   });
 
-  const title = 'Buat Surat Penawaran';
-  const description = 'Pilih modul, urutkan konten, dan unggah background untuk membuat surat penawaran.';
-  const action = 'Buat Penawaran';
+  const title = 'Buat Surat';
+  const description = 'Pilih modul, urutkan konten, dan unggah background untuk membuat surat.';
+  const action = 'Buat Surat';
 
   const selectedModuleDetails = React.useMemo(() => {
     const selectedIds = form.watch('moduleIds');
@@ -111,7 +111,7 @@ export function OfferForm({ modules }: OfferFormProps) {
         const temporaryOfferData = {
             id: `temp-${Date.now()}`,
             module: {
-                title: `Penawaran Gabungan (${orderedModules.length} modul)`,
+                title: `Surat Gabungan (${orderedModules.length} modul)`,
                 content: combinedContent,
             },
             backgroundUrl: backgroundUrl, 
@@ -121,7 +121,7 @@ export function OfferForm({ modules }: OfferFormProps) {
 
         toast({
             title: 'Mengarahkan ke Pratinjau',
-            description: 'Penawaran Anda sedang disiapkan.',
+            description: 'Surat Anda sedang disiapkan.',
         });
 
         router.push('/dashboard/offers/preview');
@@ -199,7 +199,7 @@ export function OfferForm({ modules }: OfferFormProps) {
                     </div>
                   </FormControl>
                   <FormDescription>
-                    Unggah gambar yang akan dijadikan background surat penawaran.
+                    Unggah gambar yang akan dijadikan background surat.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
