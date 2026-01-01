@@ -1,33 +1,24 @@
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
 import { Header } from '@/components/layout/header';
 import { OfferFormDynamic } from '../_components/offer-form-dynamic';
 import type { Module, UserFolder } from '@/lib/types';
 import * as React from 'react';
 
 export default function NewOfferPage() {
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { isUserLoading } = useUser();
   const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
     setIsClient(true);
   }, []);
 
-  const modulesQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
-  }, [firestore, user]);
-
-  const foldersQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid));
-  }, [firestore, user]);
-
-  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
-  const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
+  // TEMPORARILY DISABLED QUERIES
+  const modules: Module[] | null = [];
+  const userFolders: UserFolder[] | null = [];
+  const isLoadingModules = false;
+  const isLoadingFolders = false;
   
   const isLoading = isUserLoading || isLoadingModules || isLoadingFolders;
 
