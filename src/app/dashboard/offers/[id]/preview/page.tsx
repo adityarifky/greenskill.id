@@ -44,7 +44,7 @@ export default function OfferPreviewPage({ params }: { params: Promise<{ id: str
       return (
          <div className="flex h-full flex-col bg-muted/40">
             <div className="no-print">
-                <Header title="Pratinjau Penawaran" />
+                <Header title="Pratinjau Surat" />
             </div>
             <main className="flex-1 p-4 md:p-8 flex items-center justify-center">
                  <div className="print-container w-full mx-auto max-w-4xl rounded-lg bg-white shadow-lg">
@@ -64,7 +64,7 @@ export default function OfferPreviewPage({ params }: { params: Promise<{ id: str
   if (!templateImage.imageUrl) {
     return (
       <div className="flex h-full flex-col">
-        <Header title="Pratinjau Penawaran" />
+        <Header title="Pratinjau Surat" />
         <main className="flex-1 p-4 md:p-8 text-center">
           <p>Gambar template tidak ditemukan.</p>
         </main>
@@ -75,7 +75,7 @@ export default function OfferPreviewPage({ params }: { params: Promise<{ id: str
   return (
     <div className="flex h-full flex-col bg-muted/40">
       <div className="no-print">
-        <Header title="Pratinjau Penawaran" />
+        <Header title="Pratinjau Surat" />
       </div>
       <main className="flex-1 p-4 md:p-8 flex items-center justify-center">
         <div className="print-container w-full mx-auto max-w-4xl rounded-lg bg-white shadow-lg">

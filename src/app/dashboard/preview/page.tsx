@@ -84,7 +84,7 @@ export default function PreviewPage() {
         <Tabs defaultValue="schemes" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="schemes">Skema Registrasi</TabsTrigger>
-            <TabsTrigger value="offers">Daftar Penawaran</TabsTrigger>
+            <TabsTrigger value="offers">Daftar Surat</TabsTrigger>
             <TabsTrigger value="modules">Daftar Modul</TabsTrigger>
           </TabsList>
           
@@ -130,8 +130,8 @@ export default function PreviewPage() {
           <TabsContent value="offers">
             <Card>
               <CardHeader>
-                <CardTitle>Daftar Penawaran</CardTitle>
-                <CardDescription>Tampilan semua penawaran yang telah Anda buat.</CardDescription>
+                <CardTitle>Daftar Surat</CardTitle>
+                <CardDescription>Tampilan semua surat yang telah Anda buat.</CardDescription>
               </CardHeader>
               <CardContent>
                  <Table>
@@ -160,7 +160,7 @@ export default function PreviewPage() {
                   </TableBody>
                 </Table>
                 {!isLoading && (!offers || offers.length === 0) && (
-                    <div className="text-center py-10 text-muted-foreground">Belum ada penawaran.</div>
+                    <div className="text-center py-10 text-muted-foreground">Belum ada surat.</div>
                 )}
               </CardContent>
             </Card>

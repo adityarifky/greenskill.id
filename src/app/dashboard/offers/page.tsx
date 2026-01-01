@@ -59,19 +59,19 @@ export default function OffersPage() {
   
   return (
     <div className="flex h-full flex-col">
-      <Header title="Daftar Penawaran" />
+      <Header title="Daftar Surat" />
       <main className="flex-1 p-4 md:p-8">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Penawaran Dibuat</CardTitle>
-                <CardDescription>Kelola semua penawaran yang telah Anda buat.</CardDescription>
+                <CardTitle>Surat Dibuat</CardTitle>
+                <CardDescription>Kelola semua surat yang telah Anda buat.</CardDescription>
               </div>
               <Button asChild>
                 <Link href="/dashboard/offers/new">
                   <PlusCircle className="mr-2 h-4 w-4" />
-                  Buat Penawaran Baru
+                  Buat Surat Baru
                 </Link>
               </Button>
             </div>
@@ -82,7 +82,7 @@ export default function OffersPage() {
                 <TableRow>
                   <TableHead>Customer</TableHead>
                   <TableHead>Skema</TableHead>
-                  <TableHead className="hidden md:table-cell">Tanggal Penawaran</TableHead>
+                  <TableHead className="hidden md:table-cell">Tanggal Surat</TableHead>
                   <TableHead>
                     <span className="sr-only">Aksi</span>
                   </TableHead>
@@ -139,7 +139,7 @@ export default function OffersPage() {
             </Table>
              {!isLoading && (!offers || offers.length === 0) && (
               <div className="py-10 text-center text-muted-foreground">
-                Belum ada penawaran yang dibuat.
+                Belum ada surat yang dibuat.
               </div>
             )}
           </CardContent>
@@ -151,7 +151,7 @@ export default function OffersPage() {
 
 const OffersPageSkeleton = () => (
     <div className="flex h-full flex-col">
-        <Header title="Daftar Penawaran" />
+        <Header title="Daftar Surat" />
         <main className="flex-1 p-4 md:p-8">
             <Card>
                 <CardHeader>

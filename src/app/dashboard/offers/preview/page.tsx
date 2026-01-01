@@ -39,7 +39,7 @@ export default function SessionOfferPreviewPage() {
     return (
       <div className="flex h-full flex-col bg-muted/40">
         <div className="no-print">
-          <Header title="Pratinjau Penawaran" />
+          <Header title="Pratinjau Surat" />
         </div>
         <main className="flex-1 p-4 md:p-8">
           <div className="print-container mx-auto w-full max-w-4xl rounded-lg bg-white shadow-lg">
@@ -55,7 +55,7 @@ export default function SessionOfferPreviewPage() {
   if (!previewData || !previewData.backgroundUrl || !previewData.module) {
     return (
       <div className="flex h-full flex-col">
-        <Header title="Pratinjau Penawaran" />
+        <Header title="Pratinjau Surat" />
         <main className="flex flex-1 flex-col items-center justify-center p-4 md:p-8">
           <div className="text-center">
             <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
@@ -74,7 +74,7 @@ export default function SessionOfferPreviewPage() {
 
   const { module, backgroundUrl } = previewData;
 
-  const headerTitle = 'Pratinjau Surat Penawaran';
+  const headerTitle = 'Pratinjau Surat';
 
   return (
     <div className="flex h-full flex-col bg-muted/40">
@@ -89,7 +89,7 @@ export default function SessionOfferPreviewPage() {
             </Button>
              <Button onClick={() => window.print()}>
                 <Printer className="mr-2 h-4 w-4" />
-                Cetak Surat Penawaran
+                Cetak Surat
             </Button>
          </div>
         
@@ -116,7 +116,7 @@ export default function SessionOfferPreviewPage() {
               >
                   <Image
                     src={backgroundUrl}
-                    alt="Background Surat Penawaran"
+                    alt="Background Surat"
                     fill
                     sizes="100vw"
                     priority

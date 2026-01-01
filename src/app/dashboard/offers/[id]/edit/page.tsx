@@ -32,7 +32,7 @@ export default function EditOfferPage({ params }: { params: Promise<{ id: string
   if (isLoadingOffer || isLoadingSchemes) {
     return (
         <div className="flex h-full flex-col">
-            <Header title="Edit Penawaran" />
+            <Header title="Edit Surat" />
             <main className="flex-1 p-4 md:p-8">
             <div className="mx-auto max-w-2xl">
                 <OfferFormDynamic initialData={null} schemes={[]} isLoading={true} />
@@ -44,7 +44,7 @@ export default function EditOfferPage({ params }: { params: Promise<{ id: string
 
   return (
     <div className="flex h-full flex-col">
-      <Header title="Edit Penawaran" />
+      <Header title="Edit Surat" />
       <main className="flex-1 p-4 md:p-8">
         <div className="mx-auto max-w-2xl">
           <OfferFormDynamic initialData={offer} schemes={schemes || []} />

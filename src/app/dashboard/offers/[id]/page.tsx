@@ -43,7 +43,7 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
   if (isLoadingOffer || isLoadingScheme) {
     return (
       <div className="flex h-full flex-col">
-        <Header title="Detail Penawaran" />
+        <Header title="Detail Surat" />
         <main className="flex-1 p-4 md:p-8">
           <div className="mx-auto max-w-3xl">
             <div className="mb-6 flex items-center justify-between">
@@ -90,7 +90,7 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="flex h-full flex-col">
-      <Header title="Detail Penawaran" />
+      <Header title="Detail Surat" />
       <main className="flex-1 p-4 md:p-8">
         <div className="mx-auto max-w-3xl">
           <div className="mb-6 flex items-center justify-between">
@@ -117,14 +117,14 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
           </div>
           <Card>
             <CardHeader>
-              <CardTitle>Penawaran untuk: {offer.customerName}</CardTitle>
+              <CardTitle>Surat untuk: {offer.customerName}</CardTitle>
               <CardDescription>
                 Dibuat pada {offer.createdAt ? format(offer.createdAt, "d MMMM yyyy, HH:mm", { locale: id }) : 'N/A'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                <div>
-                <h3 className="text-lg font-semibold">Detail Penawaran</h3>
+                <h3 className="text-lg font-semibold">Detail Surat</h3>
                 <Separator className="my-2" />
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
@@ -132,7 +132,7 @@ export default function OfferDetailsPage({ params }: { params: Promise<{ id: str
                     <span>{offer.customerName}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tanggal Penawaran:</span>
+                    <span className="text-muted-foreground">Tanggal Surat:</span>
                     <span>{offer.offerDate ? format(offer.offerDate, "d MMMM yyyy", { locale: id }) : 'N/A'}</span>
                   </div>
                 </div>
