@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit, FolderPlus } from 'lucide-react';
 import * as React from 'react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -109,12 +109,18 @@ export default function ModulesPage() {
               <h2 className="text-2xl font-bold tracking-tight">Daftar Modul Pelatihan</h2>
               <p className="text-muted-foreground">Kelola semua modul pelatihan Anda di sini.</p>
             </div>
-            <Button asChild>
-              <Link href="/dashboard/modules/new">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Buat Modul Baru
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+               <Button variant="outline">
+                <FolderPlus className="mr-2 h-4 w-4" />
+                Tambah Folder
+              </Button>
+              <Button asChild>
+                <Link href="/dashboard/modules/new">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Buat Modul Baru
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {!isLoading && (!modules || modules.length === 0) ? (
