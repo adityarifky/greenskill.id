@@ -9,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import type { Module } from '@/lib/types';
 import { useFirestore, useUser } from '@/firebase';
 import React, { useRef, useEffect, memo, forwardRef, useImperativeHandle } from 'react';
-import { Bold } from 'lucide-react';
+import { Bold, AlignLeft, AlignCenter, AlignRight, ChevronDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -24,43 +24,72 @@ import {
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 // --- Text Editor Component ---
-// This component is memoized to prevent re-renders on every keystroke,
-// which was causing the cursor to jump.
 const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { initialContent: string }, ref) {
     const editorRef = useRef<HTMLDivElement>(null);
 
-    // Expose a method to get the current content, which can be called by the parent form on submit
     useImperativeHandle(ref, () => ({
         getContent: () => {
             return editorRef.current?.innerHTML || '';
         }
     }));
 
-    // Set initial content only once when the component mounts
     useEffect(() => {
         if (editorRef.current && initialContent) {
             editorRef.current.innerHTML = initialContent;
         }
-        // We only want this to run once, so we pass an empty dependency array.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [initialContent]);
 
     const execCommand = (command: string, value?: string) => {
         document.execCommand(command, false, value);
         editorRef.current?.focus();
     };
+
+    const applyFontSize = (size: string) => {
+        execCommand('formatBlock', 'p');
+        execCommand('fontSize', size);
+    }
     
     return (
         <div className="rounded-md border border-input">
-            <div className="p-2 border-b">
+            <div className="p-2 border-b flex items-center space-x-1">
                 <ToggleGroup type="multiple" variant="outline" size="sm">
                     <ToggleGroupItem value="bold" aria-label="Toggle bold" onClick={() => execCommand('bold')}>
                         <Bold className="h-4 w-4" />
                     </ToggleGroupItem>
                 </ToggleGroup>
+                 <ToggleGroup type="single" variant="outline" size="sm">
+                    <ToggleGroupItem value="left" aria-label="Align left" onClick={() => execCommand('justifyLeft')}>
+                        <AlignLeft className="h-4 w-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="center" aria-label="Align center" onClick={() => execCommand('justifyCenter')}>
+                        <AlignCenter className="h-4 w-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="right" aria-label="Align right" onClick={() => execCommand('justifyRight')}>
+                        <AlignRight className="h-4 w-4" />
+                    </ToggleGroupItem>
+                </ToggleGroup>
+
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="flex items-center gap-1">
+                            Ukuran Teks
+                            <ChevronDown className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => applyFontSize('1')}>Sangat Kecil</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => applyFontSize('2')}>Kecil</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => applyFontSize('3')}>Normal</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => applyFontSize('4')}>Sedang</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => applyFontSize('5')}>Besar</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => applyFontSize('6')}>Sangat Besar</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => applyFontSize('7')}>Judul</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
             <div
                 ref={editorRef}
@@ -69,7 +98,14 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
                 suppressContentEditableWarning={true}
                 className={cn(
                     "min-h-[400px] w-full rounded-b-md bg-transparent px-3 py-2 text-sm ring-offset-background",
-                    "focus-visible:outline-none"
+                    "focus-visible:outline-none",
+                    "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
+                    "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
+                    "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
+                    "[&_font[size='4']]:text-xl [&_font[size='4']]:font-semibold",
+                    "[&_font[size='3']]:text-base",
+                    "[&_font[size='2']]:text-sm",
+                    "[&_font[size='1']]:text-xs",
                 )}
                  dangerouslySetInnerHTML={{ __html: initialContent }}
             />
@@ -80,8 +116,7 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
 // --- Main Module Form Component ---
 const formSchema = z.object({
   title: z.string().min(3, { message: 'Judul modul harus memiliki setidaknya 3 karakter.' }),
-  // Content validation will be handled manually before submit
-  content: z.string(),
+  content: z.string(), // This field is now just for passing initial data
 });
 
 const contentValidationSchema = z.string().min(10, { message: 'Konten modul harus memiliki setidaknya 10 karakter.' });
@@ -129,10 +164,8 @@ export function ModuleForm({ initialData, onSave }: ModuleFormProps) {
         return;
     }
 
-    // Get the latest content directly from the editor component on submit
     const currentContent = editorComponentRef.current?.getContent() || '';
     
-    // Manually trigger validation for the content field
     const contentValidationResult = contentValidationSchema.safeParse(currentContent);
     if (!contentValidationResult.success) {
       form.setError('content', {
