@@ -283,7 +283,7 @@ const TextEditor = memo(forwardRef(function TextEditor({ initialContent }: { ini
                     contentEditable={true}
                     suppressContentEditableWarning={true}
                     className={cn(
-                        "min-h-[400px] w-full rounded-b-md bg-transparent px-3 py-2 text-sm ring-offset-background",
+                        "min-h-[400px] w-full rounded-b-md bg-transparent py-2 text-sm ring-offset-background",
                         "focus-visible:outline-none",
                         "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
                         "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
