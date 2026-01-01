@@ -67,19 +67,23 @@ export default function ModulesPage() {
   const [draggedModule, setDraggedModule] = React.useState<Module | null>(null);
 
 
-  const modulesQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'modules'), where('userId', '==', user?.uid), orderBy('position', 'asc'));
-  }, [firestore, user]);
+  // const modulesQuery = useMemoFirebase(() => {
+  //   if (!firestore || !user) return null;
+  //   return query(collection(firestore, 'modules'), where('userId', '==', user?.uid), orderBy('position', 'asc'));
+  // }, [firestore, user]);
 
-  const foldersQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'user_folders'), where('userId', '==', user?.uid));
-  }, [firestore, user]);
+  // const foldersQuery = useMemoFirebase(() => {
+  //   if (!firestore || !user) return null;
+  //   return query(collection(firestore, 'user_folders'), where('userId', '==', user?.uid));
+  // }, [firestore, user]);
 
-  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
-  const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
+  // const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
+  // const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
   
+  const modules: Module[] = [];
+  const userFolders: UserFolder[] = [];
+  const isLoadingModules = false;
+  const isLoadingFolders = false;
   const isLoading = isUserLoading || isLoadingModules || isLoadingFolders;
   
   const openFolderContent = (folder: {id: string, name: string}) => {

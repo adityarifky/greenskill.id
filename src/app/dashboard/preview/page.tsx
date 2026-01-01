@@ -28,15 +28,17 @@ export default function PreviewPage() {
     return query(collection(firestore, 'training_offers'), where('userId', '==', user.uid));
   }, [firestore, user]);
 
-  const modulesQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
-  }, [firestore, user]);
+  // const modulesQuery = useMemoFirebase(() => {
+  //   if (!firestore || !user) return null;
+  //   return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
+  // }, [firestore, user]);
 
   const { data: schemes, isLoading: isLoadingSchemes } = useCollection<Scheme>(schemesQuery);
   const { data: offers, isLoading: isLoadingOffers } = useCollection<Offer>(offersQuery);
-  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
-  
+  // const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
+  const modules: Module[] = [];
+  const isLoadingModules = false;
+
   const isLoading = isUserLoading || isLoadingSchemes || isLoadingOffers || isLoadingModules;
 
   const getFormattedDate = (date: any): string => {
