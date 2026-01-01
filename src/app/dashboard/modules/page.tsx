@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit, FolderPlus, Folder } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit, FolderPlus, Folder, ArrowRight } from 'lucide-react';
 import * as React from 'react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -15,7 +15,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardFooter
+  CardFooter,
+  CardDescription
 } from '@/components/ui/card';
 import {
   Dialog,
@@ -50,20 +51,14 @@ import { ModuleFormDynamic } from './_components/module-form-dynamic';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
-type FolderType = {
-  id: string;
-  name: string;
-};
-
 export default function ModulesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const [moduleToDelete, setModuleToDelete] = React.useState<Module | null>(null);
   const [moduleToPreview, setModuleToPreview] = React.useState<Module | null>(null);
   const [moduleToEdit, setModuleToEdit] = React.useState<Module | null>(null);
-  const [isFolderDialogOpen, setIsFolderDialogOpen] = React.useState(false);
-  const [folders, setFolders] = React.useState<FolderType[]>([]);
-  const [folderName, setFolderName] = React.useState('');
+  const [isFolderContentOpen, setIsFolderContentOpen] = React.useState(false);
+
 
   const modulesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -110,28 +105,6 @@ export default function ModulesPage() {
     }
     return '-';
   };
-
-  const handleSaveFolder = () => {
-    if (folderName.trim() === '') {
-      toast({
-        variant: 'destructive',
-        title: 'Gagal!',
-        description: 'Nama folder tidak boleh kosong.',
-      });
-      return;
-    }
-    const newFolder: FolderType = {
-      id: `folder_${Date.now()}`,
-      name: folderName.trim(),
-    };
-    setFolders(prevFolders => [...prevFolders, newFolder]);
-    toast({
-      title: 'Sukses!',
-      description: `Folder "${newFolder.name}" berhasil dibuat.`,
-    });
-    setFolderName('');
-    setIsFolderDialogOpen(false);
-  };
   
   return (
     <div className="flex h-full flex-col">
@@ -143,10 +116,6 @@ export default function ModulesPage() {
               <p className="text-muted-foreground">Kelola semua modul pelatihan Anda di sini.</p>
             </div>
             <div className="flex items-center gap-2">
-               <Button variant="outline" onClick={() => setIsFolderDialogOpen(true)}>
-                <FolderPlus className="mr-2 h-4 w-4" />
-                Tambah Folder
-              </Button>
               <Button asChild>
                 <Link href="/dashboard/modules/new">
                   <PlusCircle className="mr-2 h-4 w-4" />
@@ -156,11 +125,11 @@ export default function ModulesPage() {
             </div>
           </div>
 
-          {!isLoading && (!modules || modules.length === 0) && folders.length === 0 ? (
+          {!isLoading && (!modules || modules.length === 0) ? (
               <div className="py-20 text-center text-muted-foreground flex flex-col items-center justify-center border-2 border-dashed rounded-lg h-full">
                 <BookOpen className="h-16 w-16 text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold">Belum Ada Modul atau Folder</h3>
-                <p className="mb-4">Mulai buat modul atau folder pertama Anda.</p>
+                <h3 className="text-lg font-semibold">Belum Ada Modul</h3>
+                <p className="mb-4">Mulai buat modul pertama Anda.</p>
                  <Button asChild>
                     <Link href="/dashboard/modules/new">
                         <PlusCircle className="mr-2 h-4 w-4" />
@@ -170,99 +139,46 @@ export default function ModulesPage() {
               </div>
           ) : (
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {isLoading && (
+                {isLoading ? (
                     <>
-                      {[...Array(8)].map((_, i) => (
-                        <Card key={i}>
-                            <CardHeader>
-                                <Skeleton className="h-6 w-3/4" />
-                                <Skeleton className="h-4 w-1/2" />
-                            </CardHeader>
-                            <CardFooter>
-                                <Skeleton className="h-4 w-full" />
-                            </CardFooter>
-                        </Card>
-                      ))}
+                      <Card>
+                          <CardHeader>
+                              <Skeleton className="h-6 w-3/4" />
+                              <Skeleton className="h-4 w-1/2" />
+                          </CardHeader>
+                          <CardFooter>
+                              <Skeleton className="h-4 w-full" />
+                          </CardFooter>
+                      </Card>
+                       <Card>
+                          <CardHeader>
+                              <Skeleton className="h-6 w-3/4" />
+                              <Skeleton className="h-4 w-1/2" />
+                          </CardHeader>
+                          <CardFooter>
+                              <Skeleton className="h-4 w-full" />
+                          </CardFooter>
+                      </Card>
                     </>
-                  )}
-                  {folders.map((folder) => (
+                  ) : (
                     <Card 
-                      key={folder.id} 
+                      key="folder-surat-penawaran" 
                       className="flex flex-col h-full transition-all duration-200 hover:shadow-xl hover:-translate-y-1 cursor-pointer bg-amber-50/50"
+                      onClick={() => setIsFolderContentOpen(true)}
                     >
                         <CardHeader className="flex-row items-start justify-between">
-                           <CardTitle className="text-base leading-snug break-words">{folder.name}</CardTitle>
+                           <CardTitle className="text-base leading-snug break-words">Surat Penawaran</CardTitle>
                            <Folder className="h-5 w-5 text-amber-500" />
                         </CardHeader>
                         <CardContent className="flex-grow flex items-center justify-center">
                            <Folder className="h-16 w-16 text-amber-200" />
                         </CardContent>
-                        <CardFooter>
-                           <p className="text-xs text-muted-foreground">Folder</p>
+                        <CardFooter className="flex justify-between items-center w-full">
+                           <p className="text-xs text-muted-foreground">{modules?.length || 0} Modul</p>
+                           <ArrowRight className="h-4 w-4 text-muted-foreground" />
                         </CardFooter>
                     </Card>
-                  ))}
-                  {!isLoading && modules?.map((module) => (
-                      <Card 
-                        key={module.id} 
-                        className="flex flex-col h-full transition-all duration-200 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
-                        onClick={() => setModuleToPreview(module)}
-                      >
-                          <CardHeader className="flex-row items-start justify-between">
-                            <CardTitle className="text-base leading-snug break-words">{module.title}</CardTitle>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                  <Button 
-                                    aria-haspopup="true" 
-                                    size="icon" 
-                                    variant="ghost" 
-                                    className="h-8 w-8 -mt-2 -mr-2"
-                                    onClick={(e) => {
-                                      e.preventDefault(); 
-                                      e.stopPropagation();
-                                    }}
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                    <span className="sr-only">Toggle menu</span>
-                                  </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={(e) => {
-                                    e.stopPropagation();
-                                    setModuleToPreview(module);
-                                }}>
-                                    <BookOpen className="mr-2 h-4 w-4" />
-                                    Pratinjau
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditClick(module);
-                                }}>
-                                    <FileEdit className="mr-2 h-4 w-4" />
-                                    Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="text-destructive focus:bg-destructive/10 focus:text-destructive" 
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setModuleToDelete(module)
-                                  }}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Hapus
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </CardHeader>
-                          <CardContent className="flex-grow"></CardContent>
-                          <CardFooter>
-                            <p className="text-xs text-muted-foreground">
-                                Dibuat pada {getFormattedDate(module.createdAt)}
-                            </p>
-                          </CardFooter>
-                      </Card>
-                  ))}
+                  )}
              </div>
           )}
       </main>
@@ -333,35 +249,71 @@ export default function ModulesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isFolderDialogOpen} onOpenChange={setIsFolderDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog open={isFolderContentOpen} onOpenChange={setIsFolderContentOpen}>
+        <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Buat Folder Baru</DialogTitle>
+            <DialogTitle>Isi Folder: Surat Penawaran</DialogTitle>
             <DialogDescription>
-              Beri nama folder baru Anda. Anda bisa memindahkan modul ke dalamnya nanti.
+              Berikut adalah daftar semua modul yang ada di dalam folder ini.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="folder-name" className="text-right">
-                Nama
-              </Label>
-              <Input 
-                id="folder-name" 
-                placeholder="Contoh: Modul K3" 
-                className="col-span-3"
-                value={folderName}
-                onChange={(e) => setFolderName(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsFolderDialogOpen(false)}>Batal</Button>
-            <Button type="submit" onClick={handleSaveFolder}>Simpan Folder</Button>
-          </DialogFooter>
+          <ScrollArea className="flex-grow">
+              <div className="space-y-3 pr-4">
+                {!isLoading && modules?.map((module, index) => (
+                  <Card key={module.id} className="flex items-center p-3 gap-4">
+                      <span className="text-lg font-bold text-muted-foreground w-6 text-center">{index + 1}.</span>
+                      <div className="flex-grow">
+                          <h4 className="font-semibold text-base">{module.title}</h4>
+                          <p className="text-xs text-muted-foreground">
+                            Dibuat pada {getFormattedDate(module.createdAt)}
+                          </p>
+                      </div>
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button 
+                                aria-haspopup="true" 
+                                size="icon" 
+                                variant="ghost" 
+                                className="h-8 w-8"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setModuleToPreview(module)}>
+                                <BookOpen className="mr-2 h-4 w-4" />
+                                Pratinjau
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditClick(module)}>
+                                <FileEdit className="mr-2 h-4 w-4" />
+                                Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-destructive focus:bg-destructive/10 focus:text-destructive" 
+                              onClick={() => setModuleToDelete(module)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Hapus
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                  </Card>
+                ))}
+                 {isLoading && [...Array(5)].map((_, i) => (
+                    <Card key={i} className="flex items-center p-3 gap-4">
+                        <Skeleton className="h-6 w-6" />
+                        <div className="flex-grow space-y-2">
+                           <Skeleton className="h-5 w-3/4" />
+                           <Skeleton className="h-3 w-1/2" />
+                        </div>
+                        <Skeleton className="h-8 w-8" />
+                    </Card>
+                ))}
+              </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }
