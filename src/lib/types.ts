@@ -47,4 +47,6 @@ export type Module = {
 export type UserFolder = {
   id: string;
   name: string;
+  userId: string;
+  createdAt: { seconds: number; nanoseconds: number; } | Date;
 };

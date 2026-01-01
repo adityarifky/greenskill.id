@@ -28,5 +28,11 @@ service cloud.firestore {
       allow list: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
+
+    // Allow users to manage their own folders
+    match /user_folders/{folderId} {
+      allow get, list, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
   }
 }

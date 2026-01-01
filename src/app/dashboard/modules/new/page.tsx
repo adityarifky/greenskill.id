@@ -4,20 +4,21 @@ import { Header } from '@/components/layout/header';
 import { ModuleFormDynamic } from '../_components/module-form-dynamic';
 import * as React from 'react';
 import type { UserFolder } from '@/lib/types';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 export default function NewModulePage() {
-  const [folders, setFolders] = React.useState<UserFolder[]>([]);
+  const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
+
+  const foldersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid));
+  }, [firestore, user]);
+
+  const { data: folders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
   
-  React.useEffect(() => {
-    try {
-      const storedFolders = localStorage.getItem('userFolders');
-      if (storedFolders) {
-        setFolders(JSON.parse(storedFolders));
-      }
-    } catch (error) {
-      console.error("Failed to parse folders from localStorage", error);
-    }
-  }, []);
+  const isLoading = isUserLoading || isLoadingFolders;
 
 
   return (
@@ -25,7 +26,7 @@ export default function NewModulePage() {
       <Header title="Buat Modul Baru" />
       <main className="flex-1 p-4 md:p-8">
          <div className="mx-auto max-w-4xl">
-            <ModuleFormDynamic folders={folders} />
+            <ModuleFormDynamic folders={folders || []} isLoading={isLoading} />
          </div>
       </main>
     </div>

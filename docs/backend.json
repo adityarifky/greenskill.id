@@ -153,6 +153,32 @@
             "createdAt",
             "updatedAt"
         ]
+    },
+    "UserFolder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserFolder",
+      "type": "object",
+      "description": "Represents a user-created folder to organize modules.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the folder."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the folder."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this folder."
+        },
+        "createdAt": {
+            "type": "string",
+            "description": "Date when the folder was created.",
+            "format": "date-time"
+        }
+      },
+      "required": ["id", "name", "userId", "createdAt"]
     }
   },
   "auth": {
@@ -223,6 +249,22 @@
             {
               "name": "moduleId",
               "description": "Unique identifier for the module."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/user_folders/{folderId}",
+        "definition": {
+          "entityName": "UserFolder",
+          "schema": {
+            "$ref": "#/backend/entities/UserFolder"
+          },
+          "description": "Stores user-created folders for organizing modules. The 'userId' field ensures users can only access their own folders.",
+          "params": [
+            {
+              "name": "folderId",
+              "description": "Unique identifier for the folder."
             }
           ]
         }

@@ -7,7 +7,7 @@ import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit, FolderPlus, Fol
 import * as React from 'react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import {
@@ -60,27 +60,21 @@ export default function ModulesPage() {
   const [isFolderContentOpen, setIsFolderContentOpen] = React.useState(false);
   const [isAddFolderOpen, setIsAddFolderOpen] = React.useState(false);
   const [newFolderName, setNewFolderName] = React.useState('');
-  const [userFolders, setUserFolders] = React.useState<UserFolder[]>([]);
-
-  React.useEffect(() => {
-    try {
-      const storedFolders = localStorage.getItem('userFolders');
-      if (storedFolders) {
-        setUserFolders(JSON.parse(storedFolders));
-      }
-    } catch (error) {
-      console.error("Failed to parse folders from localStorage", error);
-    }
-  }, []);
-
+  
   const modulesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, 'modules'), where('userId', '==', user?.uid));
   }, [firestore, user]);
 
+  const foldersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user?.uid));
+  }, [firestore, user]);
+
   const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
+  const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
   
-  const isLoading = isUserLoading || isLoadingModules;
+  const isLoading = isUserLoading || isLoadingModules || isLoadingFolders;
 
   const handleEditClick = (module: Module) => {
     setModuleToPreview(null); // Close preview dialog if open
@@ -119,31 +113,36 @@ export default function ModulesPage() {
     return '-';
   };
 
-  const handleSaveFolder = () => {
-    if (newFolderName.trim() === '') {
+  const handleSaveFolder = async () => {
+    if (newFolderName.trim() === '' || !firestore || !user) {
         toast({
             variant: 'destructive',
             title: 'Gagal!',
-            description: 'Nama folder tidak boleh kosong.',
+            description: 'Nama folder tidak boleh kosong atau pengguna tidak terautentikasi.',
         });
         return;
     }
     
-    const newFolder: UserFolder = {
-      id: Date.now().toString(),
-      name: newFolderName,
-    };
-    
-    const updatedFolders = [...userFolders, newFolder];
-    setUserFolders(updatedFolders);
-    localStorage.setItem('userFolders', JSON.stringify(updatedFolders));
-    
-    toast({
-        title: 'Sukses!',
-        description: `Folder "${newFolderName}" berhasil dibuat.`,
-    });
-    setNewFolderName('');
-    setIsAddFolderOpen(false);
+    try {
+      await addDoc(collection(firestore, 'user_folders'), {
+        name: newFolderName,
+        userId: user.uid,
+        createdAt: serverTimestamp(),
+      });
+      toast({
+          title: 'Sukses!',
+          description: `Folder "${newFolderName}" berhasil dibuat.`,
+      });
+      setNewFolderName('');
+      setIsAddFolderOpen(false);
+    } catch(error) {
+      console.error("Error adding folder: ", error);
+       toast({
+            variant: 'destructive',
+            title: 'Gagal!',
+            description: 'Terjadi kesalahan saat membuat folder.',
+        });
+    }
   };
   
   return (
@@ -169,7 +168,7 @@ export default function ModulesPage() {
             </div>
           </div>
 
-          {!isLoading && (!modules || modules.length === 0) && userFolders.length === 0 ? (
+          {!isLoading && (!modules || modules.length === 0) && (!userFolders || userFolders.length === 0) ? (
               <div className="py-20 text-center text-muted-foreground flex flex-col items-center justify-center border-2 border-dashed rounded-lg h-full">
                 <BookOpen className="h-16 w-16 text-muted-foreground/30 mb-4" />
                 <h3 className="text-lg font-semibold">Belum Ada Modul atau Folder</h3>
@@ -219,12 +218,12 @@ export default function ModulesPage() {
                              <Folder className="h-16 w-16 text-amber-200" />
                           </CardContent>
                           <CardFooter className="flex justify-between items-center w-full">
-                             <p className="text-xs text-muted-foreground">{modules?.length || 0} Modul</p>
+                             <p className="text-xs text-muted-foreground">{modules?.filter(m => m.folderId === 'folder-surat-penawaran' || !m.folderId).length || 0} Modul</p>
                              <ArrowRight className="h-4 w-4 text-muted-foreground" />
                           </CardFooter>
                       </Card>
 
-                      {userFolders.map((folder) => (
+                      {userFolders?.map((folder) => (
                          <Card 
                             key={folder.id} 
                             className="flex flex-col h-full transition-all duration-200 hover:shadow-xl hover:-translate-y-1 cursor-pointer bg-amber-50/50"
@@ -238,7 +237,7 @@ export default function ModulesPage() {
                                  <Folder className="h-16 w-16 text-amber-200" />
                               </CardContent>
                               <CardFooter className="flex justify-between items-center w-full">
-                                 <p className="text-xs text-muted-foreground">0 Modul</p>
+                                 <p className="text-xs text-muted-foreground">{modules?.filter(m => m.folderId === folder.id).length || 0} Modul</p>
                                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
                               </CardFooter>
                           </Card>
@@ -309,7 +308,7 @@ export default function ModulesPage() {
             <div className="max-h-[80vh] overflow-y-auto p-1">
               <ModuleFormDynamic 
                   initialData={moduleToEdit}
-                  folders={userFolders}
+                  folders={userFolders || []}
                   onSave={() => setModuleToEdit(null)}
               />
             </div>
@@ -326,7 +325,7 @@ export default function ModulesPage() {
           </DialogHeader>
           <ScrollArea className="flex-grow">
               <div className="space-y-3 pr-4">
-                {!isLoading && modules?.map((module, index) => (
+                {!isLoading && modules?.filter(m => m.folderId === 'folder-surat-penawaran' || !m.folderId).map((module, index) => (
                   <Card key={module.id} className="flex items-center p-3 gap-4">
                       <span className="text-lg font-bold text-muted-foreground w-6 text-center">{index + 1}.</span>
                       <div className="flex-grow">
@@ -413,6 +412,4 @@ export default function ModulesPage() {
 
     </div>
   );
-
-    
-
+}
