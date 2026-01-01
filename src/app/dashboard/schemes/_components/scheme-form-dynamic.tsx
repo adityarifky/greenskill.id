@@ -12,13 +12,14 @@ const SchemeForm = dynamic(() => import('./scheme-form').then(mod => mod.SchemeF
 interface SchemeFormDynamicProps {
   initialData?: Scheme | null;
   isLoading?: boolean;
+  onSave?: () => void;
 }
 
-export function SchemeFormDynamic({ initialData, isLoading }: SchemeFormDynamicProps) {
+export function SchemeFormDynamic({ initialData, isLoading, onSave }: SchemeFormDynamicProps) {
     if (isLoading) {
         return <SchemeFormSkeleton />;
     }
-    return <SchemeForm initialData={initialData} />;
+    return <SchemeForm initialData={initialData} onSave={onSave} />;
 }
 
 

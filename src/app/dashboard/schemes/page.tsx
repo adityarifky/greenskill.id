@@ -1,10 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { PlusCircle, MoreHorizontal } from 'lucide-react';
 import * as React from 'react';
+import { PlusCircle, MoreHorizontal } from 'lucide-react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, deleteDoc, doc } from 'firebase/firestore';
@@ -45,12 +43,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { SchemeFormDynamic } from './_components/scheme-form-dynamic';
 
 export default function SchemesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const [isClient, setIsClient] = React.useState(false);
   const [schemeToDelete, setSchemeToDelete] = React.useState<Scheme | null>(null);
+  const [schemeToEdit, setSchemeToEdit] = React.useState<Scheme | null>(null);
 
   React.useEffect(() => {
     setIsClient(true);
@@ -203,10 +209,12 @@ export default function SchemesPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/schemes/${scheme.id}/edit`}>Edit</Link>
+                            <DropdownMenuItem onClick={() => setSchemeToEdit(scheme)}>
+                              Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => setSchemeToDelete(scheme)}>Hapus</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => setSchemeToDelete(scheme)}>
+                              Hapus
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -240,6 +248,24 @@ export default function SchemesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!schemeToEdit} onOpenChange={(open) => {
+        if (!open) {
+          setSchemeToEdit(null);
+        }
+      }}>
+        <DialogContent className="max-w-3xl">
+           <DialogHeader>
+             <DialogTitle>Edit Skema</DialogTitle>
+           </DialogHeader>
+            <div className="max-h-[80vh] overflow-y-auto p-1 pr-4 -mr-4">
+              <SchemeFormDynamic 
+                  initialData={schemeToEdit} 
+                  onSave={() => setSchemeToEdit(null)}
+              />
+            </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

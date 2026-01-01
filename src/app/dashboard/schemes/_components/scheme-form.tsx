@@ -41,9 +41,10 @@ type SchemeFormValues = z.infer<typeof formSchema>;
 
 interface SchemeFormProps {
   initialData?: Scheme | null;
+  onSave?: () => void;
 }
 
-export function SchemeForm({ initialData }: SchemeFormProps) {
+export function SchemeForm({ initialData, onSave }: SchemeFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
   const { user } = useUser();
@@ -97,7 +98,11 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
             title: 'Sukses!',
             description: toastMessage,
         });
-        router.push('/dashboard/schemes');
+        if (onSave) {
+          onSave();
+        } else {
+          router.push('/dashboard/schemes');
+        }
         router.refresh();
     }).catch(serverError => {
         console.error("Firestore operation failed:", serverError);
@@ -114,12 +119,12 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div className="mx-auto max-w-2xl">
-          <Card>
-            <CardHeader>
+          <Card className="border-0 shadow-none">
+            <CardHeader className="p-0 mb-6">
               <CardTitle>{title}</CardTitle>
               <CardDescription>{description}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 p-0">
               <FormField
                 control={form.control}
                 name="name"
@@ -220,7 +225,7 @@ export function SchemeForm({ initialData }: SchemeFormProps) {
               </div>
 
             </CardContent>
-            <CardFooter>
+            <CardFooter className="p-0 pt-6">
               <Button type="submit" className="w-full text-lg">
                   {action}
               </Button>
