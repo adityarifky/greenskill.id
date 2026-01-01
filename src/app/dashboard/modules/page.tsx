@@ -32,6 +32,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import type { Module, UserFolder } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -55,6 +56,7 @@ export default function ModulesPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const [moduleToDelete, setModuleToDelete] = React.useState<Module | null>(null);
+  const [folderToDelete, setFolderToDelete] = React.useState<UserFolder | null>(null);
   const [moduleToPreview, setModuleToPreview] = React.useState<Module | null>(null);
   const [moduleToEdit, setModuleToEdit] = React.useState<Module | null>(null);
   const [isFolderContentOpen, setIsFolderContentOpen] = React.useState(false);
@@ -81,7 +83,7 @@ export default function ModulesPage() {
     setModuleToEdit(module);
   };
   
-  const handleDelete = async (e: React.MouseEvent) => {
+  const handleDeleteModule = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!moduleToDelete || !firestore) return;
     try {
@@ -99,6 +101,27 @@ export default function ModulesPage() {
       console.error("Error deleting document: ", error);
     } finally {
         setModuleToDelete(null);
+    }
+  };
+
+  const handleDeleteFolder = async () => {
+    if (!folderToDelete || !firestore) return;
+    try {
+      await deleteDoc(doc(firestore, 'user_folders', folderToDelete.id));
+      // Optional: Add logic to handle modules inside the deleted folder
+      toast({
+        title: 'Sukses!',
+        description: `Folder "${folderToDelete.name}" berhasil dihapus.`,
+      });
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Gagal!',
+        description: 'Terjadi kesalahan saat menghapus folder.',
+      });
+      console.error("Error deleting folder: ", error);
+    } finally {
+        setFolderToDelete(null);
     }
   };
 
@@ -226,17 +249,38 @@ export default function ModulesPage() {
                       {userFolders?.map((folder) => (
                          <Card 
                             key={folder.id} 
-                            className="flex flex-col h-full transition-all duration-200 hover:shadow-xl hover:-translate-y-1 cursor-pointer bg-amber-50/50"
-                            onClick={() => { /* Logic to open this specific folder's content */ }}
+                            className="flex flex-col h-full transition-all duration-200 hover:shadow-xl hover:-translate-y-1 bg-amber-50/50 group"
                           >
                               <CardHeader className="flex-row items-start justify-between">
-                                 <CardTitle className="text-base leading-snug break-words">{folder.name}</CardTitle>
-                                 <Folder className="h-5 w-5 text-amber-500" />
+                                 <CardTitle className="text-base leading-snug break-words cursor-pointer flex-grow" onClick={() => { /* Logic to open this specific folder's content */ }}>{folder.name}</CardTitle>
+                                 <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button 
+                                            aria-haspopup="true" 
+                                            size="icon" 
+                                            variant="ghost" 
+                                            className="h-6 w-6 -mr-2 -mt-2 opacity-0 group-hover:opacity-100"
+                                        >
+                                            <MoreHorizontal className="h-4 w-4" />
+                                            <span className="sr-only">Toggle menu</span>
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                          <DropdownMenuLabel>Aksi Folder</DropdownMenuLabel>
+                                           <DropdownMenuItem 
+                                                className="text-destructive focus:bg-destructive/10 focus:text-destructive" 
+                                                onClick={() => setFolderToDelete(folder)}
+                                            >
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Hapus
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                  </DropdownMenu>
                               </CardHeader>
-                              <CardContent className="flex-grow flex items-center justify-center">
+                              <CardContent className="flex-grow flex items-center justify-center cursor-pointer" onClick={() => { /* Logic to open this specific folder's content */ }}>
                                  <Folder className="h-16 w-16 text-amber-200" />
                               </CardContent>
-                              <CardFooter className="flex justify-between items-center w-full">
+                              <CardFooter className="flex justify-between items-center w-full cursor-pointer" onClick={() => { /* Logic to open this specific folder's content */ }}>
                                  <p className="text-xs text-muted-foreground">{modules?.filter(m => m.folderId === folder.id).length || 0} Modul</p>
                                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
                               </CardFooter>
@@ -258,8 +302,25 @@ export default function ModulesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogAction onClick={handleDeleteModule} className="bg-destructive hover:bg-destructive/90">
               Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+       <AlertDialog open={!!folderToDelete} onOpenChange={(open) => !open && setFolderToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Folder Ini?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Anda yakin ingin menghapus folder "{folderToDelete?.name}"? Tindakan ini tidak dapat diurungkan. Modul di dalam folder ini tidak akan dihapus.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteFolder} className="bg-destructive hover:bg-destructive/90">
+              Hapus Folder
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -412,4 +473,3 @@ export default function ModulesPage() {
 
     </div>
   );
-}
