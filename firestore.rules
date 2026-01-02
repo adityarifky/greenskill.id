@@ -37,11 +37,10 @@ service cloud.firestore {
     match /user_folders/{folderId} {
         // Allow write operations if the user is the owner
         allow create, update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
-        // Allow reading documents (get and list) only if they belong to the user.
-        // This rule secures list operations by checking each document returned.
-        allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-        // Allow list operation for any authenticated user, but the read rule above will secure the data access.
-        allow list: if request.auth != null;
+        // Allow reading a single document if they are the owner
+        allow get: if request.auth != null && resource.data.userId == request.auth.uid;
+        // Allow list operation only if the query is filtered by the user's ID.
+        allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
     }
   }
 }
