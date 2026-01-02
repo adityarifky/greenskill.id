@@ -99,32 +99,37 @@ export default function SessionOfferPreviewPage() {
               className="print-content w-full"
             >
               {modules.map((module, index) => (
-                  <div
-                      key={index}
-                      className={cn(
-                          "printable-page relative aspect-[1/1.414] bg-white text-sm shadow-lg",
-                          "not-last:mb-8",
-                          "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
-                          "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
-                          "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
-                          "[&_font[size='4']]:text-xl [&_font[size='4']]:font-semibold",
-                          "[&_font[size='3']]:text-base",
-                          "[&_font[size='2']]:text-sm",
-                          "[&_font[size='1']]:text-xs",
-                          "[&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2",
-                          "[&_img]:max-w-full [&_img]:h-auto"
-                      )}
-                  >
-                      <Image
-                        src={backgroundUrl}
-                        alt={`Background Surat - Halaman ${index + 1}`}
-                        fill
-                        sizes="100vw"
-                        priority={index === 0}
-                        className="object-cover pointer-events-none"
-                      />
-                      <div className="absolute inset-0 p-4" dangerouslySetInnerHTML={{ __html: module.content || '' }}/>
-                  </div>
+                  <React.Fragment key={index}>
+                    <div
+                        className={cn(
+                            "printable-page relative aspect-[1/1.414] bg-white text-sm shadow-lg",
+                            "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
+                            "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
+                            "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
+                            "[&_font[size='4']]:text-xl [&_font[size='4']]:font-semibold",
+                            "[&_font[size='3']]:text-base",
+                            "[&_font[size='2']]:text-sm",
+                            "[&_font[size='1']]:text-xs",
+                            "[&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2",
+                            "[&_img]:max-w-full [&_img]:h-auto"
+                        )}
+                    >
+                        <Image
+                          src={backgroundUrl}
+                          alt={`Background Surat - Halaman ${index + 1}`}
+                          fill
+                          sizes="100vw"
+                          priority={index === 0}
+                          className="object-cover pointer-events-none"
+                        />
+                        <div className="absolute inset-0 p-4" dangerouslySetInnerHTML={{ __html: module.content || '' }}/>
+                    </div>
+                    {index < modules.length - 1 && (
+                      <div className="no-print my-8 flex items-center justify-center" aria-hidden="true">
+                        <div className="h-px w-full max-w-md bg-gray-300"></div>
+                      </div>
+                    )}
+                  </React.Fragment>
               ))}
             </div>
           </div>
