@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
@@ -30,7 +30,7 @@ export default function PreviewPage() {
 
   const modulesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'modules'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+    return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
   }, [firestore, user]);
 
 

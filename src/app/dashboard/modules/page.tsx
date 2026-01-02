@@ -7,7 +7,7 @@ import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit, FolderPlus, Fol
 import * as React from 'react';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { deleteDoc, doc, addDoc, serverTimestamp, writeBatch, query, collection, where, orderBy } from 'firebase/firestore';
+import { deleteDoc, doc, addDoc, serverTimestamp, writeBatch, query, collection, where } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import {
@@ -68,7 +68,7 @@ export default function ModulesPage() {
 
   const modulesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'modules'), where('userId', '==', user.uid), orderBy('position'));
+    return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
   }, [firestore, user]);
 
   const foldersQuery = useMemoFirebase(() => {
