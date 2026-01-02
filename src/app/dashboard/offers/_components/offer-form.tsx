@@ -79,11 +79,9 @@ export function OfferForm({ allModules, userFolders }: OfferFormProps) {
     setIsSubmitting(true);
     
     try {
-        const selectedModules = data.selectedModuleIds.map(id => allModules.find(m => m.id === id)).filter(Boolean) as Module[];
-
-        const combinedContent = selectedModules
-            .map(m => m.content)
-            .join('<div style="page-break-after: always;"></div>');
+        const selectedModules = data.selectedModuleIds
+            .map(id => allModules.find(m => m.id === id))
+            .filter(Boolean) as Module[];
 
         let backgroundUrl: string | undefined = undefined;
         if (data.backgroundFiles && data.backgroundFiles.length > 0) {
@@ -98,10 +96,7 @@ export function OfferForm({ allModules, userFolders }: OfferFormProps) {
     
         const temporaryOfferData = {
             id: `temp-${Date.now()}`,
-            module: {
-                title: `Surat Kustom`,
-                content: combinedContent,
-            },
+            modules: selectedModules.map(m => ({ title: m.title, content: m.content })),
             backgroundUrl: backgroundUrl, 
         };
         

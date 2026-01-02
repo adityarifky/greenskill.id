@@ -23,7 +23,7 @@ export type Offer = {
   createdAt: Date;
   userId: string;
   backgroundUrl?: string; // For single background
-  module?: Partial<Module>;
+  modules?: Array<Partial<Module>>;
   selectedModuleIds?: string[];
 };
 

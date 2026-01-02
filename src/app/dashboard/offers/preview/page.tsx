@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 
 type PreviewData = {
   id: string;
-  module?: Partial<Module>;
+  modules?: Array<Partial<Module>>;
   backgroundUrl?: string;
 };
 
@@ -52,7 +52,7 @@ export default function SessionOfferPreviewPage() {
     );
   }
 
-  if (!previewData || !previewData.backgroundUrl || !previewData.module) {
+  if (!previewData || !previewData.backgroundUrl || !previewData.modules || previewData.modules.length === 0) {
     return (
       <div className="flex h-full flex-col">
         <Header title="Pratinjau Surat" />
@@ -72,7 +72,7 @@ export default function SessionOfferPreviewPage() {
     );
   }
 
-  const { module, backgroundUrl } = previewData;
+  const { modules, backgroundUrl } = previewData;
 
   const headerTitle = 'Pratinjau Surat';
 
@@ -96,34 +96,36 @@ export default function SessionOfferPreviewPage() {
           <div className="print-container mx-auto max-w-4xl rounded-lg bg-white shadow-lg">
             <div
               id="print-content-wrapper"
-              className="print-content relative w-full"
+              className="print-content w-full"
             >
-              {/* This wrapper will contain all pages */}
-              <div
-                  className={cn(
-                      "printable-page relative aspect-[1/1.414]",
-                      "bg-white text-sm",
-                      "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
-                      "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
-                      "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
-                      "[&_font[size='4']]:text-xl [&_font[size='4']]:font-semibold",
-                      "[&_font[size='3']]:text-base",
-                      "[&_font[size='2']]:text-sm",
-                      "[&_font[size='1']]:text-xs",
-                      "[&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2",
-                      "[&_img]:max-w-full [&_img]:h-auto"
-                  )}
-              >
-                  <Image
-                    src={backgroundUrl}
-                    alt="Background Surat"
-                    fill
-                    sizes="100vw"
-                    priority
-                    className="object-cover pointer-events-none"
-                  />
-                  <div className="absolute inset-0 p-4" dangerouslySetInnerHTML={{ __html: module.content || '' }}/>
-              </div>
+              {modules.map((module, index) => (
+                  <div
+                      key={index}
+                      className={cn(
+                          "printable-page relative aspect-[1/1.414]",
+                          "bg-white text-sm",
+                          "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
+                          "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
+                          "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
+                          "[&_font[size='4']]:text-xl [&_font[size='4']]:font-semibold",
+                          "[&_font[size='3']]:text-base",
+                          "[&_font[size='2']]:text-sm",
+                          "[&_font[size='1']]:text-xs",
+                          "[&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2",
+                          "[&_img]:max-w-full [&_img]:h-auto"
+                      )}
+                  >
+                      <Image
+                        src={backgroundUrl}
+                        alt={`Background Surat - Halaman ${index + 1}`}
+                        fill
+                        sizes="100vw"
+                        priority={index === 0}
+                        className="object-cover pointer-events-none"
+                      />
+                      <div className="absolute inset-0 p-4" dangerouslySetInnerHTML={{ __html: module.content || '' }}/>
+                  </div>
+              ))}
             </div>
           </div>
       </main>
@@ -139,8 +141,8 @@ export default function SessionOfferPreviewPage() {
             }
             .printable-page {
                 page-break-after: always;
-                width: 100%;
-                height: 100%;
+                width: 210mm;
+                height: 297mm;
                 position: relative;
                 overflow: hidden;
             }
