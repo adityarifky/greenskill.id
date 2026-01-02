@@ -1,41 +1,50 @@
 'use client';
 
-import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { useDoc, useFirestore, useMemoFirebase, useCollection, useUser } from '@/firebase';
+import { doc, collection, query, where } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { notFound } from 'next/navigation';
 import { OfferFormDynamic } from '../../_components/offer-form-dynamic';
-import type { Offer, Scheme } from '@/lib/types';
+import type { Offer, Scheme, UserFolder, Module } from '@/lib/types';
 import { use } from 'react';
 
 export default function EditOfferPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
 
   const offerRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return doc(firestore, 'training_offers', id);
   }, [firestore, id]);
 
-  const schemesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'registration_schemas');
-  }, [firestore]);
+  const allModulesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
+  }, [firestore, user]);
+
+  const userFoldersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid));
+  }, [firestore, user]);
 
   const { data: offer, isLoading: isLoadingOffer } = useDoc<Offer>(offerRef);
-  const { data: schemes, isLoading: isLoadingSchemes } = useCollection<Scheme>(schemesQuery);
+  const { data: allModules, isLoading: isLoadingModules } = useCollection<Module>(allModulesQuery);
+  const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(userFoldersQuery);
+
+  const isLoading = isLoadingOffer || isLoadingModules || isLoadingFolders || isUserLoading;
 
   if (!isLoadingOffer && !offer) {
     notFound();
   }
   
-  if (isLoadingOffer || isLoadingSchemes) {
+  if (isLoading) {
     return (
         <div className="flex h-full flex-col">
             <Header title="Edit Surat" />
             <main className="flex-1 p-4 md:p-8">
             <div className="mx-auto max-w-2xl">
-                <OfferFormDynamic initialData={null} schemes={[]} isLoading={true} />
+                <OfferFormDynamic initialData={null} allModules={[]} userFolders={[]} isLoading={true} />
             </div>
             </main>
         </div>
@@ -47,7 +56,11 @@ export default function EditOfferPage({ params }: { params: Promise<{ id: string
       <Header title="Edit Surat" />
       <main className="flex-1 p-4 md:p-8">
         <div className="mx-auto max-w-2xl">
-          <OfferFormDynamic initialData={offer} schemes={schemes || []} />
+          <OfferFormDynamic 
+            initialData={offer} 
+            allModules={allModules || []}
+            userFolders={userFolders || []}
+          />
         </div>
       </main>
     </div>

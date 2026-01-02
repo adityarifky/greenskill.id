@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Offer, Module, UserFolder, Scheme } from '@/lib/types';
+import type { Offer, Module, UserFolder } from '@/lib/types';
 
 const OfferForm = dynamic(() => import('./offer-form').then(mod => mod.OfferForm), {
   ssr: false,
