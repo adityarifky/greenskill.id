@@ -17,7 +17,7 @@ service cloud.firestore {
     // Users can only manage their own training offers.
     match /training_offers/{offerId} {
       // Allow read/write on single documents if user is the owner
-      allow get, update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow get, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
       // Allow create if the new document's userId matches the user's uid
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       // Allow list (collection query) for authenticated users.
@@ -35,11 +35,9 @@ service cloud.firestore {
 
     // Users can only manage their own folders.
     match /user_folders/{folderId} {
-        // Allow write operations if the user is the owner
-        allow create, update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
-        // Allow reading a single document if they are the owner
-        allow get: if request.auth != null && resource.data.userId == request.auth.uid;
-        // Allow list operation only if the query is filtered by the user's ID.
+        // Allow get/write on single documents if user is the owner
+        allow get, update, delete, create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        // Allow list (collection query) if the query is scoping to the user's own documents.
         allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
     }
   }
