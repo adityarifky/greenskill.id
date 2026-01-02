@@ -10,7 +10,7 @@ import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { Scheme, Offer, Module } from '@/lib/types';
+import type { Scheme, Offer, Module, UserFolder } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PreviewPage() {
@@ -33,13 +33,19 @@ export default function PreviewPage() {
     return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
   }, [firestore, user]);
 
+  const foldersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid));
+  }, [firestore, user]);
+
 
   const { data: schemes, isLoading: isLoadingSchemes } = useCollection<Scheme>(schemesQuery);
   const { data: offers, isLoading: isLoadingOffers } = useCollection<Offer>(offersQuery);
   const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
+  const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
 
 
-  const isLoading = isUserLoading || isLoadingSchemes || isLoadingOffers || isLoadingModules;
+  const isLoading = isUserLoading || isLoadingSchemes || isLoadingOffers || isLoadingModules || isLoadingFolders;
 
   const getFormattedDate = (date: any): string => {
     if (!date) return '-';
