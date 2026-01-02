@@ -104,6 +104,7 @@ export default function SessionOfferPreviewPage() {
                       className={cn(
                           "printable-page relative aspect-[1/1.414]",
                           "bg-white text-sm",
+                          "not-last:mb-8", // Add margin between pages on screen
                           "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
                           "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
                           "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
@@ -138,6 +139,7 @@ export default function SessionOfferPreviewPage() {
                 box-shadow: none;
                 margin: 0;
                 padding: 0;
+                border: none;
             }
             .printable-page {
                 page-break-after: always;
@@ -145,10 +147,14 @@ export default function SessionOfferPreviewPage() {
                 height: 297mm;
                 position: relative;
                 overflow: hidden;
+                margin-bottom: 0 !important; /* Remove margin for printing */
+            }
+            .printable-page:last-child {
+                page-break-after: auto;
             }
             #print-content-wrapper {
               width: 210mm;
-              margin: 0;
+              margin: 0 auto;
             }
         }
         @page {
