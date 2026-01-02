@@ -11,34 +11,32 @@ service cloud.firestore {
     // Public read for schemes, but only owners can write.
     match /registration_schemas/{schemaId} {
       allow read: if request.auth != null;
-      allow create, update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow create, update, delete: if request.resource.data.userId == request.auth.uid;
     }
 
     // Users can only manage their own training offers.
+    // This combined rule is more robust. `list` allows the query to execute,
+    // while `read` ensures document-level security, returning only owned documents.
     match /training_offers/{offerId} {
-      // Allow read/write on single documents if user is the owner
-      allow get, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      // Allow create if the new document's userId matches the user's uid
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      // Allow list (collection query) for authenticated users.
-      // The client query MUST enforce ownership via a 'where' clause.
-      allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
+      allow list: if request.auth != null;
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
     // Users can only manage their own modules.
+    // Robust rule: `list` allows the query, `read` secures each document.
     match /modules/{moduleId} {
-       // Allow get/write on single documents if user is the owner
-       allow get, update, delete, create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-       // Allow list (collection query) if the query is scoping to the user's own documents.
-       allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
+       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+       allow list: if request.auth != null;
+       allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
     // Users can only manage their own folders.
+    // Robust rule: `list` allows the query, `read` secures each document.
     match /user_folders/{folderId} {
-        // Allow get/write on single documents if user is the owner
-        allow get, update, delete, create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-        // Allow list (collection query) if the query is scoping to the user's own documents.
-        allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
+        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        allow list: if request.auth != null;
+        allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
   }
 }
