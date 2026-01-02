@@ -5,7 +5,7 @@ import { doc, collection, query, where } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { notFound } from 'next/navigation';
 import { OfferFormDynamic } from '../../_components/offer-form-dynamic';
-import type { Offer, Scheme, UserFolder, Module } from '@/lib/types';
+import type { Offer, Module, UserFolder } from '@/lib/types';
 import { use } from 'react';
 
 export default function EditOfferPage({ params }: { params: Promise<{ id: string }> }) {
