@@ -93,7 +93,7 @@ export default function SessionOfferPreviewPage() {
             </Button>
          </div>
         
-          <div className="print-container mx-auto max-w-4xl rounded-lg bg-white shadow-lg">
+          <div className="print-container mx-auto max-w-4xl">
             <div
               id="print-content-wrapper"
               className="print-content w-full"
@@ -102,9 +102,8 @@ export default function SessionOfferPreviewPage() {
                   <div
                       key={index}
                       className={cn(
-                          "printable-page relative aspect-[1/1.414]",
-                          "bg-white text-sm",
-                          "not-last:mb-8", // Add margin between pages on screen
+                          "printable-page relative aspect-[1/1.414] bg-white text-sm shadow-lg",
+                          "not-last:mb-8",
                           "[&_font[size='7']]:text-4xl [&_font[size='7']]:font-bold",
                           "[&_font[size='6']]:text-3xl [&_font[size='6']]:font-bold",
                           "[&_font[size='5']]:text-2xl [&_font[size='5']]:font-semibold",
@@ -147,6 +146,7 @@ export default function SessionOfferPreviewPage() {
                 height: 297mm;
                 position: relative;
                 overflow: hidden;
+                box-shadow: none;
                 margin-bottom: 0 !important; /* Remove margin for printing */
             }
             .printable-page:last-child {
