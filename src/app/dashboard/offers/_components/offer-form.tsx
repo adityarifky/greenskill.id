@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { Upload, CheckCircle } from "lucide-react"
+import { Upload } from "lucide-react"
 import * as React from 'react';
  
 import { Button } from '@/components/ui/button';
@@ -22,8 +22,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from '@/hooks/use-toast';
 import type { Module, UserFolder } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -69,19 +69,19 @@ export function OfferForm({ allModules, userFolders }: OfferFormProps) {
 
   const modulesInSelectedFolder = React.useMemo(() => {
       if (!selectedFolder) return [];
-      if (selectedFolder === 'folder-surat-penawaran') {
-          return allModules.filter(m => !m.folderId || m.folderId === 'folder-surat-penawaran');
-      }
-      return allModules.filter(m => m.folderId === selectedFolder);
+      const filteredModules = (selectedFolder === 'folder-surat-penawaran') 
+        ? allModules.filter(m => !m.folderId || m.folderId === 'folder-surat-penawaran')
+        : allModules.filter(m => m.folderId === selectedFolder);
+      return filteredModules.sort((a,b) => a.position - b.position);
   }, [selectedFolder, allModules]);
 
   const onSubmit = async (data: OfferFormValues) => {
     setIsSubmitting(true);
     
     try {
-        const selectedModules = allModules.filter(m => data.selectedModuleIds.includes(m.id));
+        const selectedModules = data.selectedModuleIds.map(id => allModules.find(m => m.id === id)).filter(Boolean) as Module[];
+
         const combinedContent = selectedModules
-            .sort((a, b) => a.position - b.position)
             .map(m => m.content)
             .join('<div style="page-break-after: always;"></div>');
 
@@ -167,50 +167,44 @@ export function OfferForm({ allModules, userFolders }: OfferFormProps) {
                  <FormField
                     control={form.control}
                     name="selectedModuleIds"
-                    render={() => (
+                    render={({ field }) => (
                       <FormItem>
                         <div className="mb-4">
                           <FormLabel className="text-base">Pilih Modul Konten</FormLabel>
                           <FormDescription>
-                            Pilih satu atau lebih modul untuk digabungkan menjadi satu surat.
+                            Pilih satu atau lebih modul untuk digabungkan menjadi satu surat. Urutan klik menentukan urutan konten.
                           </FormDescription>
                         </div>
                         <Card className="h-[300px] flex flex-col">
                            <CardContent className="p-2 flex-grow overflow-hidden">
                              <ScrollArea className="h-full">
-                              {modulesInSelectedFolder.length > 0 ? modulesInSelectedFolder.map((item) => (
-                                <FormField
-                                  key={item.id}
-                                  control={form.control}
-                                  name="selectedModuleIds"
-                                  render={({ field }) => {
-                                    return (
-                                      <FormItem
-                                        key={item.id}
-                                        className="flex flex-row items-center space-x-3 space-y-0 p-3 hover:bg-muted/50 rounded-md transition-colors"
-                                      >
-                                        <FormControl>
-                                          <Checkbox
-                                            checked={field.value?.includes(item.id)}
-                                            onCheckedChange={(checked) => {
-                                              return checked
-                                                ? field.onChange([...field.value, item.id])
-                                                : field.onChange(
-                                                    field.value?.filter(
-                                                      (value) => value !== item.id
-                                                    )
-                                                  )
-                                            }}
-                                          />
-                                        </FormControl>
-                                        <FormLabel className="font-normal flex-1 cursor-pointer">
-                                          {item.title}
-                                        </FormLabel>
-                                      </FormItem>
-                                    )
-                                  }}
-                                />
-                              )) : (
+                              {modulesInSelectedFolder.length > 0 ? modulesInSelectedFolder.map((item) => {
+                                const selectedIndex = field.value?.indexOf(item.id);
+                                const isSelected = selectedIndex !== -1;
+                                
+                                return (
+                                  <div
+                                    key={item.id}
+                                    className={cn("flex flex-row items-center space-x-3 space-y-0 p-3 hover:bg-muted/50 rounded-md transition-colors cursor-pointer", isSelected && "bg-blue-50")}
+                                    onClick={() => {
+                                       const newValue = isSelected
+                                        ? field.value?.filter(id => id !== item.id)
+                                        : [...(field.value || []), item.id];
+                                      field.onChange(newValue);
+                                    }}
+                                  >
+                                    <div className={cn(
+                                        "h-6 w-6 rounded-md border border-input flex items-center justify-center text-sm font-semibold transition-colors",
+                                        isSelected ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground"
+                                    )}>
+                                        {isSelected ? selectedIndex + 1 : null}
+                                    </div>
+                                    <FormLabel className="font-normal flex-1 cursor-pointer">
+                                      {item.title}
+                                    </FormLabel>
+                                  </div>
+                                )
+                              }) : (
                                 <div className="text-center p-10 text-muted-foreground">
                                     Folder ini tidak memiliki modul.
                                 </div>
