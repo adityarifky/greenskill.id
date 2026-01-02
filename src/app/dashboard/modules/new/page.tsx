@@ -5,7 +5,7 @@ import { ModuleFormDynamic } from '../_components/module-form-dynamic';
 import * as React from 'react';
 import type { Module, UserFolder } from '@/lib/types';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 
 export default function NewModulePage() {
   const { user, isUserLoading } = useUser();
@@ -13,7 +13,7 @@ export default function NewModulePage() {
 
   const foldersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid));
   }, [firestore, user]);
 
   const modulesQuery = useMemoFirebase(() => {

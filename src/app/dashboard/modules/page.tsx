@@ -73,7 +73,7 @@ export default function ModulesPage() {
 
   const foldersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid));
   }, [firestore, user]);
 
   const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);

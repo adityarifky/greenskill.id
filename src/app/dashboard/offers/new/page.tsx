@@ -1,7 +1,7 @@
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { OfferFormDynamic } from '../_components/offer-form-dynamic';
 import type { Module, UserFolder } from '@/lib/types';
@@ -18,12 +18,12 @@ export default function NewOfferPage() {
 
   const modulesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'modules'), where('userId', '==', user.uid), orderBy('position'));
+    return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
   }, [firestore, user]);
 
   const foldersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid));
   }, [firestore, user]);
 
   const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
