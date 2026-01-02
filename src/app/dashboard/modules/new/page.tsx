@@ -4,16 +4,25 @@ import { Header } from '@/components/layout/header';
 import { ModuleFormDynamic } from '../_components/module-form-dynamic';
 import * as React from 'react';
 import type { Module, UserFolder } from '@/lib/types';
-import { useUser } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 
 export default function NewModulePage() {
-  const { isUserLoading } = useUser();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
 
-  // TEMPORARILY DISABLED QUERIES to prevent permission errors
-  const folders: UserFolder[] = [];
-  const modules: Module[] = [];
-  const isLoadingFolders = false;
-  const isLoadingModules = false;
+  const foldersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+  }, [firestore, user]);
+
+  const modulesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'modules'), where('userId', '==', user.uid));
+  }, [firestore, user]);
+
+  const { data: folders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
+  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
 
   const isLoading = isUserLoading || isLoadingFolders || isLoadingModules;
 

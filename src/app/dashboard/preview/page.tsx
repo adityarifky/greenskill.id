@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
@@ -28,13 +28,16 @@ export default function PreviewPage() {
     return query(collection(firestore, 'training_offers'), where('userId', '==', user.uid));
   }, [firestore, user]);
 
-  // TEMPORARILY DISABLED QUERY
-  const modules: Module[] | null = [];
-  const isLoadingModules = false;
+  const modulesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'modules'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+  }, [firestore, user]);
 
 
   const { data: schemes, isLoading: isLoadingSchemes } = useCollection<Scheme>(schemesQuery);
   const { data: offers, isLoading: isLoadingOffers } = useCollection<Offer>(offersQuery);
+  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
+
 
   const isLoading = isUserLoading || isLoadingSchemes || isLoadingOffers || isLoadingModules;
 
@@ -195,7 +198,7 @@ export default function PreviewPage() {
                   </TableBody>
                 </Table>
                  {!isLoading && (!modules || modules.length === 0) && (
-                    <div className="text-center py-10 text-muted-foreground">Fitur modul sedang dalam perbaikan.</div>
+                    <div className="text-center py-10 text-muted-foreground">Belum ada modul.</div>
                 )}
               </CardContent>
             </Card>

@@ -1,24 +1,33 @@
 'use client';
 
-import { useUser } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { OfferFormDynamic } from '../_components/offer-form-dynamic';
 import type { Module, UserFolder } from '@/lib/types';
 import * as React from 'react';
 
 export default function NewOfferPage() {
-  const { isUserLoading } = useUser();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // TEMPORARILY DISABLED QUERIES to prevent permission errors
-  const modules: Module[] = [];
-  const userFolders: UserFolder[] = [];
-  const isLoadingModules = false;
-  const isLoadingFolders = false;
+  const modulesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'modules'), where('userId', '==', user.uid), orderBy('position'));
+  }, [firestore, user]);
+
+  const foldersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+  }, [firestore, user]);
+
+  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
+  const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
   
   const isLoading = isUserLoading || isLoadingModules || isLoadingFolders;
 

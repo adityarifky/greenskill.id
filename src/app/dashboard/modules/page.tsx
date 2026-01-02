@@ -6,8 +6,8 @@ import { id } from 'date-fns/locale';
 import { PlusCircle, MoreHorizontal, BookOpen, Trash2, FileEdit, FolderPlus, Folder, ArrowRight, GripVertical } from 'lucide-react';
 import * as React from 'react';
 
-import { useUser } from '@/firebase';
-import { deleteDoc, doc, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { deleteDoc, doc, addDoc, serverTimestamp, writeBatch, query, collection, where, orderBy } from 'firebase/firestore';
 import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,6 +54,7 @@ import { Input } from '@/components/ui/input';
 
 export default function ModulesPage() {
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const [moduleToDelete, setModuleToDelete] = React.useState<Module | null>(null);
   const [folderToDelete, setFolderToDelete] = React.useState<UserFolder | null>(null);
   const [moduleToPreview, setModuleToPreview] = React.useState<Module | null>(null);
@@ -65,18 +66,24 @@ export default function ModulesPage() {
   const [folderModules, setFolderModules] = React.useState<Module[]>([]);
   const [draggedModule, setDraggedModule] = React.useState<Module | null>(null);
 
-  // TEMPORARILY DISABLED QUERIES to prevent permission errors
-  const modules: Module[] | null = [];
-  const userFolders: UserFolder[] | null = [];
-  const isLoadingModules = false;
-  const isLoadingFolders = false;
-  const firestore = null; // Placeholder
+  const modulesQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'modules'), where('userId', '==', user.uid), orderBy('position'));
+  }, [firestore, user]);
+
+  const foldersQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'user_folders'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+  }, [firestore, user]);
+
+  const { data: modules, isLoading: isLoadingModules } = useCollection<Module>(modulesQuery);
+  const { data: userFolders, isLoading: isLoadingFolders } = useCollection<UserFolder>(foldersQuery);
 
   const isLoading = isUserLoading || isLoadingModules || isLoadingFolders;
   
   const openFolderContent = (folder: {id: string, name: string}) => {
     setOpenedFolder(folder);
-    const filteredModules = modules?.filter(m => (folder.id === 'folder-surat-penawaran') ? (m.folderId === 'folder-surat-penawaran' || !m.folderId) : m.folderId === folder.id) || [];
+    const filteredModules = modules?.filter(m => (folder.id === 'folder-surat-penawaran') ? (m.folderId === 'folder-surat-penawaran' || !m.folderId) : m.folderId === folder.id).sort((a, b) => a.position - b.position) || [];
     setFolderModules(filteredModules);
   }
 
@@ -130,7 +137,7 @@ export default function ModulesPage() {
             description: "Terjadi kesalahan saat menyimpan urutan modul baru.",
         });
         // Optionally, revert the local state if the DB update fails
-        const originalModules = modules?.filter(m => openedFolder && m.folderId === openedFolder.id) || [];
+        const originalModules = modules?.filter(m => openedFolder && (m.folderId === openedFolder.id || (!m.folderId && openedFolder.id === 'folder-surat-penawaran'))).sort((a,b) => a.position - b.position) || [];
         setFolderModules(originalModules);
     }
   };
@@ -251,33 +258,34 @@ export default function ModulesPage() {
           </div>
 
           {!isLoading && (!modules || modules.length === 0) && (!userFolders || userFolders.length === 0) ? (
-              <div className="py-20 text-center text-muted-foreground flex flex-col items-center justify-center border-2 border-dashed rounded-lg h-full">
+              <div className="py-20 text-center text-muted-foreground flex flex-col items-center justify-center border-2 border-dashed rounded-lg min-h-[400px]">
                 <BookOpen className="h-16 w-16 text-muted-foreground/30 mb-4" />
                 <h3 className="text-lg font-semibold">Belum Ada Modul</h3>
-                <p className="mb-4">Fitur modul dinonaktifkan sementara untuk perbaikan. Silakan kembali lagi nanti.</p>
+                <p className="mb-4 max-w-sm">Anda belum membuat modul atau folder apa pun. Mulai dengan membuat folder baru atau langsung membuat modul pertama Anda.</p>
+                 <Button asChild>
+                    <Link href="/dashboard/modules/new">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Buat Modul Pertama
+                    </Link>
+                </Button>
               </div>
           ) : (
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {isLoading ? (
                     <>
-                      <Card>
-                          <CardHeader>
-                              <Skeleton className="h-6 w-3/4" />
-                              <Skeleton className="h-4 w-1/2" />
-                          </CardHeader>
-                          <CardFooter>
-                              <Skeleton className="h-4 w-full" />
-                          </CardFooter>
-                      </Card>
-                       <Card>
-                          <CardHeader>
-                              <Skeleton className="h-6 w-3/4" />
-                              <Skeleton className="h-4 w-1/2" />
-                          </CardHeader>
-                          <CardFooter>
-                              <Skeleton className="h-4 w-full" />
-                          </CardFooter>
-                      </Card>
+                      {[...Array(4)].map((_, i) => (
+                        <Card key={i}>
+                            <CardHeader>
+                                <Skeleton className="h-6 w-3/4" />
+                            </CardHeader>
+                             <CardContent className="flex-grow flex items-center justify-center">
+                                 <Skeleton className="h-16 w-16" />
+                             </CardContent>
+                            <CardFooter>
+                                <Skeleton className="h-4 w-1/3" />
+                            </CardFooter>
+                        </Card>
+                      ))}
                     </>
                   ) : (
                     <>
@@ -457,7 +465,7 @@ export default function ModulesPage() {
                       <div className="flex-grow">
                           <h4 className="font-semibold text-base">{module.title}</h4>
                           <p className="text-xs text-muted-foreground">
-                            Dibuat pada {getFormattedDate(module.createdAt)}
+                            Diperbarui pada {getFormattedDate(module.updatedAt)}
                           </p>
                       </div>
                       <DropdownMenu>
