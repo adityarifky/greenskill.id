@@ -22,7 +22,7 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       // Allow list (collection query) for authenticated users.
       // The client query MUST enforce ownership via a 'where' clause.
-      allow list: if request.auth != null;
+      allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
     }
 
     // Users can only manage their own modules.
@@ -30,7 +30,7 @@ service cloud.firestore {
        // Allow get/write on single documents if user is the owner
        allow get, update, delete, create: if request.auth != null && request.resource.data.userId == request.auth.uid;
        // Allow list (collection query) if the query is scoping to the user's own documents.
-       allow list: if request.auth != null;
+       allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
     }
 
     // Users can only manage their own folders.
@@ -38,7 +38,7 @@ service cloud.firestore {
         // Allow get/write on single documents if user is the owner
         allow get, update, delete, create: if request.auth != null && request.resource.data.userId == request.auth.uid;
         // Allow list (collection query) if the query is scoping to the user's own documents.
-        allow list: if request.auth != null;
+        allow list: if request.auth != null && request.query.where.userId == request.auth.uid;
     }
   }
 }
